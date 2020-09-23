@@ -1,0 +1,27 @@
+Removed Pin From Net: NetName=LED5 Pin=DS10-1
+Removed Pin From Net: NetName=GND Pin=DS10-2
+Removed Pin From Net: NetName=LED6 Pin=DS10-3
+Removed Member From Class: ClassName=Micocontroller Peripherals Member=DS10
+Added Component: Designator=DS?(XLxxxx34x)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/sunled/XLMDKCBD34M/1497-1307-ND/4901632"; VariantName = "[No Variations]"
+Added Component: Designator=R?(Res_ThinFilm_0603)
+Added Component: Designator=R?(Res_ThinFilm_0603)
+Added Pin To Net: NetName=VCC Pin=C13-1
+Added Pin To Net: NetName=VCC Pin=C16-2
+Added Pin To Net: NetName=VCC Pin=C19-1
+Added Pin To Net: NetName=VCC Pin=C22-2
+Added Pin To Net: NetName=GND Pin=DS?-2
+Added Pin To Net: NetName=LED5 Pin=R?-2
+Added Pin To Net: NetName=LED6 Pin=R?-2
+Added Pin To Net: NetName=VCC Pin=U4-15
+Added Pin To Net: NetName=VCC Pin=U5-15
+Added Pin To Net: NetName=LED R5 Pin=DS?-1
+Added Pin To Net: NetName=LED R5 Pin=R?-1
+Added Net: Name=LED R5
+Added Pin To Net: NetName=LED R6 Pin=DS?-3
+Added Pin To Net: NetName=LED R6 Pin=R?-1
+Added Net: Name=LED R6
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component DS? XLMDKCBD34M
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component R? 1k
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component R? 1k

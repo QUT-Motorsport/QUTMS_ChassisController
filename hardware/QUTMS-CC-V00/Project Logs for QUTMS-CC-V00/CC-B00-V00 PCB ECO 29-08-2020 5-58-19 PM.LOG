@@ -1,0 +1,4 @@
+Removed Pin From Net: NetName=UARTP RX Pin=D8-1
+Removed Pin From Net: NetName=UARTP TX Pin=D8-2
+Added Pin To Net: NetName=UARTP TX Pin=D8-1
+Added Pin To Net: NetName=UARTP RX Pin=D8-2

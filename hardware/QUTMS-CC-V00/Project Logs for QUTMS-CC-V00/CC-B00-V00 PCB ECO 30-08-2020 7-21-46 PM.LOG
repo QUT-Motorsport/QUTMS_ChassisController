@@ -1,0 +1,7 @@
+Added Component: Designator=FID1(FIDUCIAL 1MM)
+Added Component: Designator=FID2(FIDUCIAL 1MM)
+Added Component: Designator=FID3(FIDUCIAL 1MM)
+Added Component: Designator=FID4(FIDUCIAL 1MM)
+Added Component: Designator=LOGO1(QUTMS LOGO 15MM)
+Added Component: Designator=LOGO2(QUTMS LOGO 30MM)
+Added Class: Name=CC-S00-V00-ChassisController

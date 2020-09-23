@@ -1,0 +1,18 @@
+Added Component: Designator=U7(MAX3232CPWR)
+Added Pin To Net: NetName=NetC47_2 Pin=U7-1
+Added Pin To Net: NetName=NetC49_2 Pin=U7-2
+Added Pin To Net: NetName=NetC47_1 Pin=U7-3
+Added Pin To Net: NetName=NetC48_2 Pin=U7-4
+Added Pin To Net: NetName=NetC48_1 Pin=U7-5
+Added Pin To Net: NetName=NetC50_2 Pin=U7-6
+Added Pin To Net: NetName=RS232B RX Pin=U7-7
+Added Pin To Net: NetName=RS232B TX Pin=U7-8
+Added Pin To Net: NetName=UART2 RX Pin=U7-9
+Added Pin To Net: NetName=UART2 TX Pin=U7-10
+Added Pin To Net: NetName=UART1 TX Pin=U7-11
+Added Pin To Net: NetName=UART1 RX Pin=U7-12
+Added Pin To Net: NetName=RS232A TX Pin=U7-13
+Added Pin To Net: NetName=RS232A RX Pin=U7-14
+Added Pin To Net: NetName=GND Pin=U7-15
+Added Pin To Net: NetName=3V3 Pin=U7-16
+Added Member To Class: ClassName=Serial Communications Member=Component U7 MAX3232CPWR

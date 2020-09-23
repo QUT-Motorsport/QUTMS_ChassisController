@@ -1,0 +1,3 @@
+Added Component: Designator=R59(Res_ThinFilm_0603)
+Added Pin To Net: NetName=BOOT0 Pin=R59-2
+Added Member To Class: ClassName=Microcontroller Member=Component R59 10k

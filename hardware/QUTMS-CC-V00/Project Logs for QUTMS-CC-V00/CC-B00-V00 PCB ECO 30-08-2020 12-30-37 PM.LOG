@@ -1,0 +1,12 @@
+Removed Pin From Net: NetName=CAN H 1 Pin=J4-A6
+Removed Pin From Net: NetName=CAN L 1 Pin=J4-A7
+Removed Pin From Net: NetName=CAN H 2 Pin=J4-A12
+Removed Pin From Net: NetName=CAN L 2 Pin=J4-A13
+Removed Pin From Net: NetName=CAN H 3 Pin=J4-A18
+Removed Pin From Net: NetName=CAN L 3 Pin=J4-A19
+Added Pin To Net: NetName=CAN L 1 Pin=J4-A6
+Added Pin To Net: NetName=CAN H 1 Pin=J4-A7
+Added Pin To Net: NetName=CAN L 2 Pin=J4-A12
+Added Pin To Net: NetName=CAN H 2 Pin=J4-A13
+Added Pin To Net: NetName=CAN L 3 Pin=J4-A18
+Added Pin To Net: NetName=CAN H 3 Pin=J4-A19

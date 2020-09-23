@@ -1,0 +1,18 @@
+Removed Pin From Net: NetName=UART3 TX Pin=U1-46
+Removed Pin From Net: NetName=UART3 RX Pin=U1-47
+Removed Pin From Net: NetName=UART4 RX Pin=U1-81
+Removed Pin From Net: NetName=UART4 TX Pin=U1-82
+Added Pin To Net: NetName=UART4 TX Pin=U1-46
+Added Pin To Net: NetName=UART4 RX Pin=U1-47
+Added Pin To Net: NetName=UART3 RX Pin=U1-81
+Added Pin To Net: NetName=UART3 TX Pin=U1-82
+Added Member To Class: ClassName=5V Supply Member=Component C33 22uF 35V 1206
+Added Room: Name=3V3 Supply
+Added Room: Name=5V Supply
+Added Room: Name=Connector
+Added Room: Name=High Side Outputs
+Added Room: Name=Micocontroller Peripherals
+Added Room: Name=Microcontroller
+Added Room: Name=Power
+Added Room: Name=Power Selection
+Added Room: Name=Serial Communications

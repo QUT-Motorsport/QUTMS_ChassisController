@@ -1,0 +1,17 @@
+Change Pin Designator/Name:  Old Designator=U1F-22 Old Name=PA0 (ADC0) New Designator =PA1 (ADC1) New Name=23
+Change Pin Designator/Name:  Old Designator=U1F-18 Old Name=PC3 (ADC13) New Designator =PA0 (ADC0) New Name=22
+Change Pin Designator/Name:  Old Designator=U1F-24 Old Name=PA2 (ADC2) New Designator =PA3 (ADC3) New Name=25
+Change Pin Designator/Name:  Old Designator=U1F-25 Old Name=PA3 (ADC3) New Designator =PA2 (ADC2) New Name=24
+Change Pin Designator/Name:  Old Designator=U1G-42 Old Name=PE12 New Designator =PE14 New Name=44
+Change Pin Designator/Name:  Old Designator=U1G-41 Old Name=PE11 New Designator =PE13 New Name=43
+Change Pin Designator/Name:  Old Designator=U1G-38 Old Name=PE8 New Designator =PE12 New Name=42
+Change Pin Designator/Name:  Old Designator=U1F-17 Old Name=PC2 (ADC12) New Designator =PC3 (ADC13) New Name=18
+Change Pin Designator/Name:  Old Designator=U1F-23 Old Name=PA1 (ADC1) New Designator =PC2 (ADC12) New Name=17
+Change Pin Designator/Name:  Old Designator=U1G-36 Old Name=PB2 New Designator =PE9 New Name=39
+Change Pin Designator/Name:  Old Designator=U1G-7 Old Name=PC13 New Designator =PE10 New Name=40
+Change Pin Designator/Name:  Old Designator=U1G-43 Old Name=PE13 New Designator =PE6 New Name=5
+Change Pin Designator/Name:  Old Designator=U1G-44 Old Name=PE14 New Designator =PB2 New Name=36
+Change Pin Designator/Name:  Old Designator=U1G-5 Old Name=PE6 New Designator =PE11 New Name=41
+Change Pin Designator/Name:  Old Designator=U1G-37 Old Name=PE7 New Designator =PE8 New Name=38
+Change Pin Designator/Name:  Old Designator=U1G-40 Old Name=PE10 New Designator =PE7 New Name=37
+Change Pin Designator/Name:  Old Designator=U1G-39 Old Name=PE9 New Designator =PC13 New Name=7

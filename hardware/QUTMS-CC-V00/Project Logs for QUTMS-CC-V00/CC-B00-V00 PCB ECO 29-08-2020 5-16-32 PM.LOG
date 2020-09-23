@@ -1,0 +1,158 @@
+Removed Pin From Net: NetName=LED5 Pin=DS10-1
+Removed Pin From Net: NetName=LED6 Pin=DS10-3
+Change Component Footprint: Designator=U8 Old Footprint=FP-S8-5-MFG New Footprint=MAX3490EESA
+Change Component Comment : Designator=R21 Old Comment=1k 5% 0603 New Comment=1k
+Change Component Comment : Designator=R22 Old Comment=1k 5% 0603 New Comment=1k
+Change Component Comment : Designator=U8 Old Comment=MAX3490EESA+ New Comment=MAX3490EESA
+Change Managed Component Library Link : Designator=U8 Old VaultGUID=B7D15EC3-160A-466F-A46C-7801FE6295A7 New VaultGUID= Old ItemGUID=1FF42ADE-0404-44B7-BDA5-9A959C6D83E2 New ItemGUID= Old RevisionGUID=C6C83A0B-5E33-42A2-84E5-229ACC6AE4CC New RevisionGUID=
+Change component parameters: Designator = "U8" ("U8"); Footprint = "FP-S8-5-MFG"; UniqueID = "\CDWSKDZZ\ECXYYKDT" ("\CDWSKDZZ\ECXYYKDT")
+Added Component: Designator=C42(Cap_Ceramic_0603)
+Added Component: Designator=C47(Cap_Ceramic_0603)
+Added Component: Designator=C48(Cap_Ceramic_0603)
+Added Component: Designator=C49(Cap_Ceramic_0603)
+Added Component: Designator=C50(Cap_Ceramic_0603)
+Added Component: Designator=C51(Cap_Ceramic_0603)
+Added Component: Designator=D17(USBLC6-2SC6)
+Added Component: Designator=J6(Jumper_2Way_Solderable)
+Added Component: Designator=J7(Jumper_2Way_Solderable)
+Added Component: Designator=J8(Jumper_2Way_Solderable)
+Added Component: Designator=J9(Jumper_2Way_Solderable)
+Added Component: Designator=R55(Res_ThinFilm_0603)
+Added Component: Designator=R56(Res_ThinFilm_0603)
+Added Component: Designator=R57(Res_ThinFilm_1210)
+Added Component: Designator=R58(Res_ThinFilm_1210)
+Added Pin To Net: NetName=VCC Pin=C13-1
+Added Pin To Net: NetName=VCC Pin=C16-2
+Added Pin To Net: NetName=VCC Pin=C19-1
+Added Pin To Net: NetName=VCC Pin=C22-2
+Added Pin To Net: NetName=3V3 Pin=C42-1
+Added Pin To Net: NetName=GND Pin=C42-2
+Added Pin To Net: NetName=GND Pin=C49-1
+Added Pin To Net: NetName=GND Pin=C50-1
+Added Pin To Net: NetName=3V3 Pin=C51-1
+Added Pin To Net: NetName=GND Pin=C51-2
+Added Pin To Net: NetName=GND Pin=D4-3
+Added Pin To Net: NetName=GND Pin=D5-3
+Added Pin To Net: NetName=GND Pin=D6-3
+Added Pin To Net: NetName=GND Pin=D7-3
+Added Pin To Net: NetName=GND Pin=D8-3
+Added Pin To Net: NetName=GND Pin=J4-B24
+Added Pin To Net: NetName=GND Pin=J4-B33
+Added Pin To Net: NetName=LED5 Pin=R55-2
+Added Pin To Net: NetName=LED6 Pin=R56-2
+Added Pin To Net: NetName=VCC Pin=U4-15
+Added Pin To Net: NetName=VCC Pin=U5-15
+Added Pin To Net: NetName=3V3 Pin=U8-1
+Added Pin To Net: NetName=GND Pin=U8-4
+Change Net Name : Old Net Name=NetC41_1 New Net Name=SD SHIELD
+Change Net Name : Old Net Name=NetJ5_4 New Net Name=USB ID
+Added Pin To Net: NetName=LED R5 Pin=DS10-1
+Added Pin To Net: NetName=LED R5 Pin=R55-1
+Added Net: Name=LED R5
+Added Pin To Net: NetName=LED R6 Pin=DS10-3
+Added Pin To Net: NetName=LED R6 Pin=R56-1
+Added Net: Name=LED R6
+Added Pin To Net: NetName=NetC47_1 Pin=C47-1
+Added Net: Name=NetC47_1
+Added Pin To Net: NetName=NetC47_2 Pin=C47-2
+Added Net: Name=NetC47_2
+Added Pin To Net: NetName=NetC48_1 Pin=C48-1
+Added Net: Name=NetC48_1
+Added Pin To Net: NetName=NetC48_2 Pin=C48-2
+Added Net: Name=NetC48_2
+Added Pin To Net: NetName=NetC49_2 Pin=C49-2
+Added Net: Name=NetC49_2
+Added Pin To Net: NetName=NetC50_2 Pin=C50-2
+Added Net: Name=NetC50_2
+Added Pin To Net: NetName=NetD17_1 Pin=D17-1
+Added Pin To Net: NetName=NetD17_1 Pin=R21-2
+Added Net: Name=NetD17_1
+Added Pin To Net: NetName=NetD17_3 Pin=D17-3
+Added Pin To Net: NetName=NetD17_3 Pin=R22-2
+Added Net: Name=NetD17_3
+Added Pin To Net: NetName=NetJ6_1 Pin=J6-1
+Added Pin To Net: NetName=NetJ6_1 Pin=R57-2
+Added Net: Name=NetJ6_1
+Added Pin To Net: NetName=NetJ9_2 Pin=J9-2
+Added Pin To Net: NetName=NetJ9_2 Pin=R58-1
+Added Net: Name=NetJ9_2
+Added Pin To Net: NetName=RS232A RX Pin=D4-2
+Added Pin To Net: NetName=RS232A RX Pin=J4-A25
+Added Net: Name=RS232A RX
+Added Pin To Net: NetName=RS232A TX Pin=D4-1
+Added Pin To Net: NetName=RS232A TX Pin=J4-A26
+Added Net: Name=RS232A TX
+Added Pin To Net: NetName=RS232B RX Pin=D5-2
+Added Pin To Net: NetName=RS232B RX Pin=J4-A23
+Added Net: Name=RS232B RX
+Added Pin To Net: NetName=RS232B TX Pin=D5-1
+Added Pin To Net: NetName=RS232B TX Pin=J4-A24
+Added Net: Name=RS232B TX
+Added Pin To Net: NetName=RS485 A Pin=D6-2
+Added Pin To Net: NetName=RS485 A Pin=J4-B9
+Added Pin To Net: NetName=RS485 A Pin=J6-2
+Added Pin To Net: NetName=RS485 A Pin=J7-2
+Added Pin To Net: NetName=RS485 A Pin=U8-8
+Added Net: Name=RS485 A
+Added Pin To Net: NetName=RS485 B Pin=D6-1
+Added Pin To Net: NetName=RS485 B Pin=J4-B17
+Added Pin To Net: NetName=RS485 B Pin=J8-1
+Added Pin To Net: NetName=RS485 B Pin=R57-1
+Added Pin To Net: NetName=RS485 B Pin=U8-7
+Added Net: Name=RS485 B
+Added Pin To Net: NetName=RS485 Y Pin=D7-2
+Added Pin To Net: NetName=RS485 Y Pin=J4-B25
+Added Pin To Net: NetName=RS485 Y Pin=J7-1
+Added Pin To Net: NetName=RS485 Y Pin=R58-2
+Added Pin To Net: NetName=RS485 Y Pin=U8-5
+Added Net: Name=RS485 Y
+Added Pin To Net: NetName=RS485 Z Pin=D7-1
+Added Pin To Net: NetName=RS485 Z Pin=J4-B34
+Added Pin To Net: NetName=RS485 Z Pin=J8-2
+Added Pin To Net: NetName=RS485 Z Pin=J9-1
+Added Pin To Net: NetName=RS485 Z Pin=U8-6
+Added Net: Name=RS485 Z
+Added Pin To Net: NetName=UART1 RX Pin=U1-69
+Added Net: Name=UART1 RX
+Added Pin To Net: NetName=UART1 TX Pin=U1-68
+Added Net: Name=UART1 TX
+Added Pin To Net: NetName=UART2 RX Pin=U1-87
+Added Net: Name=UART2 RX
+Added Pin To Net: NetName=UART2 TX Pin=U1-86
+Added Net: Name=UART2 TX
+Added Pin To Net: NetName=UART3 RX Pin=U1-47
+Added Pin To Net: NetName=UART3 RX Pin=U8-2
+Added Net: Name=UART3 RX
+Added Pin To Net: NetName=UART3 TX Pin=U1-46
+Added Pin To Net: NetName=UART3 TX Pin=U8-3
+Added Net: Name=UART3 TX
+Added Pin To Net: NetName=UART4 RX Pin=R22-1
+Added Pin To Net: NetName=UART4 RX Pin=U1-81
+Added Net: Name=UART4 RX
+Added Pin To Net: NetName=UART4 TX Pin=R21-1
+Added Pin To Net: NetName=UART4 TX Pin=U1-82
+Added Net: Name=UART4 TX
+Added Pin To Net: NetName=UARTP RX Pin=D8-1
+Added Pin To Net: NetName=UARTP RX Pin=D17-4
+Added Pin To Net: NetName=UARTP RX Pin=J4-B16
+Added Net: Name=UARTP RX
+Added Pin To Net: NetName=UARTP TX Pin=D8-2
+Added Pin To Net: NetName=UARTP TX Pin=D17-6
+Added Pin To Net: NetName=UARTP TX Pin=J4-B8
+Added Net: Name=UARTP TX
+Added Member To Class: ClassName=Serial Communications Member=Component C42 100nF
+Added Member To Class: ClassName=Serial Communications Member=Component C47 100nF
+Added Member To Class: ClassName=Serial Communications Member=Component C48 100nF
+Added Member To Class: ClassName=Serial Communications Member=Component C49 100nF
+Added Member To Class: ClassName=Serial Communications Member=Component C50 100nF
+Added Member To Class: ClassName=Serial Communications Member=Component C51 100nF
+Added Member To Class: ClassName=Serial Communications Member=Component D17 USBLC6-2SC6
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component DS10 XLMDKCBD34M
+Added Member To Class: ClassName=Serial Communications Member=Component J6 Jumper 2Way Solderable
+Added Member To Class: ClassName=Serial Communications Member=Component J7 Jumper 2Way Solderable
+Added Member To Class: ClassName=Serial Communications Member=Component J8 Jumper 2Way Solderable
+Added Member To Class: ClassName=Serial Communications Member=Component J9 Jumper 2Way Solderable
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component R55 1k
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component R56 1k
+Added Member To Class: ClassName=Serial Communications Member=Component R57 120R 1% 1210
+Added Member To Class: ClassName=Serial Communications Member=Component R58 120R 1% 1210

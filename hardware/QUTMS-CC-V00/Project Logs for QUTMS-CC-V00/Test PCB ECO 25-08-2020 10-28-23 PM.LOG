@@ -1,0 +1,50 @@
+Change Component Designator: OldDesignator=C13_CANBUS 1 NewDesignator=C13A
+Change Component Designator: OldDesignator=C13_CANBUS 2 NewDesignator=C13B
+Change Component Designator: OldDesignator=C13_CANBUS 3 NewDesignator=C13C
+Change Component Designator: OldDesignator=D3_CANBUS 1 NewDesignator=D3A
+Change Component Designator: OldDesignator=D3_CANBUS 2 NewDesignator=D3B
+Change Component Designator: OldDesignator=D3_CANBUS 3 NewDesignator=D3C
+Change Component Designator: OldDesignator=DS1_CANBUS 1 NewDesignator=DS1A
+Change Component Designator: OldDesignator=DS1_CANBUS 2 NewDesignator=DS1B
+Change Component Designator: OldDesignator=DS1_CANBUS 3 NewDesignator=DS1C
+Change Component Designator: OldDesignator=DS2_CANBUS 1 NewDesignator=DS2A
+Change Component Designator: OldDesignator=DS2_CANBUS 2 NewDesignator=DS2B
+Change Component Designator: OldDesignator=DS2_CANBUS 3 NewDesignator=DS2C
+Change Component Designator: OldDesignator=J2_CANBUS 1 NewDesignator=J2A
+Change Component Designator: OldDesignator=J2_CANBUS 2 NewDesignator=J2B
+Change Component Designator: OldDesignator=J2_CANBUS 3 NewDesignator=J2C
+Change Component Designator: OldDesignator=R17_CANBUS 1 NewDesignator=R17A
+Change Component Designator: OldDesignator=R17_CANBUS 2 NewDesignator=R17B
+Change Component Designator: OldDesignator=R17_CANBUS 3 NewDesignator=R17C
+Change Component Designator: OldDesignator=R18_CANBUS 1 NewDesignator=R18A
+Change Component Designator: OldDesignator=R18_CANBUS 2 NewDesignator=R18B
+Change Component Designator: OldDesignator=R18_CANBUS 3 NewDesignator=R18C
+Change Component Designator: OldDesignator=R19_CANBUS 1 NewDesignator=R19A
+Change Component Designator: OldDesignator=R19_CANBUS 2 NewDesignator=R19B
+Change Component Designator: OldDesignator=R19_CANBUS 3 NewDesignator=R19C
+Change Component Designator: OldDesignator=U5_CANBUS 1 NewDesignator=U5A
+Change Component Designator: OldDesignator=U5_CANBUS 2 NewDesignator=U5B
+Change Component Designator: OldDesignator=U5_CANBUS 3 NewDesignator=U5C
+Change Net Name : Old Net Name=CAN H_CANBUS 1 New Net Name=CAN HA
+Change Net Name : Old Net Name=CAN H_CANBUS 2 New Net Name=CAN HB
+Change Net Name : Old Net Name=CAN H_CANBUS 3 New Net Name=CAN HC
+Change Net Name : Old Net Name=CAN L_CANBUS 1 New Net Name=CAN LA
+Change Net Name : Old Net Name=CAN L_CANBUS 2 New Net Name=CAN LB
+Change Net Name : Old Net Name=CAN L_CANBUS 3 New Net Name=CAN LC
+Change Net Name : Old Net Name=CAN RX_CANBUS 1 New Net Name=CAN RXA
+Change Net Name : Old Net Name=CAN RX_CANBUS 2 New Net Name=CAN RXB
+Change Net Name : Old Net Name=CAN RX_CANBUS 3 New Net Name=CAN RXC
+Change Net Name : Old Net Name=CAN RX LED_CANBUS 1 New Net Name=CAN RX LEDA
+Change Net Name : Old Net Name=CAN RX LED_CANBUS 2 New Net Name=CAN RX LEDB
+Change Net Name : Old Net Name=CAN RX LED_CANBUS 3 New Net Name=CAN RX LEDC
+Change Net Name : Old Net Name=CAN TERM_CANBUS 1 New Net Name=CAN TERMA
+Change Net Name : Old Net Name=CAN TERM_CANBUS 2 New Net Name=CAN TERMB
+Change Net Name : Old Net Name=CAN TERM_CANBUS 3 New Net Name=CAN TERMC
+Change Net Name : Old Net Name=CAN TX_CANBUS 1 New Net Name=CAN TXA
+Change Net Name : Old Net Name=CAN TX_CANBUS 2 New Net Name=CAN TXB
+Change Net Name : Old Net Name=CAN TX_CANBUS 3 New Net Name=CAN TXC
+Change Net Name : Old Net Name=CAN TX LED_CANBUS 1 New Net Name=CAN TX LEDA
+Change Net Name : Old Net Name=CAN TX LED_CANBUS 2 New Net Name=CAN TX LEDB
+Change Net Name : Old Net Name=CAN TX LED_CANBUS 3 New Net Name=CAN TX LEDC
+Added Room: Name=Connector
+Added Room: Name=Microcontroller

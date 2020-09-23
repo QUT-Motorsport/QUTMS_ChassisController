@@ -1,0 +1,683 @@
+Removed Pin From Net: NetName=GND Pin=D4A-A
+Removed Pin From Net: NetName=DOUT1 Pin=D4A-K
+Removed Pin From Net: NetName=GND Pin=D4B-A
+Removed Pin From Net: NetName=DOUT2 Pin=D4B-K
+Removed Pin From Net: NetName=GND Pin=D4C-A
+Removed Pin From Net: NetName=DOUT3 Pin=D4C-K
+Removed Pin From Net: NetName=GND Pin=D4D-A
+Removed Pin From Net: NetName=DOUT4 Pin=D4D-K
+Removed Pin From Net: NetName=DOUT1 Pin=R20A-1
+Removed Pin From Net: NetName=DIN1 Pin=R20A-2
+Removed Pin From Net: NetName=DOUT2 Pin=R20B-1
+Removed Pin From Net: NetName=DIN2 Pin=R20B-2
+Removed Pin From Net: NetName=DOUT3 Pin=R20C-1
+Removed Pin From Net: NetName=DIN3 Pin=R20C-2
+Removed Pin From Net: NetName=DOUT4 Pin=R20D-1
+Removed Pin From Net: NetName=DIN4 Pin=R20D-2
+Change Component Footprint: Designator=D4A Old Footprint=SOD123 New Footprint=SOD323F
+Change Component Footprint: Designator=D4B Old Footprint=SOD123 New Footprint=SOD323F
+Change Component Footprint: Designator=D4C Old Footprint=SOD123 New Footprint=SOD323F
+Change Component Footprint: Designator=D4D Old Footprint=SOD123 New Footprint=SOD323F
+Change Component Comment : Designator=R20A Old Comment=10k 5% 0603 New Comment=15k
+Change Component Comment : Designator=R20B Old Comment=10k 5% 0603 New Comment=15k
+Change Component Comment : Designator=R20C Old Comment=10k 5% 0603 New Comment=15k
+Change Component Comment : Designator=R20D Old Comment=10k 5% 0603 New Comment=15k
+Change Component Comment : Designator=D4A Old Comment=BZT52B3V3-G3-08 New Comment=MM3Z3V3B
+Change Component Comment : Designator=D4B Old Comment=BZT52B3V3-G3-08 New Comment=MM3Z3V3B
+Change Component Comment : Designator=D4C Old Comment=BZT52B3V3-G3-08 New Comment=MM3Z3V3B
+Change Component Comment : Designator=D4D Old Comment=BZT52B3V3-G3-08 New Comment=MM3Z3V3B
+Change component parameters: Designator = "D4A" ("D4"); Footprint = "SOD123"; UniqueID = "\1LDRVXRDP\EIXIIUFI" ("\1LDRVXRDP\EIXIIUFI")
+Change component parameters (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Change component parameters: Designator = "D4B" ("D4"); Footprint = "SOD123"; UniqueID = "\2LDRVXRDP\EIXIIUFI" ("\2LDRVXRDP\EIXIIUFI")
+Change component parameters (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Change component parameters: Designator = "D4C" ("D4"); Footprint = "SOD123"; UniqueID = "\3LDRVXRDP\EIXIIUFI" ("\3LDRVXRDP\EIXIIUFI")
+Change component parameters (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Change component parameters: Designator = "D4D" ("D4"); Footprint = "SOD123"; UniqueID = "\4LDRVXRDP\EIXIIUFI" ("\4LDRVXRDP\EIXIIUFI")
+Change component parameters (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=C43A(Cap_Ceramic_0603)
+Added Component: Designator=C43B(Cap_Ceramic_0603)
+Added Component: Designator=C43C(Cap_Ceramic_0603)
+Added Component: Designator=C43D(Cap_Ceramic_0603)
+Added Component: Designator=C43E(Cap_Ceramic_0603)
+Added Component: Designator=C43F(Cap_Ceramic_0603)
+Added Component: Designator=C43G(Cap_Ceramic_0603)
+Added Component: Designator=C43H(Cap_Ceramic_0603)
+Added Component: Designator=C43I(Cap_Ceramic_0603)
+Added Component: Designator=C43J(Cap_Ceramic_0603)
+Added Component: Designator=C43K(Cap_Ceramic_0603)
+Added Component: Designator=C43L(Cap_Ceramic_0603)
+Added Component: Designator=C44(Cap_Ceramic_0603)
+Added Component: Designator=C45(Cap_Ceramic_0603)
+Added Component: Designator=C46A(Cap_Ceramic_0603)
+Added Component: Designator=C46B(Cap_Ceramic_0603)
+Added Component: Designator=C46C(Cap_Ceramic_0603)
+Added Component: Designator=C46D(Cap_Ceramic_0603)
+Added Component: Designator=D4E(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D4F(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D4G(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D4H(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D4I(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D4J(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D4K(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D4L(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D12A(SOD323F)
+Added Component: Designator=D12B(SOD323F)
+Added Component: Designator=D12C(SOD323F)
+Added Component: Designator=D12D(SOD323F)
+Added Component: Designator=D12E(SOD323F)
+Added Component: Designator=D12F(SOD323F)
+Added Component: Designator=D12G(SOD323F)
+Added Component: Designator=D12H(SOD323F)
+Added Component: Designator=D12I(SOD323F)
+Added Component: Designator=D12J(SOD323F)
+Added Component: Designator=D12K(SOD323F)
+Added Component: Designator=D12L(SOD323F)
+Added Component: Designator=D13(SMB)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/littelfuse-inc/SMBJ15CA/SMBJ15CALFCT-ND/285983"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://www.littelfuse.com/~/media/electronics/datasheets/tvs_diodes/littelfuse_tvs_diode_smbj_datasheet.pdf.pdf"; VariantName = "[No Variations]"
+Added Component: Designator=D14(SMB)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/littelfuse-inc/SMBJ15CA/SMBJ15CALFCT-ND/285983"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://www.littelfuse.com/~/media/electronics/datasheets/tvs_diodes/littelfuse_tvs_diode_smbj_datasheet.pdf.pdf"; VariantName = "[No Variations]"
+Added Component: Designator=D15(SMB)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/littelfuse-inc/SMBJ15CA/SMBJ15CALFCT-ND/285983"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://www.littelfuse.com/~/media/electronics/datasheets/tvs_diodes/littelfuse_tvs_diode_smbj_datasheet.pdf.pdf"; VariantName = "[No Variations]"
+Added Component: Designator=D16(WS2812C)
+Added Component: Designator=D17(WS2812C)
+Added Component: Designator=D18A(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D18B(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D18C(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D18D(SOD323F)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/MM3Z3V3B/MM3Z3V3BCT-ND/1626881"; VariantName = "[No Variations]"
+Added Component: Designator=D19A(SOD323F)
+Added Component: Designator=D19B(SOD323F)
+Added Component: Designator=D19C(SOD323F)
+Added Component: Designator=D19D(SOD323F)
+Added Component: Designator=DS5(LED ORANGE 0603)
+Added Component: Designator=DS6(LED ORANGE 0603)
+Added Component: Designator=DS7(LED ORANGE 0603)
+Added Component: Designator=DS8(LED ORANGE 0603)
+Added Component: Designator=L4(Inductor_0603)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/w%C3%BCrth-elektronik/74404064221/732-7261-1-ND/5353241"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "LCSC A"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://lcsc.com/product-detail/Power-Inductors_Sunlord-SWPA6045S221MT_C91047.html"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3Description"; Value = "LCSC B"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3URL"; Value = "https://lcsc.com/product-detail/Power-Inductors_SXN-Shun-Xiang-Nuo-Elec-SMNR6045-221MT_C467145.html"; VariantName = "[No Variations]"
+Added Component: Designator=R20E(Res_ThinFilm_0603)
+Added Component: Designator=R20F(Res_ThinFilm_0603)
+Added Component: Designator=R20G(Res_ThinFilm_0603)
+Added Component: Designator=R20H(Res_ThinFilm_0603)
+Added Component: Designator=R20I(Res_ThinFilm_0603)
+Added Component: Designator=R20J(Res_ThinFilm_0603)
+Added Component: Designator=R20K(Res_ThinFilm_0603)
+Added Component: Designator=R20L(Res_ThinFilm_0603)
+Added Component: Designator=R43A(Res_ThinFilm_0603)
+Added Component: Designator=R43B(Res_ThinFilm_0603)
+Added Component: Designator=R43C(Res_ThinFilm_0603)
+Added Component: Designator=R43D(Res_ThinFilm_0603)
+Added Component: Designator=R43E(Res_ThinFilm_0603)
+Added Component: Designator=R43F(Res_ThinFilm_0603)
+Added Component: Designator=R43G(Res_ThinFilm_0603)
+Added Component: Designator=R43H(Res_ThinFilm_0603)
+Added Component: Designator=R43I(Res_ThinFilm_0603)
+Added Component: Designator=R43J(Res_ThinFilm_0603)
+Added Component: Designator=R43K(Res_ThinFilm_0603)
+Added Component: Designator=R43L(Res_ThinFilm_0603)
+Added Component: Designator=R44A(Res_ThinFilm_0603)
+Added Component: Designator=R44B(Res_ThinFilm_0603)
+Added Component: Designator=R44C(Res_ThinFilm_0603)
+Added Component: Designator=R44D(Res_ThinFilm_0603)
+Added Component: Designator=R44E(Res_ThinFilm_0603)
+Added Component: Designator=R44F(Res_ThinFilm_0603)
+Added Component: Designator=R44G(Res_ThinFilm_0603)
+Added Component: Designator=R44H(Res_ThinFilm_0603)
+Added Component: Designator=R44I(Res_ThinFilm_0603)
+Added Component: Designator=R44J(Res_ThinFilm_0603)
+Added Component: Designator=R44K(Res_ThinFilm_0603)
+Added Component: Designator=R44L(Res_ThinFilm_0603)
+Added Component: Designator=R45(Res_ThinFilm_0603)
+Added Component: Designator=R46(Res_ThinFilm_0603)
+Added Component: Designator=R47(Res_ThinFilm_0603)
+Added Component: Designator=R48(Res_ThinFilm_0603)
+Added Component: Designator=R49(Res_ThinFilm_0603)
+Added Component: Designator=R50(Res_ThinFilm_0603)
+Added Component: Designator=R51A(Res_ThinFilm_0603)
+Added Component: Designator=R51B(Res_ThinFilm_0603)
+Added Component: Designator=R51C(Res_ThinFilm_0603)
+Added Component: Designator=R51D(Res_ThinFilm_0603)
+Added Component: Designator=R52A(Res_ThinFilm_0603)
+Added Component: Designator=R52B(Res_ThinFilm_0603)
+Added Component: Designator=R52C(Res_ThinFilm_0603)
+Added Component: Designator=R52D(Res_ThinFilm_0603)
+Added Component: Designator=R53A(Res_ThinFilm_0603)
+Added Component: Designator=R53B(Res_ThinFilm_0603)
+Added Component: Designator=R53C(Res_ThinFilm_0603)
+Added Component: Designator=R53D(Res_ThinFilm_0603)
+Added Pin To Net: NetName=AGND Pin=C43A-1
+Added Pin To Net: NetName=AGND Pin=C43B-1
+Added Pin To Net: NetName=AGND Pin=C43C-1
+Added Pin To Net: NetName=AGND Pin=C43D-1
+Added Pin To Net: NetName=AGND Pin=C43E-1
+Added Pin To Net: NetName=AGND Pin=C43F-1
+Added Pin To Net: NetName=AGND Pin=C43G-1
+Added Pin To Net: NetName=AGND Pin=C43H-1
+Added Pin To Net: NetName=AGND Pin=C43I-1
+Added Pin To Net: NetName=AGND Pin=C43J-1
+Added Pin To Net: NetName=AGND Pin=C43K-1
+Added Pin To Net: NetName=AGND Pin=C43L-1
+Added Pin To Net: NetName=GND Pin=C44-1
+Added Pin To Net: NetName=3V3 Pin=C44-2
+Added Pin To Net: NetName=GND Pin=C45-1
+Added Pin To Net: NetName=3V3 Pin=C45-2
+Added Pin To Net: NetName=GND Pin=C46A-1
+Added Pin To Net: NetName=DOUT1 Pin=C46A-2
+Added Pin To Net: NetName=GND Pin=C46B-1
+Added Pin To Net: NetName=DOUT2 Pin=C46B-2
+Added Pin To Net: NetName=GND Pin=C46C-1
+Added Pin To Net: NetName=DOUT3 Pin=C46C-2
+Added Pin To Net: NetName=GND Pin=C46D-1
+Added Pin To Net: NetName=DOUT4 Pin=C46D-2
+Added Pin To Net: NetName=AGND Pin=D4A-A
+Added Pin To Net: NetName=AGND Pin=D4B-A
+Added Pin To Net: NetName=AGND Pin=D4C-A
+Added Pin To Net: NetName=AGND Pin=D4D-A
+Added Pin To Net: NetName=AGND Pin=D4E-A
+Added Pin To Net: NetName=AGND Pin=D4F-A
+Added Pin To Net: NetName=AGND Pin=D4G-A
+Added Pin To Net: NetName=AGND Pin=D4H-A
+Added Pin To Net: NetName=AGND Pin=D4I-A
+Added Pin To Net: NetName=AGND Pin=D4J-A
+Added Pin To Net: NetName=AGND Pin=D4K-A
+Added Pin To Net: NetName=AGND Pin=D4L-A
+Added Pin To Net: NetName=AGND Pin=D12A-A
+Added Pin To Net: NetName=AIN1 Pin=D12A-K
+Added Pin To Net: NetName=AGND Pin=D12B-A
+Added Pin To Net: NetName=AIN2 Pin=D12B-K
+Added Pin To Net: NetName=AGND Pin=D12C-A
+Added Pin To Net: NetName=AIN3 Pin=D12C-K
+Added Pin To Net: NetName=AGND Pin=D12D-A
+Added Pin To Net: NetName=AIN4 Pin=D12D-K
+Added Pin To Net: NetName=AGND Pin=D12E-A
+Added Pin To Net: NetName=AIN5 Pin=D12E-K
+Added Pin To Net: NetName=AGND Pin=D12F-A
+Added Pin To Net: NetName=AIN6 Pin=D12F-K
+Added Pin To Net: NetName=AGND Pin=D12G-A
+Added Pin To Net: NetName=AIN7 Pin=D12G-K
+Added Pin To Net: NetName=AGND Pin=D12H-A
+Added Pin To Net: NetName=AIN8 Pin=D12H-K
+Added Pin To Net: NetName=AGND Pin=D12I-A
+Added Pin To Net: NetName=AIN9 Pin=D12I-K
+Added Pin To Net: NetName=AGND Pin=D12J-A
+Added Pin To Net: NetName=AIN10 Pin=D12J-K
+Added Pin To Net: NetName=AGND Pin=D12K-A
+Added Pin To Net: NetName=AIN11 Pin=D12K-K
+Added Pin To Net: NetName=AGND Pin=D12L-A
+Added Pin To Net: NetName=AIN12 Pin=D12L-K
+Added Pin To Net: NetName=GND Pin=D13-A
+Added Pin To Net: NetName=3V3 Pin=D13-K
+Added Pin To Net: NetName=GND Pin=D14-A
+Added Pin To Net: NetName=VCC Pin=D14-K
+Added Pin To Net: NetName=GND Pin=D15-A
+Added Pin To Net: NetName=5V Pin=D15-K
+Added Pin To Net: NetName=3V3 Pin=D16-1
+Added Pin To Net: NetName=GND Pin=D16-3
+Added Pin To Net: NetName=3V3 Pin=D17-1
+Added Pin To Net: NetName=GND Pin=D17-3
+Added Pin To Net: NetName=GND Pin=D18A-A
+Added Pin To Net: NetName=DOUT1 Pin=D18A-K
+Added Pin To Net: NetName=GND Pin=D18B-A
+Added Pin To Net: NetName=DOUT2 Pin=D18B-K
+Added Pin To Net: NetName=GND Pin=D18C-A
+Added Pin To Net: NetName=DOUT3 Pin=D18C-K
+Added Pin To Net: NetName=GND Pin=D18D-A
+Added Pin To Net: NetName=DOUT4 Pin=D18D-K
+Added Pin To Net: NetName=GND Pin=D19A-A
+Added Pin To Net: NetName=DIN1 Pin=D19A-K
+Added Pin To Net: NetName=GND Pin=D19B-A
+Added Pin To Net: NetName=DIN2 Pin=D19B-K
+Added Pin To Net: NetName=GND Pin=D19C-A
+Added Pin To Net: NetName=DIN3 Pin=D19C-K
+Added Pin To Net: NetName=GND Pin=D19D-A
+Added Pin To Net: NetName=DIN4 Pin=D19D-K
+Added Pin To Net: NetName=GND Pin=DS5-2
+Added Pin To Net: NetName=GND Pin=DS6-2
+Added Pin To Net: NetName=GND Pin=DS7-2
+Added Pin To Net: NetName=GND Pin=DS8-2
+Added Pin To Net: NetName=3V3 Pin=J3-B4
+Added Pin To Net: NetName=DIN1 Pin=J3-B7
+Added Pin To Net: NetName=DIN2 Pin=J3-B15
+Added Pin To Net: NetName=3V3 Pin=J3-B21
+Added Pin To Net: NetName=DIN3 Pin=J3-B23
+Added Pin To Net: NetName=DIN4 Pin=J3-B32
+Added Pin To Net: NetName=GND Pin=L4-1
+Added Pin To Net: NetName=AGND Pin=L4-2
+Added Pin To Net: NetName=AIN1 Pin=R20A-2
+Added Pin To Net: NetName=AIN2 Pin=R20B-2
+Added Pin To Net: NetName=AIN3 Pin=R20C-2
+Added Pin To Net: NetName=AIN4 Pin=R20D-2
+Added Pin To Net: NetName=AIN5 Pin=R20E-2
+Added Pin To Net: NetName=AIN6 Pin=R20F-2
+Added Pin To Net: NetName=AIN7 Pin=R20G-2
+Added Pin To Net: NetName=AIN8 Pin=R20H-2
+Added Pin To Net: NetName=AIN9 Pin=R20I-2
+Added Pin To Net: NetName=AIN10 Pin=R20J-2
+Added Pin To Net: NetName=AIN11 Pin=R20K-2
+Added Pin To Net: NetName=AIN12 Pin=R20L-2
+Added Pin To Net: NetName=AGND Pin=R44A-1
+Added Pin To Net: NetName=AGND Pin=R44B-1
+Added Pin To Net: NetName=AGND Pin=R44C-1
+Added Pin To Net: NetName=AGND Pin=R44D-1
+Added Pin To Net: NetName=AGND Pin=R44E-1
+Added Pin To Net: NetName=AGND Pin=R44F-1
+Added Pin To Net: NetName=AGND Pin=R44G-1
+Added Pin To Net: NetName=AGND Pin=R44H-1
+Added Pin To Net: NetName=AGND Pin=R44I-1
+Added Pin To Net: NetName=AGND Pin=R44J-1
+Added Pin To Net: NetName=AGND Pin=R44K-1
+Added Pin To Net: NetName=AGND Pin=R44L-1
+Added Pin To Net: NetName=GND Pin=R49-1
+Added Pin To Net: NetName=AGND Pin=R49-2
+Added Pin To Net: NetName=GND Pin=R50-1
+Added Pin To Net: NetName=AGND Pin=R50-2
+Added Pin To Net: NetName=DIN1 Pin=R51A-2
+Added Pin To Net: NetName=DIN2 Pin=R51B-2
+Added Pin To Net: NetName=DIN3 Pin=R51C-2
+Added Pin To Net: NetName=DIN4 Pin=R51D-2
+Added Pin To Net: NetName=DOUT1 Pin=R52A-1
+Added Pin To Net: NetName=DOUT2 Pin=R52B-1
+Added Pin To Net: NetName=DOUT3 Pin=R52C-1
+Added Pin To Net: NetName=DOUT4 Pin=R52D-1
+Added Pin To Net: NetName=GND Pin=R53A-1
+Added Pin To Net: NetName=GND Pin=R53B-1
+Added Pin To Net: NetName=GND Pin=R53C-1
+Added Pin To Net: NetName=GND Pin=R53D-1
+Added Pin To Net: NetName=HSADC1 Pin=U1-17
+Added Pin To Net: NetName=HSADC2 Pin=U1-18
+Added Pin To Net: NetName=GND Pin=U1-19
+Added Pin To Net: NetName=HSEN1 Pin=U1-36
+Added Pin To Net: NetName=HSEN2 Pin=U1-37
+Added Pin To Net: NetName=HSEN3 Pin=U1-38
+Added Pin To Net: NetName=HSEN4 Pin=U1-39
+Added Pin To Net: NetName=HSDIAG1 Pin=U1-41
+Added Pin To Net: NetName=HSDIAG2 Pin=U1-42
+Added Pin To Net: NetName=HSDIAG3 Pin=U1-43
+Added Pin To Net: NetName=HSDIAG4 Pin=U1-44
+Added Pin To Net: NetName=NetR18B_1 Pin=U1-51
+Added Pin To Net: NetName=USB DET Pin=U1-52
+Added Pin To Net: NetName=USB_N Pin=U1-53
+Added Pin To Net: NetName=USB_P Pin=U1-54
+Added Pin To Net: NetName=DOUT1 Pin=U1-55
+Added Pin To Net: NetName=DOUT2 Pin=U1-56
+Added Pin To Net: NetName=DOUT3 Pin=U1-57
+Added Pin To Net: NetName=DOUT4 Pin=U1-58
+Added Pin To Net: NetName=SD DATA0 Pin=U1-65
+Added Pin To Net: NetName=SD DATA1 Pin=U1-66
+Added Pin To Net: NetName=NetR18C_1 Pin=U1-67
+Added Pin To Net: NetName=NetR18A_1 Pin=U1-70
+Added Pin To Net: NetName=NetR17A_1 Pin=U1-71
+Added Pin To Net: NetName=NetR17C_1 Pin=U1-77
+Added Pin To Net: NetName=SD DATA2 Pin=U1-78
+Added Pin To Net: NetName=SD DATA3 Pin=U1-79
+Added Pin To Net: NetName=SD CLK Pin=U1-80
+Added Pin To Net: NetName=SD CMD Pin=U1-83
+Added Pin To Net: NetName=PSEL Pin=U1-84
+Added Pin To Net: NetName=NetR17B_1 Pin=U1-92
+Added Pin To Net: NetName=GND Pin=U1-99
+Added Pin To Net: NetName=AOUT1 Pin=C43A-2
+Added Pin To Net: NetName=AOUT1 Pin=D4A-K
+Added Pin To Net: NetName=AOUT1 Pin=R43A-1
+Added Pin To Net: NetName=AOUT1 Pin=U1-22
+Added Net: Name=AOUT1
+Added Pin To Net: NetName=AOUT2 Pin=C43B-2
+Added Pin To Net: NetName=AOUT2 Pin=D4B-K
+Added Pin To Net: NetName=AOUT2 Pin=R43B-1
+Added Pin To Net: NetName=AOUT2 Pin=U1-23
+Added Net: Name=AOUT2
+Added Pin To Net: NetName=AOUT3 Pin=C43C-2
+Added Pin To Net: NetName=AOUT3 Pin=D4C-K
+Added Pin To Net: NetName=AOUT3 Pin=R43C-1
+Added Pin To Net: NetName=AOUT3 Pin=U1-24
+Added Net: Name=AOUT3
+Added Pin To Net: NetName=AOUT4 Pin=C43D-2
+Added Pin To Net: NetName=AOUT4 Pin=D4D-K
+Added Pin To Net: NetName=AOUT4 Pin=R43D-1
+Added Pin To Net: NetName=AOUT4 Pin=U1-25
+Added Net: Name=AOUT4
+Added Pin To Net: NetName=AOUT5 Pin=C43E-2
+Added Pin To Net: NetName=AOUT5 Pin=D4E-K
+Added Pin To Net: NetName=AOUT5 Pin=R43E-1
+Added Pin To Net: NetName=AOUT5 Pin=U1-28
+Added Net: Name=AOUT5
+Added Pin To Net: NetName=AOUT6 Pin=C43F-2
+Added Pin To Net: NetName=AOUT6 Pin=D4F-K
+Added Pin To Net: NetName=AOUT6 Pin=R43F-1
+Added Pin To Net: NetName=AOUT6 Pin=U1-29
+Added Net: Name=AOUT6
+Added Pin To Net: NetName=AOUT7 Pin=C43G-2
+Added Pin To Net: NetName=AOUT7 Pin=D4G-K
+Added Pin To Net: NetName=AOUT7 Pin=R43G-1
+Added Pin To Net: NetName=AOUT7 Pin=U1-30
+Added Net: Name=AOUT7
+Added Pin To Net: NetName=AOUT8 Pin=C43H-2
+Added Pin To Net: NetName=AOUT8 Pin=D4H-K
+Added Pin To Net: NetName=AOUT8 Pin=R43H-1
+Added Pin To Net: NetName=AOUT8 Pin=U1-31
+Added Net: Name=AOUT8
+Added Pin To Net: NetName=AOUT9 Pin=C43I-2
+Added Pin To Net: NetName=AOUT9 Pin=D4I-K
+Added Pin To Net: NetName=AOUT9 Pin=R43I-1
+Added Pin To Net: NetName=AOUT9 Pin=U1-34
+Added Net: Name=AOUT9
+Added Pin To Net: NetName=AOUT10 Pin=C43J-2
+Added Pin To Net: NetName=AOUT10 Pin=D4J-K
+Added Pin To Net: NetName=AOUT10 Pin=R43J-1
+Added Pin To Net: NetName=AOUT10 Pin=U1-35
+Added Net: Name=AOUT10
+Added Pin To Net: NetName=AOUT11 Pin=C43K-2
+Added Pin To Net: NetName=AOUT11 Pin=D4K-K
+Added Pin To Net: NetName=AOUT11 Pin=R43K-1
+Added Pin To Net: NetName=AOUT11 Pin=U1-15
+Added Net: Name=AOUT11
+Added Pin To Net: NetName=AOUT12 Pin=C43L-2
+Added Pin To Net: NetName=AOUT12 Pin=D4L-K
+Added Pin To Net: NetName=AOUT12 Pin=R43L-1
+Added Pin To Net: NetName=AOUT12 Pin=U1-16
+Added Net: Name=AOUT12
+Added Pin To Net: NetName=LED1 Pin=R45-2
+Added Net: Name=LED1
+Added Pin To Net: NetName=LED2 Pin=R46-2
+Added Net: Name=LED2
+Added Pin To Net: NetName=LED3 Pin=R47-2
+Added Net: Name=LED3
+Added Pin To Net: NetName=LED4 Pin=U1-63
+Added Net: Name=LED4
+Added Pin To Net: NetName=LED R1 Pin=DS5-1
+Added Pin To Net: NetName=LED R1 Pin=R45-1
+Added Net: Name=LED R1
+Added Pin To Net: NetName=LED R2 Pin=DS6-1
+Added Pin To Net: NetName=LED R2 Pin=R46-1
+Added Net: Name=LED R2
+Added Pin To Net: NetName=LED R3 Pin=DS7-1
+Added Pin To Net: NetName=LED R3 Pin=R47-1
+Added Net: Name=LED R3
+Added Pin To Net: NetName=LED R4 Pin=DS8-1
+Added Pin To Net: NetName=LED R4 Pin=R48-1
+Added Net: Name=LED R4
+Added Pin To Net: NetName=NEOPIX Pin=D16-4
+Added Pin To Net: NetName=NEOPIX Pin=U1-88
+Added Net: Name=NEOPIX
+Added Pin To Net: NetName=NetD16_2 Pin=D16-2
+Added Pin To Net: NetName=NetD16_2 Pin=D17-4
+Added Net: Name=NetD16_2
+Added Pin To Net: NetName=NetR20A_1 Pin=R20A-1
+Added Pin To Net: NetName=NetR20A_1 Pin=R43A-2
+Added Pin To Net: NetName=NetR20A_1 Pin=R44A-2
+Added Net: Name=NetR20A_1
+Added Pin To Net: NetName=NetR20B_1 Pin=R20B-1
+Added Pin To Net: NetName=NetR20B_1 Pin=R43B-2
+Added Pin To Net: NetName=NetR20B_1 Pin=R44B-2
+Added Net: Name=NetR20B_1
+Added Pin To Net: NetName=NetR20C_1 Pin=R20C-1
+Added Pin To Net: NetName=NetR20C_1 Pin=R43C-2
+Added Pin To Net: NetName=NetR20C_1 Pin=R44C-2
+Added Net: Name=NetR20C_1
+Added Pin To Net: NetName=NetR20D_1 Pin=R20D-1
+Added Pin To Net: NetName=NetR20D_1 Pin=R43D-2
+Added Pin To Net: NetName=NetR20D_1 Pin=R44D-2
+Added Net: Name=NetR20D_1
+Added Pin To Net: NetName=NetR20E_1 Pin=R20E-1
+Added Pin To Net: NetName=NetR20E_1 Pin=R43E-2
+Added Pin To Net: NetName=NetR20E_1 Pin=R44E-2
+Added Net: Name=NetR20E_1
+Added Pin To Net: NetName=NetR20F_1 Pin=R20F-1
+Added Pin To Net: NetName=NetR20F_1 Pin=R43F-2
+Added Pin To Net: NetName=NetR20F_1 Pin=R44F-2
+Added Net: Name=NetR20F_1
+Added Pin To Net: NetName=NetR20G_1 Pin=R20G-1
+Added Pin To Net: NetName=NetR20G_1 Pin=R43G-2
+Added Pin To Net: NetName=NetR20G_1 Pin=R44G-2
+Added Net: Name=NetR20G_1
+Added Pin To Net: NetName=NetR20H_1 Pin=R20H-1
+Added Pin To Net: NetName=NetR20H_1 Pin=R43H-2
+Added Pin To Net: NetName=NetR20H_1 Pin=R44H-2
+Added Net: Name=NetR20H_1
+Added Pin To Net: NetName=NetR20I_1 Pin=R20I-1
+Added Pin To Net: NetName=NetR20I_1 Pin=R43I-2
+Added Pin To Net: NetName=NetR20I_1 Pin=R44I-2
+Added Net: Name=NetR20I_1
+Added Pin To Net: NetName=NetR20J_1 Pin=R20J-1
+Added Pin To Net: NetName=NetR20J_1 Pin=R43J-2
+Added Pin To Net: NetName=NetR20J_1 Pin=R44J-2
+Added Net: Name=NetR20J_1
+Added Pin To Net: NetName=NetR20K_1 Pin=R20K-1
+Added Pin To Net: NetName=NetR20K_1 Pin=R43K-2
+Added Pin To Net: NetName=NetR20K_1 Pin=R44K-2
+Added Net: Name=NetR20K_1
+Added Pin To Net: NetName=NetR20L_1 Pin=R20L-1
+Added Pin To Net: NetName=NetR20L_1 Pin=R43L-2
+Added Pin To Net: NetName=NetR20L_1 Pin=R44L-2
+Added Net: Name=NetR20L_1
+Added Pin To Net: NetName=NetR51A_1 Pin=R51A-1
+Added Pin To Net: NetName=NetR51A_1 Pin=R52A-2
+Added Pin To Net: NetName=NetR51A_1 Pin=R53A-2
+Added Net: Name=NetR51A_1
+Added Pin To Net: NetName=NetR51B_1 Pin=R51B-1
+Added Pin To Net: NetName=NetR51B_1 Pin=R52B-2
+Added Pin To Net: NetName=NetR51B_1 Pin=R53B-2
+Added Net: Name=NetR51B_1
+Added Pin To Net: NetName=NetR51C_1 Pin=R51C-1
+Added Pin To Net: NetName=NetR51C_1 Pin=R52C-2
+Added Pin To Net: NetName=NetR51C_1 Pin=R53C-2
+Added Net: Name=NetR51C_1
+Added Pin To Net: NetName=NetR51D_1 Pin=R51D-1
+Added Pin To Net: NetName=NetR51D_1 Pin=R52D-2
+Added Pin To Net: NetName=NetR51D_1 Pin=R53D-2
+Added Net: Name=NetR51D_1
+Added Pin To Net: NetName=NetU1_46 Pin=U1-46
+Added Net: Name=NetU1_46
+Added Pin To Net: NetName=NetU1_47 Pin=U1-47
+Added Net: Name=NetU1_47
+Added Pin To Net: NetName=NetU1_68 Pin=U1-68
+Added Net: Name=NetU1_68
+Added Pin To Net: NetName=NetU1_69 Pin=U1-69
+Added Net: Name=NetU1_69
+Added Pin To Net: NetName=NetU1_81 Pin=U1-81
+Added Net: Name=NetU1_81
+Added Pin To Net: NetName=NetU1_82 Pin=U1-82
+Added Net: Name=NetU1_82
+Added Pin To Net: NetName=NetU1_86 Pin=U1-86
+Added Net: Name=NetU1_86
+Added Pin To Net: NetName=NetU1_87 Pin=U1-87
+Added Net: Name=NetU1_87
+Added Member To Class: ClassName=Analog In1 Member=Component C43A (C43) 10nF
+Added Member To Class: ClassName=Analog In2 Member=Component C43B (C43) 10nF
+Added Member To Class: ClassName=Analog In3 Member=Component C43C (C43) 10nF
+Added Member To Class: ClassName=Analog In4 Member=Component C43D (C43) 10nF
+Added Member To Class: ClassName=Analog In5 Member=Component C43E (C43) 10nF
+Added Member To Class: ClassName=Analog In6 Member=Component C43F (C43) 10nF
+Added Member To Class: ClassName=Analog In7 Member=Component C43G (C43) 10nF
+Added Member To Class: ClassName=Analog In8 Member=Component C43H (C43) 10nF
+Added Member To Class: ClassName=Analog In9 Member=Component C43I (C43) 10nF
+Added Member To Class: ClassName=Analog In10 Member=Component C43J (C43) 10nF
+Added Member To Class: ClassName=Analog In11 Member=Component C43K (C43) 10nF
+Added Member To Class: ClassName=Analog In12 Member=Component C43L (C43) 10nF
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component C44 100nF
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component C45 100nF
+Added Member To Class: ClassName=Digital In1 Member=Component C46A (C46) 10nF
+Added Member To Class: ClassName=Digital In2 Member=Component C46B (C46) 10nF
+Added Member To Class: ClassName=Digital In3 Member=Component C46C (C46) 10nF
+Added Member To Class: ClassName=Digital In4 Member=Component C46D (C46) 10nF
+Added Member To Class: ClassName=Analog In1 Member=Component D4A (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In2 Member=Component D4B (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In3 Member=Component D4C (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In4 Member=Component D4D (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In5 Member=Component D4E (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In6 Member=Component D4F (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In7 Member=Component D4G (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In8 Member=Component D4H (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In9 Member=Component D4I (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In10 Member=Component D4J (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In11 Member=Component D4K (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In12 Member=Component D4L (D4) MM3Z3V3B
+Added Member To Class: ClassName=Analog In1 Member=Component D12A (D12) PESD5V0L1UA
+Added Member To Class: ClassName=Analog In2 Member=Component D12B (D12) PESD5V0L1UA
+Added Member To Class: ClassName=Analog In3 Member=Component D12C (D12) PESD5V0L1UA
+Added Member To Class: ClassName=Analog In4 Member=Component D12D (D12) PESD5V0L1UA
+Added Member To Class: ClassName=Analog In5 Member=Component D12E (D12) PESD5V0L1UA
+Added Member To Class: ClassName=Analog In6 Member=Component D12F (D12) PESD5V0L1UA
+Added Member To Class: ClassName=Analog In7 Member=Component D12G (D12) PESD5V0L1UA
+Added Member To Class: ClassName=Analog In8 Member=Component D12H (D12) PESD5V0L1UA
+Added Member To Class: ClassName=Analog In9 Member=Component D12I (D12) PESD5V0L1UA
+Added Member To Class: ClassName=Analog In10 Member=Component D12J (D12) PESD5V0L1UA
+Added Member To Class: ClassName=Analog In11 Member=Component D12K (D12) PESD5V0L1UA
+Added Member To Class: ClassName=Analog In12 Member=Component D12L (D12) PESD5V0L1UA
+Added Member To Class: ClassName=3V3 Supply Member=Component D13 SMBJ15CA
+Added Member To Class: ClassName=5V Supply Member=Component D14 SMBJ15CA
+Added Member To Class: ClassName=5V Supply Member=Component D15 SMBJ15CA
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component D16 WS2812C
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component D17 WS2812C
+Added Member To Class: ClassName=Digital In1 Member=Component D18A (D18) MM3Z3V3B
+Added Member To Class: ClassName=Digital In2 Member=Component D18B (D18) MM3Z3V3B
+Added Member To Class: ClassName=Digital In3 Member=Component D18C (D18) MM3Z3V3B
+Added Member To Class: ClassName=Digital In4 Member=Component D18D (D18) MM3Z3V3B
+Added Member To Class: ClassName=Digital In1 Member=Component D19A (D19) PESD5V0L1UA
+Added Member To Class: ClassName=Digital In2 Member=Component D19B (D19) PESD5V0L1UA
+Added Member To Class: ClassName=Digital In3 Member=Component D19C (D19) PESD5V0L1UA
+Added Member To Class: ClassName=Digital In4 Member=Component D19D (D19) PESD5V0L1UA
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component DS5 LED Orange 0603
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component DS6 LED Orange 0603
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component DS7 LED Orange 0603
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component DS8 LED Orange 0603
+Added Member To Class: ClassName=Power Member=Component L4 10uH
+Added Member To Class: ClassName=Analog In1 Member=Component R20A (R20) 15k
+Added Member To Class: ClassName=Analog In2 Member=Component R20B (R20) 15k
+Added Member To Class: ClassName=Analog In3 Member=Component R20C (R20) 15k
+Added Member To Class: ClassName=Analog In4 Member=Component R20D (R20) 15k
+Added Member To Class: ClassName=Analog In5 Member=Component R20E (R20) 15k
+Added Member To Class: ClassName=Analog In6 Member=Component R20F (R20) 15k
+Added Member To Class: ClassName=Analog In7 Member=Component R20G (R20) 15k
+Added Member To Class: ClassName=Analog In8 Member=Component R20H (R20) 15k
+Added Member To Class: ClassName=Analog In9 Member=Component R20I (R20) 15k
+Added Member To Class: ClassName=Analog In10 Member=Component R20J (R20) 15k
+Added Member To Class: ClassName=Analog In11 Member=Component R20K (R20) 15k
+Added Member To Class: ClassName=Analog In12 Member=Component R20L (R20) 15k
+Added Member To Class: ClassName=Analog In1 Member=Component R43A (R43) 10k
+Added Member To Class: ClassName=Analog In2 Member=Component R43B (R43) 10k
+Added Member To Class: ClassName=Analog In3 Member=Component R43C (R43) 10k
+Added Member To Class: ClassName=Analog In4 Member=Component R43D (R43) 10k
+Added Member To Class: ClassName=Analog In5 Member=Component R43E (R43) 10k
+Added Member To Class: ClassName=Analog In6 Member=Component R43F (R43) 10k
+Added Member To Class: ClassName=Analog In7 Member=Component R43G (R43) 10k
+Added Member To Class: ClassName=Analog In8 Member=Component R43H (R43) 10k
+Added Member To Class: ClassName=Analog In9 Member=Component R43I (R43) 10k
+Added Member To Class: ClassName=Analog In10 Member=Component R43J (R43) 10k
+Added Member To Class: ClassName=Analog In11 Member=Component R43K (R43) 10k
+Added Member To Class: ClassName=Analog In12 Member=Component R43L (R43) 10k
+Added Member To Class: ClassName=Analog In1 Member=Component R44A (R44) 22k
+Added Member To Class: ClassName=Analog In2 Member=Component R44B (R44) 22k
+Added Member To Class: ClassName=Analog In3 Member=Component R44C (R44) 22k
+Added Member To Class: ClassName=Analog In4 Member=Component R44D (R44) 22k
+Added Member To Class: ClassName=Analog In5 Member=Component R44E (R44) 22k
+Added Member To Class: ClassName=Analog In6 Member=Component R44F (R44) 22k
+Added Member To Class: ClassName=Analog In7 Member=Component R44G (R44) 22k
+Added Member To Class: ClassName=Analog In8 Member=Component R44H (R44) 22k
+Added Member To Class: ClassName=Analog In9 Member=Component R44I (R44) 22k
+Added Member To Class: ClassName=Analog In10 Member=Component R44J (R44) 22k
+Added Member To Class: ClassName=Analog In11 Member=Component R44K (R44) 22k
+Added Member To Class: ClassName=Analog In12 Member=Component R44L (R44) 22k
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component R45 1k
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component R46 1k
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component R47 1k
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component R48 1k
+Added Member To Class: ClassName=Power Member=Component R49 DNF 0603
+Added Member To Class: ClassName=Power Member=Component R50 10k
+Added Member To Class: ClassName=Digital In1 Member=Component R51A (R51) 15k
+Added Member To Class: ClassName=Digital In2 Member=Component R51B (R51) 15k
+Added Member To Class: ClassName=Digital In3 Member=Component R51C (R51) 15k
+Added Member To Class: ClassName=Digital In4 Member=Component R51D (R51) 15k
+Added Member To Class: ClassName=Digital In1 Member=Component R52A (R52) 10k
+Added Member To Class: ClassName=Digital In2 Member=Component R52B (R52) 10k
+Added Member To Class: ClassName=Digital In3 Member=Component R52C (R52) 10k
+Added Member To Class: ClassName=Digital In4 Member=Component R52D (R52) 10k
+Added Member To Class: ClassName=Digital In1 Member=Component R53A (R53) 22k
+Added Member To Class: ClassName=Digital In2 Member=Component R53B (R53) 22k
+Added Member To Class: ClassName=Digital In3 Member=Component R53C (R53) 22k
+Added Member To Class: ClassName=Digital In4 Member=Component R53D (R53) 22k
+Added Member To Class: ClassName=Microcontroller Member=Component U1 STM32F765VI
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[0]: AOUT
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[1]: AOUT
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[2]: AOUT
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[3]: AOUT
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[4]: AOUT
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[5]: AOUT
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[6]: AOUT
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[7]: AOUT
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[8]: AOUT
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[9]: AOUT
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[10]: AOUT
+Added Member To Class: ClassName=AOUT[1..12] Member=Element[11]: AOUT
+Added Member To Class: ClassName=LED[1..4] Member=Element[0]: LED
+Added Member To Class: ClassName=LED[1..4] Member=Element[1]: LED
+Added Member To Class: ClassName=LED[1..4] Member=Element[2]: LED
+Added Member To Class: ClassName=LED[1..4] Member=Element[3]: LED
+Added Room: Name=3V3 Supply
+Added Room: Name=5V Supply
+Added Room: Name=Analog In1
+Added Room: Name=Analog In2
+Added Room: Name=Analog In3
+Added Room: Name=Analog In4
+Added Room: Name=Analog In5
+Added Room: Name=Analog In6
+Added Room: Name=Analog In7
+Added Room: Name=Analog In8
+Added Room: Name=Analog In9
+Added Room: Name=Analog In10
+Added Room: Name=Analog In11
+Added Room: Name=Analog In12
+Added Room: Name=CANBUS 1
+Added Room: Name=CANBUS 2
+Added Room: Name=CANBUS 3
+Added Room: Name=Connector
+Added Room: Name=Digital In1
+Added Room: Name=Digital In2
+Added Room: Name=Digital In3
+Added Room: Name=Digital In4
+Added Room: Name=High Side Outputs
+Added Room: Name=Micocontroller Peripherals
+Added Room: Name=Microcontroller
+Added Room: Name=Power
+Added Room: Name=Power Selection
+Added Room: Name=Serial Communications

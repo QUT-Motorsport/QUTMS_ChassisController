@@ -1,0 +1,28 @@
+Removed Pin From Net: NetName=GND Pin=C42-1
+Removed Pin From Net: NetName=3V3 Pin=C42-2
+Removed Pin From Net: NetName=3V3 Pin=D17-1
+Removed Pin From Net: NetName=GND Pin=D17-3
+Removed Pin From Net: NetName=LED1 Pin=U1-60
+Removed Pin From Net: NetName=LED2 Pin=U1-61
+Removed Pin From Net: NetName=LED3 Pin=U1-62
+Removed Pin From Net: NetName=LED4 Pin=U1-63
+Removed Member From Class: ClassName=Micocontroller Peripherals Member=C42
+Removed Member From Class: ClassName=Micocontroller Peripherals Member=D17
+Added Component: Designator=DS10(XLxxxx34x)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/sunled/XLMDKCBD34M/1497-1307-ND/4901632"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=GND Pin=DS10-2
+Added Pin To Net: NetName=LED1 Pin=U1-91
+Added Pin To Net: NetName=LED2 Pin=U1-93
+Added Pin To Net: NetName=LED3 Pin=U1-95
+Added Pin To Net: NetName=LED4 Pin=U1-96
+Added Pin To Net: NetName=LED5 Pin=DS10-1
+Added Pin To Net: NetName=LED5 Pin=U1-97
+Added Net: Name=LED5
+Added Pin To Net: NetName=LED6 Pin=DS10-3
+Added Pin To Net: NetName=LED6 Pin=U1-98
+Added Net: Name=LED6
+Change Class Name : Old Net Name=LED[1..4] New Net Name=LED[1..6]
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component DS10 XLMDKCBD34M
+Added Member To Class: ClassName=LED[1..6] Member=Element[4]: LED
+Added Member To Class: ClassName=LED[1..6] Member=Element[5]: LED

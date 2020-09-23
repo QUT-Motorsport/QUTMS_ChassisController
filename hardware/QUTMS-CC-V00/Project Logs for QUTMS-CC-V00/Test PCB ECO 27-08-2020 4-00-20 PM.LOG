@@ -1,0 +1,327 @@
+Removed Pin From Net: NetName=PWR CB Pin=C17-1
+Removed Pin From Net: NetName=GND Pin=C18-1
+Removed Pin From Net: NetName=12V Pin=C18-2
+Removed Pin From Net: NetName=12V Pin=C18-2
+Removed Pin From Net: NetName=GND Pin=C19-1
+Removed Pin From Net: NetName=12V Pin=C19-2
+Removed Pin From Net: NetName=12V Pin=C19-2
+Removed Pin From Net: NetName=GND Pin=C20-1
+Removed Pin From Net: NetName=3V3 Pin=C20-2
+Removed Pin From Net: NetName=3V3 Pin=C20-2
+Removed Pin From Net: NetName=GND Pin=C21-1
+Removed Pin From Net: NetName=3V3 Pin=C21-2
+Removed Pin From Net: NetName=3V3 Pin=C21-2
+Removed Pin From Net: NetName=GND Pin=D4-A
+Removed Pin From Net: NetName=USB D_N Pin=D5-1
+Removed Pin From Net: NetName=GND Pin=D5-2
+Removed Pin From Net: NetName=USB D_P Pin=D5-3
+Removed Pin From Net: NetName=USB ESD D_P Pin=D5-4
+Removed Pin From Net: NetName=VUSB Pin=D5-5
+Removed Pin From Net: NetName=USB ESD D_N Pin=D5-6
+Removed Pin From Net: NetName=PWR SW Pin=L2-1
+Removed Pin From Net: NetName=3V3 Pin=L2-2
+Removed Pin From Net: NetName=3V3 Pin=L2-2
+Removed Pin From Net: NetName=3V3 Pin=R22-2
+Removed Pin From Net: NetName=3V3 Pin=R23-2
+Removed Pin From Net: NetName=GND Pin=R24-1
+Removed Pin From Net: NetName=3V3 Pin=TP3-1
+Removed Pin From Net: NetName=PWR SW Pin=TP4-1
+Removed Pin From Net: NetName=12V Pin=U6-4
+Removed Pin From Net: NetName=12V Pin=U6-4
+Removed Pin From Net: NetName=12V Pin=U6-5
+Removed Pin From Net: NetName=12V Pin=U6-5
+Removed Pin From Net: NetName=PWR SW Pin=U6-6
+Removed Member From Class: ClassName=3V3 Supply Member=C18
+Removed Member From Class: ClassName=3V3 Supply Member=C19
+Removed Member From Class: ClassName=3V3 Supply Member=C20
+Removed Member From Class: ClassName=3V3 Supply Member=C21
+Removed Member From Class: ClassName=Micocontroller Peripherals Member=D5
+Removed Member From Class: ClassName=3V3 Supply Member=L2
+Removed Member From Class: ClassName=5V Supply Member=R22
+Removed Member From Class: ClassName=5V Supply Member=R24
+Removed Member From Class: ClassName=3V3 Supply Member=TP3
+Removed Member From Class: ClassName=5V Supply Member=TP3
+Removed Member From Class: ClassName=3V3 Supply Member=TP4
+Removed Member From Class: ClassName=5V Supply Member=TP4
+Removed Member From Class: ClassName=3V3 Supply Member=TP5
+Removed Member From Class: ClassName=5V Supply Member=TP5
+Change Component Footprint: Designator=D5 Old Footprint=STM-SOT23-6L_V New Footprint=NUP2105L
+Change Component Comment : Designator=D5 Old Comment=USBLC6-2SC6 New Comment=NUP2105L
+Change Managed Component Library Link : Designator=D5 Old VaultGUID=B7D15EC3-160A-466F-A46C-7801FE6295A7 New VaultGUID= Old ItemGUID=DB15E0DE-202D-4A3A-9E52-5CAF63EF97AC New ItemGUID= Old RevisionGUID=E5DB5F2B-EB46-4AD0-AE74-5E00A1984BA1 New RevisionGUID=
+Change component parameters: Designator = "D5" ("D5"); Footprint = "STM-SOT23-6L_V"; UniqueID = "\CDWSKDZZ\GNCZBFEU" ("\CDWSKDZZ\GNCZBFEU")
+Change component parameters (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.onsemi.cn/PowerSolutions/document/NUP2105L-D.PDF"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "ComponentLink2Description"; Value = "LCSC"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "ComponentLink2URL"; Value = "https://lcsc.com/product-detail/TVS_ON-Semiconductor-NUP2105LT1G_C14486.html"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "ComponentLink3Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Change component parameters (AddParameter): Name = "ComponentLink3URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/SZNUP2105LT1G/SZNUP2105LT1GOSCT-ND/3487669"; VariantName = "[No Variations]"
+Added Component: Designator=C36(Cap_Ceramic_1206)
+Added Component: Designator=C37(Cap_Ceramic_1206)
+Added Component: Designator=C38(Cap_Ceramic_1210)
+Added Component: Designator=C39(Cap_Ceramic_1210)
+Added Component: Designator=C40(Cap_Ceramic_0603)
+Added Component: Designator=C41(Cap_Ceramic_0603)
+Added Component: Designator=C42(Cap_Ceramic_0603)
+Added Component: Designator=D4A(SOD123)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/vishay-semiconductor-diodes-division/BZT52B3V3-G3-08/BZT52B3V3-G3-08GICT-ND/8284035"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://www.vishay.com/docs/83340/bzt52g.pdf"; VariantName = "[No Variations]"
+Added Component: Designator=D4B(SOD123)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/vishay-semiconductor-diodes-division/BZT52B3V3-G3-08/BZT52B3V3-G3-08GICT-ND/8284035"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://www.vishay.com/docs/83340/bzt52g.pdf"; VariantName = "[No Variations]"
+Added Component: Designator=D4C(SOD123)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/vishay-semiconductor-diodes-division/BZT52B3V3-G3-08/BZT52B3V3-G3-08GICT-ND/8284035"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://www.vishay.com/docs/83340/bzt52g.pdf"; VariantName = "[No Variations]"
+Added Component: Designator=D4D(SOD123)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/vishay-semiconductor-diodes-division/BZT52B3V3-G3-08/BZT52B3V3-G3-08GICT-ND/8284035"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://www.vishay.com/docs/83340/bzt52g.pdf"; VariantName = "[No Variations]"
+Added Component: Designator=D6(NUP2105L)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.onsemi.cn/PowerSolutions/document/NUP2105L-D.PDF"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "LCSC"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://lcsc.com/product-detail/TVS_ON-Semiconductor-NUP2105LT1G_C14486.html"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/SZNUP2105LT1G/SZNUP2105LT1GOSCT-ND/3487669"; VariantName = "[No Variations]"
+Added Component: Designator=D8(NUP2105L)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.onsemi.cn/PowerSolutions/document/NUP2105L-D.PDF"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "LCSC"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://lcsc.com/product-detail/TVS_ON-Semiconductor-NUP2105LT1G_C14486.html"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/SZNUP2105LT1G/SZNUP2105LT1GOSCT-ND/3487669"; VariantName = "[No Variations]"
+Added Component: Designator=D9(NUP2105L)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.onsemi.cn/PowerSolutions/document/NUP2105L-D.PDF"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "LCSC"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://lcsc.com/product-detail/TVS_ON-Semiconductor-NUP2105LT1G_C14486.html"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/SZNUP2105LT1G/SZNUP2105LT1GOSCT-ND/3487669"; VariantName = "[No Variations]"
+Added Component: Designator=D10(NUP2105L)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Datasheet"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.onsemi.cn/PowerSolutions/document/NUP2105L-D.PDF"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "LCSC"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://lcsc.com/product-detail/TVS_ON-Semiconductor-NUP2105LT1G_C14486.html"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3URL"; Value = "https://www.digikey.com.au/product-detail/en/on-semiconductor/SZNUP2105LT1G/SZNUP2105LT1GOSCT-ND/3487669"; VariantName = "[No Variations]"
+Added Component: Designator=D11(USBLC6-2SC6)
+Added Component: Designator=DS4(LED GREEN 0603)
+Added Component: Designator=L3(INDUCTOR_4X3MM_1.8MM)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com/product-detail/en/w%C3%BCrth-elektronik/74404042470/732-5512-1-ND/4865405"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2Description"; Value = "LCSC A"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink2URL"; Value = "https://lcsc.com/product-detail/Power-Inductors_Sunlord-SWPA6045S221MT_C91047.html"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3Description"; Value = "LCSC B"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink3URL"; Value = "https://lcsc.com/product-detail/Power-Inductors_SXN-Shun-Xiang-Nuo-Elec-SMNR6045-221MT_C467145.html"; VariantName = "[No Variations]"
+Added Component: Designator=R20A(Res_ThinFilm_0603)
+Added Component: Designator=R20B(Res_ThinFilm_0603)
+Added Component: Designator=R20C(Res_ThinFilm_0603)
+Added Component: Designator=R20D(Res_ThinFilm_0603)
+Added Component: Designator=R32(Res_ThinFilm_0603)
+Added Component: Designator=R33(Res_ThinFilm_0603)
+Added Component: Designator=R34(Res_ThinFilm_0603)
+Added Component: Designator=R35(Res_ThinFilm_0603)
+Added Component: Designator=R36(Res_ThinFilm_0603)
+Added Component: Designator=R37(Res_ThinFilm_0603)
+Added Component: Designator=R38(Res_ThinFilm_0603)
+Added Component: Designator=R39(Res_ThinFilm_0603)
+Added Component: Designator=R40(Res_ThinFilm_0603)
+Added Component: Designator=R41(Res_ThinFilm_0603)
+Added Component: Designator=R42(Res_ThinFilm_0603)
+Added Component: Designator=U10(TPS2115A)
+Add component (AddParameter): Name = "ComponentLink1Description"; Value = "Digikey"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "ComponentLink1URL"; Value = "https://www.digikey.com.au/product-detail/en/texas-instruments/TPS2115AIPWRQ1/296-24155-1-ND/2000840"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=PWR CB Pin=C17-1
+Added Pin To Net: NetName=GND Pin=C36-1
+Added Pin To Net: NetName=GND Pin=C37-1
+Added Pin To Net: NetName=GND Pin=C38-1
+Added Pin To Net: NetName=3V3 Pin=C38-2
+Added Pin To Net: NetName=GND Pin=C39-1
+Added Pin To Net: NetName=3V3 Pin=C39-2
+Added Pin To Net: NetName=GND Pin=C40-1
+Added Pin To Net: NetName=VUSB Pin=C40-2
+Added Pin To Net: NetName=GND Pin=C41-1
+Added Pin To Net: NetName=VUSB Pin=C41-2
+Added Pin To Net: NetName=GND Pin=C42-1
+Added Pin To Net: NetName=GND Pin=D4A-A
+Added Pin To Net: NetName=GND Pin=D4B-A
+Added Pin To Net: NetName=GND Pin=D4C-A
+Added Pin To Net: NetName=GND Pin=D4D-A
+Added Pin To Net: NetName=USB D_N Pin=D11-1
+Added Pin To Net: NetName=GND Pin=D11-2
+Added Pin To Net: NetName=USB D_P Pin=D11-3
+Added Pin To Net: NetName=USB ESD D_P Pin=D11-4
+Added Pin To Net: NetName=VUSB Pin=D11-5
+Added Pin To Net: NetName=USB ESD D_N Pin=D11-6
+Added Pin To Net: NetName=GND Pin=DS4-2
+Added Pin To Net: NetName=CAN HA Pin=J3-A6
+Added Pin To Net: NetName=CAN LA Pin=J3-A7
+Added Pin To Net: NetName=CAN HB Pin=J3-A12
+Added Pin To Net: NetName=CAN LB Pin=J3-A13
+Added Pin To Net: NetName=CAN HC Pin=J3-A18
+Added Pin To Net: NetName=CAN LC Pin=J3-A19
+Added Pin To Net: NetName=GND Pin=J3-B19
+Added Pin To Net: NetName=GND Pin=J3-B27
+Added Pin To Net: NetName=GND Pin=J3-B28
+Added Pin To Net: NetName=PWR SW Pin=L3-1
+Added Pin To Net: NetName=3V3 Pin=L3-2
+Added Pin To Net: NetName=GND Pin=R35-1
+Added Pin To Net: NetName=VUSB Pin=R36-2
+Added Pin To Net: NetName=3V3 Pin=R37-2
+Added Pin To Net: NetName=VUSB Pin=R39-2
+Added Pin To Net: NetName=GND Pin=R40-1
+Added Pin To Net: NetName=GND Pin=R41-1
+Added Pin To Net: NetName=GND Pin=R42-1
+Added Pin To Net: NetName=PWR SW Pin=U6-6
+Added Pin To Net: NetName=GND Pin=U10-5
+Added Pin To Net: NetName=VUSB Pin=U10-6
+Change Net Name : Old Net Name=CAN HA New Net Name=CAN H 1
+Change Net Name : Old Net Name=CAN HB New Net Name=CAN H 2
+Change Net Name : Old Net Name=CAN HC New Net Name=CAN H 3
+Change Net Name : Old Net Name=CAN LA New Net Name=CAN L 1
+Change Net Name : Old Net Name=CAN LB New Net Name=CAN L 2
+Change Net Name : Old Net Name=CAN LC New Net Name=CAN L 3
+Change Net Name : Old Net Name=CAN RXA New Net Name=NetR18A_1
+Change Net Name : Old Net Name=CAN RXB New Net Name=NetR18B_1
+Change Net Name : Old Net Name=CAN RXC New Net Name=NetR18C_1
+Change Net Name : Old Net Name=CAN TXA New Net Name=NetR17A_1
+Change Net Name : Old Net Name=CAN TXB New Net Name=NetR17B_1
+Change Net Name : Old Net Name=CAN TXC New Net Name=NetR17C_1
+Change Net Name : Old Net Name=NetR25_1 New Net Name=USB DET
+Added Pin To Net: NetName=5V Pin=C20-2
+Added Pin To Net: NetName=5V Pin=C21-2
+Added Pin To Net: NetName=5V Pin=C42-2
+Added Pin To Net: NetName=5V Pin=J3-B12
+Added Pin To Net: NetName=5V Pin=J3-B20
+Added Pin To Net: NetName=5V Pin=L2-2
+Added Pin To Net: NetName=5V Pin=R23-2
+Added Pin To Net: NetName=5V Pin=R34-2
+Added Pin To Net: NetName=5V Pin=R38-2
+Added Pin To Net: NetName=5V Pin=U10-8
+Added Net: Name=5V
+Added Pin To Net: NetName=AGND Pin=J3-A5
+Added Pin To Net: NetName=AGND Pin=J3-A20
+Added Pin To Net: NetName=AGND Pin=J3-A21
+Added Pin To Net: NetName=AGND Pin=J3-A22
+Added Net: Name=AGND
+Added Pin To Net: NetName=AIN1 Pin=J3-A1
+Added Net: Name=AIN1
+Added Pin To Net: NetName=AIN2 Pin=J3-A2
+Added Net: Name=AIN2
+Added Pin To Net: NetName=AIN3 Pin=J3-A3
+Added Net: Name=AIN3
+Added Pin To Net: NetName=AIN4 Pin=J3-A4
+Added Net: Name=AIN4
+Added Pin To Net: NetName=AIN5 Pin=J3-A8
+Added Net: Name=AIN5
+Added Pin To Net: NetName=AIN6 Pin=J3-A9
+Added Net: Name=AIN6
+Added Pin To Net: NetName=AIN7 Pin=J3-A10
+Added Net: Name=AIN7
+Added Pin To Net: NetName=AIN8 Pin=J3-A11
+Added Net: Name=AIN8
+Added Pin To Net: NetName=AIN9 Pin=J3-A14
+Added Net: Name=AIN9
+Added Pin To Net: NetName=AIN10 Pin=J3-A15
+Added Net: Name=AIN10
+Added Pin To Net: NetName=AIN11 Pin=J3-A16
+Added Net: Name=AIN11
+Added Pin To Net: NetName=AIN12 Pin=J3-A17
+Added Net: Name=AIN12
+Added Pin To Net: NetName=DIN1 Pin=R20A-2
+Added Net: Name=DIN1
+Added Pin To Net: NetName=DIN2 Pin=R20B-2
+Added Net: Name=DIN2
+Added Pin To Net: NetName=DIN3 Pin=R20C-2
+Added Net: Name=DIN3
+Added Pin To Net: NetName=DIN4 Pin=R20D-2
+Added Net: Name=DIN4
+Added Pin To Net: NetName=DOUT1 Pin=D4A-K
+Added Pin To Net: NetName=DOUT1 Pin=R20A-1
+Added Net: Name=DOUT1
+Added Pin To Net: NetName=DOUT2 Pin=D4B-K
+Added Pin To Net: NetName=DOUT2 Pin=R20B-1
+Added Net: Name=DOUT2
+Added Pin To Net: NetName=DOUT3 Pin=D4C-K
+Added Pin To Net: NetName=DOUT3 Pin=R20C-1
+Added Net: Name=DOUT3
+Added Pin To Net: NetName=DOUT4 Pin=D4D-K
+Added Pin To Net: NetName=DOUT4 Pin=R20D-1
+Added Net: Name=DOUT4
+Added Pin To Net: NetName=NetDS4_1 Pin=DS4-1
+Added Pin To Net: NetName=NetDS4_1 Pin=R36-1
+Added Net: Name=NetDS4_1
+Added Pin To Net: NetName=NetR38_1 Pin=R38-1
+Added Pin To Net: NetName=NetR38_1 Pin=R41-2
+Added Pin To Net: NetName=NetR38_1 Pin=U10-2
+Added Net: Name=NetR38_1
+Added Pin To Net: NetName=NetR39_1 Pin=R39-1
+Added Pin To Net: NetName=NetR39_1 Pin=R42-2
+Added Pin To Net: NetName=NetR39_1 Pin=U10-3
+Added Net: Name=NetR39_1
+Added Pin To Net: NetName=NetR40_2 Pin=R40-2
+Added Pin To Net: NetName=NetR40_2 Pin=U10-4
+Added Net: Name=NetR40_2
+Added Pin To Net: NetName=PSEL Pin=R37-1
+Added Pin To Net: NetName=PSEL Pin=U10-1
+Added Net: Name=PSEL
+Added Pin To Net: NetName=PWR CB 5V Pin=C17-1
+Added Pin To Net: NetName=PWR CB 5V Pin=U6-1
+Added Net: Name=PWR CB 5V
+Added Pin To Net: NetName=PWR FB 5V Pin=R34-1
+Added Pin To Net: NetName=PWR FB 5V Pin=R35-2
+Added Pin To Net: NetName=PWR FB 5V Pin=U6-3
+Added Net: Name=PWR FB 5V
+Added Pin To Net: NetName=PWR SW 5V Pin=C17-2
+Added Pin To Net: NetName=PWR SW 5V Pin=D7-K
+Added Pin To Net: NetName=PWR SW 5V Pin=L2-1
+Added Pin To Net: NetName=PWR SW 5V Pin=U6-6
+Added Net: Name=PWR SW 5V
+Added Pin To Net: NetName=VBUS Pin=C36-2
+Added Pin To Net: NetName=VBUS Pin=C37-2
+Added Pin To Net: NetName=VBUS Pin=U6-4
+Added Pin To Net: NetName=VBUS Pin=U6-5
+Added Pin To Net: NetName=VBUS Pin=U10-7
+Added Net: Name=VBUS
+Added Pin To Net: NetName=VCC Pin=C18-2
+Added Pin To Net: NetName=VCC Pin=C19-2
+Added Pin To Net: NetName=VCC Pin=J3-B2
+Added Pin To Net: NetName=VCC Pin=J3-B3
+Added Pin To Net: NetName=VCC Pin=J3-B11
+Added Pin To Net: NetName=VCC Pin=U6-4
+Added Pin To Net: NetName=VCC Pin=U6-5
+Added Net: Name=VCC
+Added Class: Name=Digital In1
+Added Class: Name=Digital In2
+Added Class: Name=Digital In3
+Added Class: Name=Digital In4
+Added Class: Name=Power Selection
+Added Class: Name=AIN[1..12]
+Added Class: Name=AOUT[1..12]
+Added Class: Name=DIN[1..4]
+Added Class: Name=DOUT[1..4]
+Added Class: Name=CC-S06-V00-DigitalIn
+Added Class: Name=CC-S07-V00-AnalogueIn
+Added Member To Class: ClassName=3V3 Supply Member=Component C36 22uF 35V 1206
+Added Member To Class: ClassName=3V3 Supply Member=Component C37 22uF 35V 1206
+Added Member To Class: ClassName=3V3 Supply Member=Component C38 47uF 16V 1210
+Added Member To Class: ClassName=3V3 Supply Member=Component C39 47uF 16V 1210
+Added Member To Class: ClassName=Serial Communications Member=Component D5 NUP2105L
+Added Member To Class: ClassName=Serial Communications Member=Component D6 NUP2105L
+Added Member To Class: ClassName=Serial Communications Member=Component D8 NUP2105L
+Added Member To Class: ClassName=Serial Communications Member=Component D9 NUP2105L
+Added Member To Class: ClassName=Serial Communications Member=Component D10 NUP2105L
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component D11 USBLC6-2SC6
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component DS4 LED Green 0603
+Added Member To Class: ClassName=3V3 Supply Member=Component L3 74404042470
+Added Member To Class: ClassName=Serial Communications Member=Component R32 1k 5% 0603
+Added Member To Class: ClassName=Serial Communications Member=Component R33 1k 5% 0603
+Added Member To Class: ClassName=5V Supply Member=Component R34 111k 1%
+Added Member To Class: ClassName=5V Supply Member=Component R35 20k 1%
+Added Member To Class: ClassName=Micocontroller Peripherals Member=Component R36 1k
