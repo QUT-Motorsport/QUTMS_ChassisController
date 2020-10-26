@@ -58,7 +58,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+void CC_LogInfo(char* msg, size_t length);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

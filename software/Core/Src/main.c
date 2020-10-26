@@ -21,6 +21,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "can.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -90,11 +91,14 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
   //Create FSM instance
-  //fsm_t *fsm = fsm_new(&userDefinedInitialState);
+  fsm_t *fsm = fsm_new(&idleState);
 
+  // Set its log user defined log method
+  fsm_setLogFunction(fsm, &CC_LogInfo);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -123,6 +127,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
   */
@@ -152,9 +157,28 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3;
+  PeriphClkInitStruct.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+ * @brief Creates and logs an error string to huart3
+ * @note The form of the log message is as so: "TAG_subsystem: error"
+ * @param TAG Primary System eg. "Chassis Controller"
+ * @param Subsystem of error eg. "CAN SEND"
+ * @param error Full error string
+ * @retval None
+ */
+void CC_LogInfo(char* msg, size_t length)
+{
+	HAL_UART_Transmit(&huart3, (uint8_t *)msg, length, HAL_MAX_DELAY);
+}
 
 /* USER CODE END 4 */
 

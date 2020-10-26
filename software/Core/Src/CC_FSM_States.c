@@ -78,13 +78,13 @@ void state_idle_iterate(fsm_t *fsm)
 		/* If RTD Button Engaged */
 
 			/* Enter Driving State */
+			//fsm_changeState(fsm, &drivingState, "RTD Engaged");
 }
 
 void state_idle_exit(fsm_t *fsm)
 {
 	/* Broadcast RTD on all CAN lines */
 
-	/* Engage Driving State */
 	return;
 }
 
@@ -94,7 +94,7 @@ void state_driving_enter(fsm_t *fsm)
 {
 	/* If AMS Contactors Closed & BMS' Healthy */
 
-		/* Play RTD Siren */
+		/* Play RTD Siren for 2 Seconds */
 
 		/* Enable all channels on PDM */
 
@@ -129,6 +129,8 @@ void state_driving_iterate(fsm_t *fsm)
 			 * Error/Warning Codes:
 			 * None
 			 */
+			/* Soft Shutdown Requested */
+			//fsm_changeState(fsm, &idleState, "Soft Shutdown Requested (CAN)");
 		}
 	}
 
@@ -160,20 +162,27 @@ void state_driving_iterate(fsm_t *fsm)
 
 	/* If Throttle and Brake Implausibility State Clock < 100ms */
 
-	/*
-	 * Call Torque Vectoring Algorithm
-	 */
+		/*
+		 * Call Torque Vectoring Algorithm
+		 */
+
+		/*
+		 * Calculate Regen
+		 */
+
+		/*
+		 * Send Desired Accel to Inverters
+		 */
 
 	/*
-	 * Calculate Regen
+	 * If Throttle or Brake Implausibility State Clock > 1000ms
+	 * Engage Soft Shutdown (Reset to Idle)
 	 */
+	//fsm_changeState(fsm, &idleState, "Soft Shutdown Requested (CAN)");
 
 	/*
-	 * Send Desired Accel to Inverters
-	 */
-
-	/*
-	 * If 500ms has exceeded, request State of Charge
+	 * If 500ms has exceeded since SoC Request
+	 * Request State of Charge
 	 */
 }
 
