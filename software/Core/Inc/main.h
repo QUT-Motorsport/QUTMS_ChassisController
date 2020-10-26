@@ -59,6 +59,7 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void CC_LogInfo(char* msg, size_t length);
+__NO_RETURN void fsm_thread_mainLoop(void* arg);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
