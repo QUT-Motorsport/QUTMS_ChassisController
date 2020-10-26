@@ -1,5 +1,17 @@
-Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
+Core/Src/CC_FSM_States.o: ../Core/Src/CC_FSM_States.c \
+ ../Core/Inc/CC_FSM_States.h ../Core/Common/Inc/FSM.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
+ ../Core/Inc/FreeRTOSConfig.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/portmacro.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
+ ../Core/Inc/main.h ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_def.h \
@@ -28,19 +40,33 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pwr_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
- ../Core/Inc/FreeRTOSConfig.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/portmacro.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
- ../Core/Inc/can.h ../Core/Inc/main.h ../Core/Inc/gpio.h \
- ../Core/Common/Inc/FSM.h ../Core/Inc/CC_FSM_States.h ../Core/Inc/can.h
+ ../Core/Inc/can.h
+
+../Core/Inc/CC_FSM_States.h:
+
+../Core/Common/Inc/FSM.h:
+
+../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h:
+
+../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
+
+../Core/Inc/FreeRTOSConfig.h:
+
+../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h:
+
+../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h:
+
+../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h:
+
+../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/portmacro.h:
+
+../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h:
+
+../Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
+
+../Middlewares/Third_Party/FreeRTOS/Source/include/list.h:
+
+../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h:
 
 ../Core/Inc/main.h:
 
@@ -101,37 +127,5 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h:
 
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
-
-../Core/Inc/FreeRTOSConfig.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/portmacro.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/list.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h:
-
-../Core/Inc/can.h:
-
-../Core/Inc/main.h:
-
-../Core/Inc/gpio.h:
-
-../Core/Common/Inc/FSM.h:
-
-../Core/Inc/CC_FSM_States.h:
 
 ../Core/Inc/can.h:

@@ -27,23 +27,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 0000002e  00000000  00000000  00020010  2**0
                   CONTENTS, READONLY
- 12 .debug_info   00017d0c  00000000  00000000  0002003e  2**0
+ 12 .debug_info   00017ef3  00000000  00000000  0002003e  2**0
                   CONTENTS, READONLY, DEBUGGING
- 13 .debug_abbrev 00002e80  00000000  00000000  00037d4a  2**0
+ 13 .debug_abbrev 00002ea0  00000000  00000000  00037f31  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_aranges 00001270  00000000  00000000  0003abd0  2**3
+ 14 .debug_aranges 00001270  00000000  00000000  0003add8  2**3
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_ranges 00001108  00000000  00000000  0003be40  2**3
+ 15 .debug_ranges 00001108  00000000  00000000  0003c048  2**3
                   CONTENTS, READONLY, DEBUGGING
- 16 .debug_macro  00003597  00000000  00000000  0003cf48  2**0
+ 16 .debug_macro  000034db  00000000  00000000  0003d150  2**0
                   CONTENTS, READONLY, DEBUGGING
- 17 .debug_line   0000f4f1  00000000  00000000  000404df  2**0
+ 17 .debug_line   0000f513  00000000  00000000  0004062b  2**0
                   CONTENTS, READONLY, DEBUGGING
- 18 .debug_str    000fbd2b  00000000  00000000  0004f9d0  2**0
+ 18 .debug_str    000fbea5  00000000  00000000  0004fb3e  2**0
                   CONTENTS, READONLY, DEBUGGING
- 19 .comment      0000007b  00000000  00000000  0014b6fb  2**0
+ 19 .comment      0000007b  00000000  00000000  0014b9e3  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00004c88  00000000  00000000  0014b778  2**2
+ 20 .debug_frame  00004c88  00000000  00000000  0014ba60  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -636,7 +636,7 @@ int main(void)
  80006a0:	f7ff ffe0 	bl	8000664 <MX_GPIO_Init>
   MX_CAN1_Init();
  80006a4:	f7ff ff4c 	bl	8000540 <MX_CAN1_Init>
-  /* USER CODE BEGIN 2 */
+  //fsm_t *fsm = fsm_new(&userDefinedInitialState);
 
   /* USER CODE END 2 */
 

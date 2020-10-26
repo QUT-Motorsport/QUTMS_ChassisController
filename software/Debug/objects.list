@@ -1,5 +1,6 @@
 "Core/Common/Src/FSM.o"
 "Core/Common/Src/QUTMS_can.o"
+"Core/Src/CC_FSM_States.o"
 "Core/Src/can.o"
 "Core/Src/freertos.o"
 "Core/Src/gpio.o"

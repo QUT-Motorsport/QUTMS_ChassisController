@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "FSM.h"
+#include "CC_FSM_States.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -90,6 +91,9 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
+
+  //Create FSM instance
+  //fsm_t *fsm = fsm_new(&userDefinedInitialState);
 
   /* USER CODE END 2 */
 
