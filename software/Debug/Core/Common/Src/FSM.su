@@ -1,0 +1,9 @@
+FSM.c:10:8:fsm_new	24	static
+FSM.c:31:6:fsm_iterate	16	static
+FSM.c:42:6:fsm_changeState	120	static
+FSM.c:65:10:fsm_getState_t	24	static
+FSM.c:79:7:fsm_getState	24	static
+FSM.c:93:6:fsm_reset	104	static
+FSM.c:115:6:fsm_delete	16	static
+FSM.c:123:6:fsm_setLogFunction	16	static
+FSM.c:129:6:fsm_log	24	static
