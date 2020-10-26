@@ -40,6 +40,12 @@ void MX_CAN1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+typedef struct CC_CAN_Generic {
+	CAN_RxHeaderTypeDef header;
+	uint8_t data[8];
+	void *hcan;
+} CC_CAN_Generic_t;
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

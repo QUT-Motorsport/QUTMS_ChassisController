@@ -49,7 +49,6 @@ Allocating common symbols
 Common symbol       size              file
 
 defaultTaskHandle   0x4               Core/Src/freertos.o
-drivingState        0x10              Core/Src/CC_FSM_States.o
 errno               0x4               /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.7-2018-q2-update.linux64_1.4.0.202007081208/tools/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/fpv5/hard/libc_nano.a(lib_a-reent.o)
 CC_GlobalState      0x4               Core/Src/CC_FSM_States.o
 uwTick              0x4               Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.o
@@ -403,10 +402,12 @@ Discarded input sections
  .text          0x0000000000000000        0x0 Core/Src/CC_FSM_States.o
  .data          0x0000000000000000        0x0 Core/Src/CC_FSM_States.o
  .bss           0x0000000000000000        0x0 Core/Src/CC_FSM_States.o
- .rodata        0x0000000000000000        0xf Core/Src/CC_FSM_States.o
+ .rodata        0x0000000000000000       0x1a Core/Src/CC_FSM_States.o
  .data.deadState
                 0x0000000000000000       0x10 Core/Src/CC_FSM_States.o
  .data.idleState
+                0x0000000000000000       0x10 Core/Src/CC_FSM_States.o
+ .data.drivingState
                 0x0000000000000000       0x10 Core/Src/CC_FSM_States.o
  .text.state_dead_enter
                 0x0000000000000000       0x14 Core/Src/CC_FSM_States.o
@@ -416,11 +417,21 @@ Discarded input sections
                 0x0000000000000000       0x14 Core/Src/CC_FSM_States.o
  .text.state_idle_enter
                 0x0000000000000000       0x6c Core/Src/CC_FSM_States.o
- .debug_info    0x0000000000000000      0xff4 Core/Src/CC_FSM_States.o
- .debug_abbrev  0x0000000000000000      0x242 Core/Src/CC_FSM_States.o
+ .text.state_idle_iterate
+                0x0000000000000000       0x14 Core/Src/CC_FSM_States.o
+ .text.state_idle_exit
+                0x0000000000000000       0x14 Core/Src/CC_FSM_States.o
+ .text.state_driving_enter
+                0x0000000000000000       0x14 Core/Src/CC_FSM_States.o
+ .text.state_driving_iterate
+                0x0000000000000000       0x3c Core/Src/CC_FSM_States.o
+ .text.state_driving_exit
+                0x0000000000000000       0x14 Core/Src/CC_FSM_States.o
+ .debug_info    0x0000000000000000     0x1174 Core/Src/CC_FSM_States.o
+ .debug_abbrev  0x0000000000000000      0x25a Core/Src/CC_FSM_States.o
  .debug_aranges
-                0x0000000000000000       0x38 Core/Src/CC_FSM_States.o
- .debug_ranges  0x0000000000000000       0x28 Core/Src/CC_FSM_States.o
+                0x0000000000000000       0x60 Core/Src/CC_FSM_States.o
+ .debug_ranges  0x0000000000000000       0x50 Core/Src/CC_FSM_States.o
  .debug_macro   0x0000000000000000      0x456 Core/Src/CC_FSM_States.o
  .debug_macro   0x0000000000000000      0xa66 Core/Src/CC_FSM_States.o
  .debug_macro   0x0000000000000000       0x17 Core/Src/CC_FSM_States.o
@@ -510,13 +521,13 @@ Discarded input sections
  .debug_macro   0x0000000000000000      0x15c Core/Src/CC_FSM_States.o
  .debug_macro   0x0000000000000000       0x22 Core/Src/CC_FSM_States.o
  .debug_macro   0x0000000000000000       0x22 Core/Src/CC_FSM_States.o
- .debug_line    0x0000000000000000      0xab1 Core/Src/CC_FSM_States.o
- .debug_str     0x0000000000000000    0xf3873 Core/Src/CC_FSM_States.o
+ .debug_line    0x0000000000000000      0xb12 Core/Src/CC_FSM_States.o
+ .debug_str     0x0000000000000000    0xf393f Core/Src/CC_FSM_States.o
  .comment       0x0000000000000000       0x7c Core/Src/CC_FSM_States.o
- .debug_frame   0x0000000000000000       0xac Core/Src/CC_FSM_States.o
+ .debug_frame   0x0000000000000000      0x170 Core/Src/CC_FSM_States.o
  .ARM.attributes
                 0x0000000000000000       0x37 Core/Src/CC_FSM_States.o
- COMMON         0x0000000000000000       0x14 Core/Src/CC_FSM_States.o
+ COMMON         0x0000000000000000        0x4 Core/Src/CC_FSM_States.o
  .group         0x0000000000000000        0xc Core/Src/can.o
  .group         0x0000000000000000        0xc Core/Src/can.o
  .group         0x0000000000000000        0xc Core/Src/can.o

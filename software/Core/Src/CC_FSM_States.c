@@ -48,7 +48,10 @@ void state_idle_enter(fsm_t *fsm)
 
 	/* Initiate Startup on PDM */
 
-	/* Select Channels for Startup on PDM */
+	/*
+	 * Select Channels for Startup on PDM
+	 * Ensure Channels are not already enabled? (May not be needed)
+	 */
 
 	/* Within 100 Seconds, ensure Heartbeats are ok
 	 * and shutdown loop closed
@@ -57,29 +60,125 @@ void state_idle_enter(fsm_t *fsm)
 
 void state_idle_iterate(fsm_t *fsm)
 {
-//	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
-//	{
-//		CC_CAN_Generic_t msg;
-//		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
-//		{
-//			/* Packet Handler */
-//		}
-//	}
+	//	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
+	//	{
+	//		CC_CAN_Generic_t msg;
+	//		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
+	//		{
+	//			/* Packet Handler */
+	//		}
+	//	}
 
 	// TODO Implementation
 
 	/* If Brake Pressure > 20% */
 
-	  /* Illuminate Power Button */
+		/* Illuminate Power Button */
 
-	    /* If RTD Button Engaged */
+		/* If RTD Button Engaged */
 
-	      /* Enter Driving State */
+			/* Enter Driving State */
 }
 
 void state_idle_exit(fsm_t *fsm)
 {
-  /* Broadcast RTD on all CAN lines */
+	/* Broadcast RTD on all CAN lines */
 
-  return;
+	/* Engage Driving State */
+	return;
+}
+
+state_t drivingState = {&state_driving_enter, &state_driving_iterate, &state_driving_exit, "Driving_s"};
+
+void state_driving_enter(fsm_t *fsm)
+{
+	/* If AMS Contactors Closed & BMS' Healthy */
+
+		/* Play RTD Siren */
+
+		/* Enable all channels on PDM */
+
+	/* Else */
+
+		/* Hard Shutdown Power Off */
+	return;
+}
+
+
+void state_driving_iterate(fsm_t *fsm)
+{
+	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
+	{
+		CC_CAN_Generic_t msg;
+		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U))
+		{
+			/** Handle the packet */
+			/**
+			 * @brief Packets driving state is looking for
+			 *
+			 * Heartbeats:
+			 * AMS_Heartbeat, PDM_Heartbeat, SHDN_Heartbeat
+			 * BSPD_Heartbeat, IMD_Heartbeat
+			 *
+			 * Steering Wheel:
+			 * STRW_Adjust
+			 *
+			 * State of Charge:
+			 * AMS_SoC
+			 *
+			 * Error/Warning Codes:
+			 * None
+			 */
+		}
+	}
+
+	/*
+	 * Read 3 Throttle ADC Values
+	 * Read 2 Brake ADC Values
+	 */
+
+	/*
+	 * Calculate Throttle Implausibility
+	 * Still implausible with only 2 of the 3 ADC values?
+	 * Calculate Brake Implausibility
+	 */
+
+	/*
+	 * Average Throttle Values to Position
+	 * Average Brake Values to Position
+	 */
+
+	/*
+	 * Log Throttle Position
+	 * Log Brake Position
+	 */
+
+	/*
+	 * Read Steering Angle ADC Value
+	 * Log Steering Angle
+	 */
+
+	/* If Throttle and Brake Implausibility State Clock < 100ms */
+
+	/*
+	 * Call Torque Vectoring Algorithm
+	 */
+
+	/*
+	 * Calculate Regen
+	 */
+
+	/*
+	 * Send Desired Accel to Inverters
+	 */
+
+	/*
+	 * If 500ms has exceeded, request State of Charge
+	 */
+}
+
+void state_driving_exit(fsm_t *fsm)
+{
+	/* Broadcast Soft Shutdown */
+	return;
 }

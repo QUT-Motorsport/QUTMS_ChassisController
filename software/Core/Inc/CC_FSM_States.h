@@ -21,20 +21,20 @@
  */
 typedef struct
 {
-  //CAN
-  uint32_t CAN1_TxMailbox;
-  uint32_t CAN1_RxMailbox;
-  uint32_t CAN2_TxMailbox;
-  uint32_t CAN2_RxMailbox;
-  uint32_t CAN3_TxMailbox;
-  uint32_t CAN3_RxMailbox;
+	//CAN
+	uint32_t CAN1_TxMailbox;
+	uint32_t CAN1_RxMailbox;
+	uint32_t CAN2_TxMailbox;
+	uint32_t CAN2_RxMailbox;
+	uint32_t CAN3_TxMailbox;
+	uint32_t CAN3_RxMailbox;
 
-  uint32_t startupTicks; /**< The Tick count at the initial startup time */
+	uint32_t startupTicks; /**< The Tick count at the initial startup time */
 
-  osMessageQueueId_t CANQueue;
-  osTimerId_t heartbeatTimer;
-  osTimerId_t IDC_AlarmTimer;
-  osSemaphoreId_t sem;
+	osMessageQueueId_t CANQueue;
+	osTimerId_t heartbeatTimer;
+	osTimerId_t IDC_AlarmTimer;
+	osSemaphoreId_t sem;
 } CC_GlobalState_t;
 
 CC_GlobalState_t *CC_GlobalState;
