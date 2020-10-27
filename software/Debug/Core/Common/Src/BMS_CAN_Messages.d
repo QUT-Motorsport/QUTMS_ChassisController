@@ -1,5 +1,5 @@
-Core/Src/CC_CAN_Messages.o: ../Core/Src/CC_CAN_Messages.c \
- ../Core/Inc/CC_CAN_Messages.h ../Core/Inc/main.h \
+Core/Common/Src/BMS_CAN_Messages.o: ../Core/Common/Src/BMS_CAN_Messages.c \
+ ../Core/Common/Inc/BMS_CAN_Messages.h ../Core/Inc/main.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
@@ -31,9 +31,9 @@ Core/Src/CC_CAN_Messages.o: ../Core/Src/CC_CAN_Messages.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
- ../Core/Inc/can.h ../Core/Common/Inc/QUTMS_can.h ../Core/Inc/can.h
+ ../Core/Inc/can.h ../Core/Inc/main.h
 
-../Core/Inc/CC_CAN_Messages.h:
+../Core/Common/Inc/BMS_CAN_Messages.h:
 
 ../Core/Inc/main.h:
 
@@ -101,6 +101,4 @@ Core/Src/CC_CAN_Messages.o: ../Core/Src/CC_CAN_Messages.c \
 
 ../Core/Inc/can.h:
 
-../Core/Common/Inc/QUTMS_can.h:
-
-../Core/Inc/can.h:
+../Core/Inc/main.h:
