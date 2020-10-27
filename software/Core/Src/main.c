@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include "FSM.h"
 #include "CC_FSM_States.h"
+#include "CC_CAN_Messages.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -72,7 +73,7 @@ const osThreadAttr_t fsmThreadAttr = {
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
-
+	CC_LogInfo("test", 4);
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
