@@ -2,6 +2,7 @@
 "Core/Common/Src/BMS_CAN_Messages.o"
 "Core/Common/Src/CC_CAN_Messages.o"
 "Core/Common/Src/FSM.o"
+"Core/Common/Src/PDM_CAN_Messages.o"
 "Core/Common/Src/QUTMS_can.o"
 "Core/Src/CC_FSM_States.o"
 "Core/Src/can.o"

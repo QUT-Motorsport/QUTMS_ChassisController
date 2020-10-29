@@ -29,6 +29,8 @@
 #include "FSM.h"
 #include "CC_FSM_States.h"
 #include "CC_CAN_Messages.h"
+#include "PDM_CAN_Messages.h"
+#include "AMS_CAN_Messages.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -73,7 +75,7 @@ const osThreadAttr_t fsmThreadAttr = {
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
-	CC_LogInfo("test", 4);
+
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
@@ -99,7 +101,7 @@ int main(void)
 	/* USER CODE BEGIN 2 */
 
 	//Create FSM instance
-	fsm_t *fsm = fsm_new(&idleState);
+	fsm_t *fsm = fsm_new(&startState);
 
 	// Create a new thread, where our FSM will run.
 	osThreadNew(fsm_thread_mainLoop, fsm, &fsmThreadAttr);
@@ -194,9 +196,11 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 	CC_LogInfo("Entering FSM Thread\r\n", strlen("Entering FSM Thread\r\n"));
 	// Reset our FSM in idleState, as we are just starting
 	fsm_setLogFunction(fsm, &CC_LogInfo);
-	fsm_reset(fsm, &idleState);
+	fsm_reset(fsm, &startState);
 	for(;;)
 	{
+		CC_LogInfo("test\r\n", 6);
+		osDelay(100);
 		fsm_iterate(fsm);
 	}
 }

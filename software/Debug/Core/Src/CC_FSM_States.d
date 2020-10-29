@@ -42,7 +42,10 @@ Core/Src/CC_FSM_States.o: ../Core/Src/CC_FSM_States.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
- ../Core/Inc/can.h
+ ../Core/Inc/can.h ../Core/Common/Inc/CC_CAN_Messages.h \
+ ../Core/Inc/main.h ../Core/Inc/can.h ../Core/Common/Inc/QUTMS_can.h \
+ ../Core/Common/Inc/PDM_CAN_Messages.h \
+ ../Core/Common/Inc/AMS_CAN_Messages.h
 
 ../Core/Inc/CC_FSM_States.h:
 
@@ -135,3 +138,15 @@ Core/Src/CC_FSM_States.o: ../Core/Src/CC_FSM_States.c \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h:
 
 ../Core/Inc/can.h:
+
+../Core/Common/Inc/CC_CAN_Messages.h:
+
+../Core/Inc/main.h:
+
+../Core/Inc/can.h:
+
+../Core/Common/Inc/QUTMS_can.h:
+
+../Core/Common/Inc/PDM_CAN_Messages.h:
+
+../Core/Common/Inc/AMS_CAN_Messages.h:

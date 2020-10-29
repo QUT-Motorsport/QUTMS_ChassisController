@@ -25,9 +25,9 @@ void state_dead_exit(fsm_t *fsm)
 	return;
 }
 
-state_t idleState = {&state_idle_enter, &state_idle_iterate, &state_idle_exit, "Idle_s"};
+state_t startState = {&state_start_enter, &state_start_iterate, &state_start_exit, "Start_s"};
 
-void state_idle_enter(fsm_t *fsm)
+void state_start_enter(fsm_t *fsm)
 {
 	if(CC_GlobalState == NULL)
 	{
@@ -47,38 +47,116 @@ void state_idle_enter(fsm_t *fsm)
 	/* Set initial pin states */
 
 	/* Initiate Startup on PDM */
+	PDM_InitiateStartup_t pdmStartup = Compose_PDM_InitiateStartup();
+	CAN_TxHeaderTypeDef header =
+	{
+			.ExtId = pdmStartup.id,
+			.IDE = CAN_ID_EXT,
+			.RTR = CAN_RTR_DATA,
+			.DLC = sizeof(0x0),
+			.TransmitGlobalTime = DISABLE,
+	};
+	HAL_CAN_AddTxMessage(&hcan1, &header, 0x0, &CC_GlobalState->CAN2_TxMailbox);
+}
 
-	/*
-	 * Select Channels for Startup on PDM
-	 * Ensure Channels are not already enabled? (May not be needed)
-	 */
+void state_start_iterate(fsm_t *fsm)
+{
+	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
+	{
+		CC_CAN_Generic_t msg;
+		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
+		{
+			/* Packet Handler */
 
-	/* Within 100 Seconds, ensure Heartbeats are ok
-	 * and shutdown loop closed
-	 */
+			/* If Startup Ok */
+			if(msg.header.ExtId == Compose_CANId(0x2, 0x14, 0x0, 0x3, 0x00, 0x0))
+			{
+				/* Get Power Channel Values at Boot */
+				uint32_t getPowerChannels;
+				Parse_PDM_StartupOk(*((PDM_StartupOk_t*)&(msg.data)), &getPowerChannels);
+
+				/* Set Power Channel Values to Enable on Start */
+				uint32_t setPowerChannels;
+				setPowerChannels |= 1 << getPowerChannels;
+				PDM_SelectStartup_t pdmStartup = Compose_PDM_SelectStartup(setPowerChannels);
+				CAN_TxHeaderTypeDef header =
+				{
+						.ExtId = pdmStartup.id,
+						.IDE = CAN_ID_EXT,
+						.RTR = CAN_RTR_DATA,
+						.DLC = sizeof(pdmStartup.data),
+						.TransmitGlobalTime = DISABLE,
+				};
+				HAL_CAN_AddTxMessage(&hcan1, &header, pdmStartup.data, &CC_GlobalState->CAN2_TxMailbox);
+				/* Set Heartbeat Timers */
+				CC_GlobalState->amsTicks = HAL_GetTick();
+				/* Engage Idle State (Waiting for RTD) */
+				fsm_changeState(fsm, &idleState, "PDM Boot Sequence Initiated");
+			}
+		}
+	}
+	return;
+}
+
+void state_start_exit(fsm_t *fsm)
+{
+	return;
+}
+
+state_t idleState = {&state_idle_enter, &state_idle_iterate, &state_idle_exit, "Idle_s"};
+
+void state_idle_enter(fsm_t *fsm)
+{
+	return;
 }
 
 void state_idle_iterate(fsm_t *fsm)
 {
-	//	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
-	//	{
-	//		CC_CAN_Generic_t msg;
-	//		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
-	//		{
-	//			/* Packet Handler */
-	//		}
-	//	}
+	/* Check for Heartbeat Expiry */
+	if((HAL_GetTick() - CC_GlobalState->amsTicks) > 100)
+	{
+		/* AMS Heartbeat Expiry - Fatal Shutdown */
+		CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
+		CAN_TxHeaderTypeDef header =
+		{
+				.ExtId = fatalShutdown.id,
+				.IDE = CAN_ID_EXT,
+				.RTR = CAN_RTR_DATA,
+				.DLC = sizeof(0x0),
+				.TransmitGlobalTime = DISABLE,
+		};
+		HAL_CAN_AddTxMessage(&hcan1, &header, 0x0, &CC_GlobalState->CAN2_TxMailbox);
+		// TODO Do I need to add to every CAN Mailbox???
+	}
+
+	/* Check for Queued CAN Packets */
+	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
+	{
+		CC_CAN_Generic_t msg;
+		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
+		{
+			/* Packet Handler */
+
+			/* AMS Heartbeat */
+			if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
+			{
+				bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
+				Parse_AMS_HeartbeatResponse(*((AMS_HeartbeatResponse_t*)&(msg.data)), &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
+				CC_GlobalState->amsTicks = HAL_GetTick();
+			}
+		}
+	}
 
 	// TODO Implementation
 
 	/* If Brake Pressure > 20% */
 
-		/* Illuminate Power Button */
+	/* Illuminate Power Button */
 
-		/* If RTD Button Engaged */
+	/* If RTD Button Engaged */
 
-			/* Enter Driving State */
-			//fsm_changeState(fsm, &drivingState, "RTD Engaged");
+	/* Enter Driving State */
+	//fsm_changeState(fsm, &drivingState, "RTD Engaged");
 }
 
 void state_idle_exit(fsm_t *fsm)
@@ -94,13 +172,13 @@ void state_driving_enter(fsm_t *fsm)
 {
 	/* If AMS Contactors Closed & BMS' Healthy */
 
-		/* Play RTD Siren for 2 Seconds */
+	/* Play RTD Siren for 2 Seconds */
 
-		/* Enable all channels on PDM */
+	/* Enable all channels on PDM */
 
 	/* Else */
 
-		/* Hard Shutdown Power Off */
+	/* Hard Shutdown Power Off */
 	return;
 }
 
@@ -162,17 +240,17 @@ void state_driving_iterate(fsm_t *fsm)
 
 	/* If Throttle and Brake Implausibility State Clock < 100ms */
 
-		/*
-		 * Call Torque Vectoring Algorithm
-		 */
+	/*
+	 * Call Torque Vectoring Algorithm
+	 */
 
-		/*
-		 * Calculate Regen
-		 */
+	/*
+	 * Calculate Regen
+	 */
 
-		/*
-		 * Send Desired Accel to Inverters
-		 */
+	/*
+	 * Send Desired Accel to Inverters
+	 */
 
 	/*
 	 * If Throttle or Brake Implausibility State Clock > 1000ms

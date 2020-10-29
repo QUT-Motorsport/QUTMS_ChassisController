@@ -14,6 +14,9 @@
 #include <memory.h>
 #include <stdbool.h>
 #include "can.h"
+#include "CC_CAN_Messages.h"
+#include "PDM_CAN_Messages.h"
+#include "AMS_CAN_Messages.h"
 
 /**
  * @brief Chassis Global State
@@ -29,7 +32,7 @@ typedef struct
 	uint32_t CAN3_TxMailbox;
 	uint32_t CAN3_RxMailbox;
 
-	uint32_t startupTicks; /**< The Tick count at the initial startup time */
+	uint32_t amsTicks; /**< The Tick count at the initial startup time */
 
 	osMessageQueueId_t CANQueue;
 	osTimerId_t heartbeatTimer;
@@ -66,6 +69,31 @@ void state_dead_exit(fsm_t *fsm);
  * @details Next: idleState (Instantly)
  */
 state_t deadState;
+
+/**
+ * @brief Start state enter function. Initialises the CC_GlobalState
+ * @param fsm A pointer to the FSM object
+ */
+void state_start_enter(fsm_t *fsm);
+
+/**
+ * @brief Start state iterate function. Execute boot sequence
+ * @param fsm A pointer to the FSM object
+ */
+void state_start_iterate(fsm_t *fsm);
+
+/**
+ * @brief Start state exit function.
+ * @param fsm A pointer to the FSM object
+ */
+void state_start_exit(fsm_t *fsm);
+
+/**
+ * @brief startState ie. start state before boot sequence is executed
+ * @note LV System engaged
+ * * @details Next: idleState (Boot executed)
+ */
+state_t startState;
 
 /**
  * @brief Idle state enter function. Initialises the CC_GlobalState
