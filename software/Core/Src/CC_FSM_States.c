@@ -56,7 +56,7 @@ void state_start_enter(fsm_t *fsm)
 			.DLC = sizeof(0x0),
 			.TransmitGlobalTime = DISABLE,
 	};
-	HAL_CAN_AddTxMessage(&hcan1, &header, 0x0, &CC_GlobalState->CAN2_TxMailbox);
+	HAL_CAN_AddTxMessage(&hcan2, &header, 0x0, &CC_GlobalState->CAN2_TxMailbox);
 }
 
 void state_start_iterate(fsm_t *fsm)
@@ -87,9 +87,12 @@ void state_start_iterate(fsm_t *fsm)
 						.DLC = sizeof(pdmStartup.data),
 						.TransmitGlobalTime = DISABLE,
 				};
-				HAL_CAN_AddTxMessage(&hcan1, &header, pdmStartup.data, &CC_GlobalState->CAN2_TxMailbox);
+				HAL_CAN_AddTxMessage(&hcan2, &header, pdmStartup.data, &CC_GlobalState->CAN2_TxMailbox);
+
 				/* Set Heartbeat Timers */
 				CC_GlobalState->amsTicks = HAL_GetTick();
+				CC_GlobalState->shutdownImdTicks = HAL_GetTick();
+
 				/* Engage Idle State (Waiting for RTD) */
 				fsm_changeState(fsm, &idleState, "PDM Boot Sequence Initiated");
 			}
@@ -100,6 +103,7 @@ void state_start_iterate(fsm_t *fsm)
 
 void state_start_exit(fsm_t *fsm)
 {
+	/* Wake/Ready to Idle over CAN */
 	return;
 }
 
@@ -125,8 +129,25 @@ void state_idle_iterate(fsm_t *fsm)
 				.DLC = sizeof(0x0),
 				.TransmitGlobalTime = DISABLE,
 		};
-		HAL_CAN_AddTxMessage(&hcan1, &header, 0x0, &CC_GlobalState->CAN2_TxMailbox);
-		// TODO Do I need to add to every CAN Mailbox???
+		HAL_CAN_AddTxMessage(&hcan1, &header, 0x0, &CC_GlobalState->CAN1_TxMailbox);
+		HAL_CAN_AddTxMessage(&hcan2, &header, 0x0, &CC_GlobalState->CAN2_TxMailbox);
+		HAL_CAN_AddTxMessage(&hcan3, &header, 0x0, &CC_GlobalState->CAN3_TxMailbox);
+	}
+	if((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100)
+	{
+		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
+		CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
+		CAN_TxHeaderTypeDef header =
+		{
+				.ExtId = fatalShutdown.id,
+				.IDE = CAN_ID_EXT,
+				.RTR = CAN_RTR_DATA,
+				.DLC = sizeof(0x0),
+				.TransmitGlobalTime = DISABLE,
+		};
+		HAL_CAN_AddTxMessage(&hcan1, &header, 0x0, &CC_GlobalState->CAN1_TxMailbox);
+		HAL_CAN_AddTxMessage(&hcan2, &header, 0x0, &CC_GlobalState->CAN2_TxMailbox);
+		HAL_CAN_AddTxMessage(&hcan3, &header, 0x0, &CC_GlobalState->CAN3_TxMailbox);
 	}
 
 	/* Check for Queued CAN Packets */
@@ -143,6 +164,13 @@ void state_idle_iterate(fsm_t *fsm)
 				bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
 				Parse_AMS_HeartbeatResponse(*((AMS_HeartbeatResponse_t*)&(msg.data)), &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
 				CC_GlobalState->amsTicks = HAL_GetTick();
+			}
+			/* Shutdown IMD Heartbeat */
+			else if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
+			{
+				uint16_t pwmState;
+				Parse_SHDN_IMD_HeartbeatResponse(*((SHDN_IMD_HeartbeatResponse_t*)&(msg.data)), &pwmState);
+				CC_GlobalState->shutdownImdTicks = HAL_GetTick();
 			}
 		}
 	}

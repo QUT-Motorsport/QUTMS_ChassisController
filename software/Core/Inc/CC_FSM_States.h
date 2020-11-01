@@ -17,6 +17,7 @@
 #include "CC_CAN_Messages.h"
 #include "PDM_CAN_Messages.h"
 #include "AMS_CAN_Messages.h"
+#include "SHDN_IMD_CAN_Messages.h"
 
 /**
  * @brief Chassis Global State
@@ -32,7 +33,9 @@ typedef struct
 	uint32_t CAN3_TxMailbox;
 	uint32_t CAN3_RxMailbox;
 
-	uint32_t amsTicks; /**< The Tick count at the initial startup time */
+	/** Tick Refresh Counter for Individual Board Heartbeats */
+	uint32_t amsTicks;
+	uint32_t shutdownImdTicks;
 
 	osMessageQueueId_t CANQueue;
 	osTimerId_t heartbeatTimer;
