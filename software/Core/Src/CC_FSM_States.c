@@ -168,7 +168,7 @@ void state_idle_iterate(fsm_t *fsm)
 			/* Shutdown IMD Heartbeat */
 			else if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
 			{
-				uint16_t pwmState;
+				uint8_t pwmState;
 				Parse_SHDN_IMD_HeartbeatResponse(*((SHDN_IMD_HeartbeatResponse_t*)&(msg.data)), &pwmState);
 				CC_GlobalState->shutdownImdTicks = HAL_GetTick();
 			}

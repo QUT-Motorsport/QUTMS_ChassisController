@@ -45,7 +45,8 @@ Core/Src/CC_FSM_States.o: ../Core/Src/CC_FSM_States.c \
  ../Core/Inc/can.h ../Core/Common/Inc/CC_CAN_Messages.h \
  ../Core/Inc/main.h ../Core/Inc/can.h ../Core/Common/Inc/QUTMS_can.h \
  ../Core/Common/Inc/PDM_CAN_Messages.h \
- ../Core/Common/Inc/AMS_CAN_Messages.h
+ ../Core/Common/Inc/AMS_CAN_Messages.h \
+ ../Core/Common/Inc/SHDN_IMD_CAN_Messages.h
 
 ../Core/Inc/CC_FSM_States.h:
 
@@ -150,3 +151,5 @@ Core/Src/CC_FSM_States.o: ../Core/Src/CC_FSM_States.c \
 ../Core/Common/Inc/PDM_CAN_Messages.h:
 
 ../Core/Common/Inc/AMS_CAN_Messages.h:
+
+../Core/Common/Inc/SHDN_IMD_CAN_Messages.h:
