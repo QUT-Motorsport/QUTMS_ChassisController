@@ -25,13 +25,21 @@
  */
 typedef struct
 {
-	//CAN
+	/* CAN Mailboxes */
 	uint32_t CAN1_TxMailbox;
 	uint32_t CAN1_RxMailbox;
 	uint32_t CAN2_TxMailbox;
 	uint32_t CAN2_RxMailbox;
 	uint32_t CAN3_TxMailbox;
 	uint32_t CAN3_RxMailbox;
+
+	/* Debugger for board connectivity
+	 * true = Board not connected
+	 * false = Board connected
+	 */
+	bool PDM_Debug;
+	bool AMS_Debug;
+	bool SHDN_IMD_Debug;
 
 	/** Tick Refresh Counter for Individual Board Heartbeats */
 	uint32_t amsTicks;

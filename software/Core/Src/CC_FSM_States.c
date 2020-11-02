@@ -38,7 +38,10 @@ void state_start_enter(fsm_t *fsm)
 		CC_GlobalState->sem = osSemaphoreNew(3U, 3U, NULL);
 		if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 		{
-			// TODO Bind and configure initial global states
+			/* Bind and configure initial global states */
+			CC_GlobalState->PDM_Debug = true;
+			CC_GlobalState->AMS_Debug = false;
+			CC_GlobalState->SHDN_IMD_Debug = false;
 
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
@@ -57,53 +60,67 @@ void state_start_enter(fsm_t *fsm)
 			.TransmitGlobalTime = DISABLE,
 	};
 	HAL_CAN_AddTxMessage(&hcan2, &header, 0x0, &CC_GlobalState->CAN2_TxMailbox);
+
+	CC_LogInfo("Enter Start\r\n", strlen("Enter Start\r\n"));
+	return;
 }
 
 void state_start_iterate(fsm_t *fsm)
 {
+	/* Skip boot if PDM Debugging Enabled */
+	bool boot = CC_GlobalState->PDM_Debug;
+	uint32_t getPowerChannels = 0; uint32_t setPowerChannels = 0;
+
+	/* Monitor CAN Queue */
 	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
 	{
 		CC_CAN_Generic_t msg;
 		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
 		{
-			/* Packet Handler */
-
 			/* If Startup Ok */
 			if(msg.header.ExtId == Compose_CANId(0x2, 0x14, 0x0, 0x3, 0x00, 0x0))
 			{
 				/* Get Power Channel Values at Boot */
-				uint32_t getPowerChannels;
+				getPowerChannels = 0;
 				Parse_PDM_StartupOk(*((PDM_StartupOk_t*)&(msg.data)), &getPowerChannels);
 
-				/* Set Power Channel Values to Enable on Start */
-				uint32_t setPowerChannels;
-				setPowerChannels |= 1 << getPowerChannels;
-				PDM_SelectStartup_t pdmStartup = Compose_PDM_SelectStartup(setPowerChannels);
-				CAN_TxHeaderTypeDef header =
-				{
-						.ExtId = pdmStartup.id,
-						.IDE = CAN_ID_EXT,
-						.RTR = CAN_RTR_DATA,
-						.DLC = sizeof(pdmStartup.data),
-						.TransmitGlobalTime = DISABLE,
-				};
-				HAL_CAN_AddTxMessage(&hcan2, &header, pdmStartup.data, &CC_GlobalState->CAN2_TxMailbox);
-
-				/* Set Heartbeat Timers */
-				CC_GlobalState->amsTicks = HAL_GetTick();
-				CC_GlobalState->shutdownImdTicks = HAL_GetTick();
-
-				/* Engage Idle State (Waiting for RTD) */
-				fsm_changeState(fsm, &idleState, "PDM Boot Sequence Initiated");
+				/* Initialise Boot with Bitwise OR on Power Channels */
+				boot = true;
 			}
 		}
 	}
+
+	if(boot)
+	{
+		/* Set Power Channel Values to Enable on Start */
+		setPowerChannels |= 1 << getPowerChannels;
+		PDM_SelectStartup_t pdmStartup = Compose_PDM_SelectStartup(setPowerChannels);
+		CAN_TxHeaderTypeDef header =
+		{
+				.ExtId = pdmStartup.id,
+				.IDE = CAN_ID_EXT,
+				.RTR = CAN_RTR_DATA,
+				.DLC = sizeof(pdmStartup.data),
+				.TransmitGlobalTime = DISABLE,
+		};
+		HAL_CAN_AddTxMessage(&hcan2, &header, pdmStartup.data, &CC_GlobalState->CAN2_TxMailbox);
+
+		/* Set Heartbeat Timers */
+		CC_GlobalState->amsTicks = HAL_GetTick();
+		CC_GlobalState->shutdownImdTicks = HAL_GetTick();
+
+		/* Engage Idle State (Waiting for RTD) */
+		fsm_changeState(fsm, &idleState, "PDM Boot Sequence Initiated");
+	}
+
+	CC_LogInfo("Iter Start\r\n", strlen("Iter Start\r\n"));
 	return;
 }
 
 void state_start_exit(fsm_t *fsm)
 {
 	/* Wake/Ready to Idle over CAN */
+	CC_LogInfo("Exit Start\r\n", strlen("Exit Start\r\n"));
 	return;
 }
 
@@ -117,9 +134,10 @@ void state_idle_enter(fsm_t *fsm)
 void state_idle_iterate(fsm_t *fsm)
 {
 	/* Check for Heartbeat Expiry */
-	if((HAL_GetTick() - CC_GlobalState->amsTicks) > 100)
+
+	/* AMS Heartbeat Expiry - Fatal Shutdown */
+	if((HAL_GetTick() - CC_GlobalState->amsTicks) > 100 && !CC_GlobalState->AMS_Debug)
 	{
-		/* AMS Heartbeat Expiry - Fatal Shutdown */
 		CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
 		CAN_TxHeaderTypeDef header =
 		{
@@ -133,9 +151,9 @@ void state_idle_iterate(fsm_t *fsm)
 		HAL_CAN_AddTxMessage(&hcan2, &header, 0x0, &CC_GlobalState->CAN2_TxMailbox);
 		HAL_CAN_AddTxMessage(&hcan3, &header, 0x0, &CC_GlobalState->CAN3_TxMailbox);
 	}
-	if((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100)
+	/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
+	if((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug)
 	{
-		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 		CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
 		CAN_TxHeaderTypeDef header =
 		{

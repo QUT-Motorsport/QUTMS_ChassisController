@@ -2,5 +2,5 @@ main.c:76:5:main	16	static
 main.c:135:6:SystemClock_Config	232	static
 main.c:187:6:CC_LogInfo	16	static
 main.c:197:18:fsm_thread_mainLoop	16	static
-main.c:221:6:HAL_TIM_PeriodElapsedCallback	16	static
-main.c:238:6:Error_Handler	4	static
+main.c:220:6:HAL_TIM_PeriodElapsedCallback	16	static
+main.c:237:6:Error_Handler	4	static
