@@ -4,6 +4,8 @@
 "Core/Common/Src/FSM.o"
 "Core/Common/Src/PDM_CAN_Messages.o"
 "Core/Common/Src/QUTMS_can.o"
+"Core/Common/Src/SHDN_BSPD_CAN_Messages.o"
+"Core/Common/Src/SHDN_CAN_Messages.o"
 "Core/Common/Src/SHDN_IMD_CAN_Messages.o"
 "Core/Src/CC_FSM_States.o"
 "Core/Src/can.o"

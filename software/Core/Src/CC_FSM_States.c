@@ -112,8 +112,6 @@ void state_start_iterate(fsm_t *fsm)
 		/* Engage Idle State (Waiting for RTD) */
 		fsm_changeState(fsm, &idleState, "PDM Boot Sequence Initiated");
 	}
-
-	CC_LogInfo("Iter Start\r\n", strlen("Iter Start\r\n"));
 	return;
 }
 

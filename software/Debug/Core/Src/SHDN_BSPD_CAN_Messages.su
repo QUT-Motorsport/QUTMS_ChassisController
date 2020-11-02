@@ -1,0 +1,6 @@
+SHDN_BSPD_CAN_Messages.c:10:19:Compose_SHDN_BSPD_Fault	24	static
+SHDN_BSPD_CAN_Messages.c:17:30:Compose_SHDN_BSPD_HeartbeatRequest	24	static
+SHDN_BSPD_CAN_Messages.c:24:31:Compose_SHDN_BSPD_HeartbeatResponse	32	static
+SHDN_BSPD_CAN_Messages.c:32:6:Parse_SHDN_BSPD_HeartbeatResponse	24	static
+SHDN_BSPD_CAN_Messages.c:42:32:Compose_SHDN_BSPD_RequestCalibration	32	static
+SHDN_BSPD_CAN_Messages.c:50:6:Parse_SHDN_BSPD_RequestCalibration	24	static

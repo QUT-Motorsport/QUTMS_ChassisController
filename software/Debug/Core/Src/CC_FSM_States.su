@@ -3,10 +3,10 @@ CC_FSM_States.c:17:6:state_dead_iterate	16	static
 CC_FSM_States.c:23:6:state_dead_exit	16	static
 CC_FSM_States.c:30:6:state_start_enter	56	static
 CC_FSM_States.c:68:6:state_start_iterate	120	static
-CC_FSM_States.c:120:6:state_start_exit	16	static
-CC_FSM_States.c:129:6:state_idle_enter	16	static
-CC_FSM_States.c:134:6:state_idle_iterate	160	static
-CC_FSM_States.c:208:6:state_idle_exit	16	static
-CC_FSM_States.c:217:6:state_driving_enter	16	static
-CC_FSM_States.c:232:6:state_driving_iterate	56	static
-CC_FSM_States.c:313:6:state_driving_exit	16	static
+CC_FSM_States.c:118:6:state_start_exit	16	static
+CC_FSM_States.c:127:6:state_idle_enter	16	static
+CC_FSM_States.c:132:6:state_idle_iterate	160	static
+CC_FSM_States.c:206:6:state_idle_exit	16	static
+CC_FSM_States.c:215:6:state_driving_enter	16	static
+CC_FSM_States.c:230:6:state_driving_iterate	56	static
+CC_FSM_States.c:311:6:state_driving_exit	16	static

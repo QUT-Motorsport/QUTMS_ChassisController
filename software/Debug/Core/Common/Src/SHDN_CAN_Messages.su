@@ -1,0 +1,5 @@
+SHDN_CAN_Messages.c:10:25:Compose_SHDN_HeartbeatRequest	24	static
+SHDN_CAN_Messages.c:17:26:Compose_SHDN_One_HeartbeatResponse	32	static
+SHDN_CAN_Messages.c:25:26:Compose_SHDN_Two_HeartbeatResponse	32	static
+SHDN_CAN_Messages.c:33:26:Compose_SHDN_Three_HeartbeatResponse	32	static
+SHDN_CAN_Messages.c:41:6:Parse_SHDN_HeartbeatResponse	24	static
