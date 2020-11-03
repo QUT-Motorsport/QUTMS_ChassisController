@@ -45,6 +45,12 @@ void state_start_enter(fsm_t *fsm)
 
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
+
+		CC_GlobalState->CANQueue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
+		if(CC_GlobalState->CANQueue == NULL)
+		{
+			Error_Handler();
+		}
 	}
 
 	/* Set initial pin states */
@@ -311,5 +317,54 @@ void state_driving_iterate(fsm_t *fsm)
 void state_driving_exit(fsm_t *fsm)
 {
 	/* Broadcast Soft Shutdown */
+	return;
+}
+
+state_t debugState = {&state_debug_enter, &state_debug_iterate, &state_debug_exit, "Debug_s"};
+
+void state_debug_enter(fsm_t *fsm)
+{
+	CC_LogInfo("Enter Debugging\r\n", strlen("Enter Debugging\r\n"));
+	return;
+}
+
+void state_debug_iterate(fsm_t *fsm)
+{
+	CC_LogInfo("Iterate Debugging\r\n", strlen("Iterate Debugging\r\n"));
+	CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
+	CAN_TxHeaderTypeDef header =
+	{
+			.ExtId = fatalShutdown.id,
+			.IDE = CAN_ID_EXT,
+			.RTR = CAN_RTR_DATA,
+			.DLC = 1,
+			.TransmitGlobalTime = DISABLE,
+	};
+	uint8_t data[1] = {0xF};
+	HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+	/* Check for CAN Messages */
+	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
+	{
+		CC_CAN_Generic_t msg;
+		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
+		{
+			/* Packet Handler */
+			CC_LogInfo("CAN Being Received\r\n", strlen("CAN Being Received\r\n"));
+
+			if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
+			{
+				CC_LogInfo("AMS Heartbeat Detected\r\n", strlen("AMS Heartbeat Detected\r\n"));
+			}
+		}
+	}
+
+	return;
+}
+
+void state_debug_exit(fsm_t *fsm)
+{
+	CC_LogInfo("Exit Debugging\r\n", strlen("Exit Debugging\r\n"));
 	return;
 }

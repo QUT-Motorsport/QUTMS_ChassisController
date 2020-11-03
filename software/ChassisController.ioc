@@ -1,12 +1,16 @@
 #MicroXplorer Configuration settings - do not modify
 CAN1.CalculateTimeQuantum=1000.0
 CAN1.IPParameters=CalculateTimeQuantum
-CAN2.CalculateTimeQuantum=1000.0
-CAN2.IPParameters=CalculateTimeQuantum
+CAN2.BS1=CAN_BS1_13TQ
+CAN2.BS2=CAN_BS2_2TQ
+CAN2.CalculateTimeQuantum=125.0
+CAN2.IPParameters=CalculateTimeQuantum,Prescaler,BS1,BS2
+CAN2.Prescaler=2
 CAN3.CalculateTimeQuantum=1000.0
 CAN3.IPParameters=CalculateTimeQuantum
-FREERTOS.IPParameters=Tasks01
+FREERTOS.IPParameters=Tasks01,configTIMER_TASK_PRIORITY
 FREERTOS.Tasks01=defaultTask,24,128,StartDefaultTask,Default,NULL,Dynamic,NULL,NULL
+FREERTOS.configTIMER_TASK_PRIORITY=50
 File.Version=6
 KeepUserPlacement=false
 Mcu.Family=STM32F7

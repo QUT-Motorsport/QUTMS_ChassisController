@@ -156,4 +156,28 @@ void state_driving_exit(fsm_t *fsm);
  */
 state_t drivingState;
 
+/**
+ * Debug state enter function.
+ * @param fsm A pointer to the FSM object
+ */
+void state_debug_enter(fsm_t *fsm);
+
+/**
+ * Debug state iterate function. Spit CAN out
+ * @param fsm A pointer to the FSM object
+ */
+void state_debug_iterate(fsm_t *fsm);
+
+/**
+ * Debug state exit function
+ * @param fsm A pointer to the FSM object
+ */
+void state_debug_exit(fsm_t *fsm);
+
+/**
+ * @brief debugState for debugging functionality
+ * @note Debugging FSM state
+ */
+state_t debugState;
+
 #endif /* INC_CC_FSM_STATES_H_ */
