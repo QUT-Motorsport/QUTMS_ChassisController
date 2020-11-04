@@ -63,6 +63,11 @@ __NO_RETURN void fsm_thread_mainLoop(void* arg);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define HSOUT_RTD_LED_Pin GPIO_PIN_8
+#define HSOUT_RTD_LED_GPIO_Port GPIOE
+#define RTD_INPUT_Pin GPIO_PIN_15
+#define RTD_INPUT_GPIO_Port GPIOE
+#define RTD_INPUT_EXTI_IRQn EXTI15_10_IRQn
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

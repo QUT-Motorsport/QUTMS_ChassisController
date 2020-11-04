@@ -49,6 +49,8 @@ typedef struct
 	osTimerId_t heartbeatTimer;
 	osTimerId_t IDC_AlarmTimer;
 	osSemaphoreId_t sem;
+
+	uint32_t rtdTicks;
 } CC_GlobalState_t;
 
 CC_GlobalState_t *CC_GlobalState;
