@@ -1,4 +1,5 @@
-Core/Common/Src/FSM.o: ../Core/Common/Src/FSM.c ../Core/Common/Inc/FSM.h \
+Core/Common/Src/FSM.o: ../Core/Common/Src/FSM.c \
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/FSM.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
  ../Core/Inc/FreeRTOSConfig.h \
@@ -11,7 +12,7 @@ Core/Common/Src/FSM.o: ../Core/Common/Src/FSM.c ../Core/Common/Inc/FSM.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h
 
-../Core/Common/Inc/FSM.h:
+/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/FSM.h:
 
 ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h:
 

@@ -1,6 +1,6 @@
 Core/Common/Src/PDM_CAN_Messages.o: ../Core/Common/Src/PDM_CAN_Messages.c \
- ../Core/Common/Inc/PDM_CAN_Messages.h ../Core/Inc/main.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/PDM_CAN_Messages.h \
+ ../Core/Inc/main.h ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_def.h \
@@ -31,9 +31,10 @@ Core/Common/Src/PDM_CAN_Messages.o: ../Core/Common/Src/PDM_CAN_Messages.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
- ../Core/Inc/can.h ../Core/Inc/main.h ../Core/Common/Inc/QUTMS_can.h
+ ../Core/Inc/can.h ../Core/Inc/main.h \
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h
 
-../Core/Common/Inc/PDM_CAN_Messages.h:
+/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/PDM_CAN_Messages.h:
 
 ../Core/Inc/main.h:
 
@@ -103,4 +104,4 @@ Core/Common/Src/PDM_CAN_Messages.o: ../Core/Common/Src/PDM_CAN_Messages.c \
 
 ../Core/Inc/main.h:
 
-../Core/Common/Inc/QUTMS_can.h:
+/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h:

@@ -35,15 +35,15 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
  15 .debug_ranges 000015b0  00000000  00000000  000497f8  2**3
                   CONTENTS, READONLY, DEBUGGING
- 16 .debug_macro  0002b951  00000000  00000000  0004ada8  2**0
+ 16 .debug_macro  0002b9ab  00000000  00000000  0004ada8  2**0
                   CONTENTS, READONLY, DEBUGGING
- 17 .debug_line   00016609  00000000  00000000  000766f9  2**0
+ 17 .debug_line   00016813  00000000  00000000  00076753  2**0
                   CONTENTS, READONLY, DEBUGGING
- 18 .debug_str    001023f5  00000000  00000000  0008cd02  2**0
+ 18 .debug_str    001024b0  00000000  00000000  0008cf66  2**0
                   CONTENTS, READONLY, DEBUGGING
- 19 .comment      0000007b  00000000  00000000  0018f0f7  2**0
+ 19 .comment      0000007b  00000000  00000000  0018f416  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  000064e0  00000000  00000000  0018f174  2**2
+ 20 .debug_frame  000064e0  00000000  00000000  0018f494  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -510,7 +510,7 @@ void Parse_AMS_HeartbeatResponse(AMS_HeartbeatResponse_t packet, bool* HVAn, boo
  8000688:	4770      	bx	lr
 
 0800068a <Compose_CC_ReadyToDrive>:
- */
+#ifdef QUTMS_CAN_CC
 
 #include "CC_CAN_Messages.h"
 
@@ -569,7 +569,7 @@ CC_FatalShutdown_t Compose_CC_FatalShutdown(void)
  80006d8:	bd80      	pop	{r7, pc}
 
 080006da <fsm_new>:
- */
+#ifdef QUTMS_FSM
 
 #include <FSM.h>
 
@@ -923,7 +923,7 @@ void fsm_log(fsm_t *fsm, char* msg, size_t length)
  80008f8:	bd80      	pop	{r7, pc}
 
 080008fa <Compose_PDM_InitiateStartup>:
- */
+#ifdef QUTMS_CAN_PDM
 
 #include "PDM_CAN_Messages.h"
 
