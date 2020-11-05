@@ -1,6 +1,6 @@
 Core/Common/Src/SHDN_CAN_Messages.o: \
  ../Core/Common/Src/SHDN_CAN_Messages.c \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h \
+ /home/alistair/Dev/repos/QUTMS/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h \
  ../Core/Inc/main.h ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
@@ -21,6 +21,8 @@ Core/Common/Src/SHDN_CAN_Messages.o: \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_dma.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_dma_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_cortex.h \
+ ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_adc.h \
+ ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_adc_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_can.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_flash.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_flash_ex.h \
@@ -33,9 +35,9 @@ Core/Common/Src/SHDN_CAN_Messages.o: \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
  ../Core/Inc/can.h ../Core/Inc/main.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h
+ /home/alistair/Dev/repos/QUTMS/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h
 
-/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h:
+/home/alistair/Dev/repos/QUTMS/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h:
 
 ../Core/Inc/main.h:
 
@@ -79,6 +81,10 @@ Core/Common/Src/SHDN_CAN_Messages.o: \
 
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_cortex.h:
 
+../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_adc.h:
+
+../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_adc_ex.h:
+
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_can.h:
 
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_flash.h:
@@ -105,4 +111,4 @@ Core/Common/Src/SHDN_CAN_Messages.o: \
 
 ../Core/Inc/main.h:
 
-/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h:
+/home/alistair/Dev/repos/QUTMS/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h:

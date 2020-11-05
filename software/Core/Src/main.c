@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "adc.h"
 #include "can.h"
 #include "usart.h"
 #include "gpio.h"
@@ -103,6 +104,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_CAN2_Init();
   MX_CAN3_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 	if(HAL_CAN_Start(&hcan1) != HAL_OK)
 	{
@@ -113,6 +115,26 @@ int main(void)
 		Error_Handler();
 	}
 	if(HAL_CAN_Start(&hcan2) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	// Setup CAN Filters
+	CAN_FilterTypeDef sFilterConfig2;
+
+	sFilterConfig2.FilterBank = 14; // Must be 14 for the slave CANBUS
+	sFilterConfig2.FilterMode = CAN_FILTERMODE_IDMASK;
+	sFilterConfig2.FilterScale = CAN_FILTERSCALE_32BIT;
+	sFilterConfig2.FilterIdHigh = 0x0000;
+	sFilterConfig2.FilterIdLow = 0x0001;
+	sFilterConfig2.FilterMaskIdHigh = 0x0000;
+	sFilterConfig2.FilterMaskIdLow = 0x0000;
+	sFilterConfig2.FilterFIFOAssignment = CAN_RX_FIFO0;
+	sFilterConfig2.FilterActivation = ENABLE;
+	sFilterConfig2.SlaveStartFilterBank = 14;
+
+	HAL_CAN_ConfigFilter(&hcan2, &sFilterConfig2);
+
+	if(HAL_ADC_Start(&hadc1) != HAL_OK)
 	{
 		Error_Handler();
 	}
@@ -212,9 +234,20 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 	CC_LogInfo("Entering FSM Thread\r\n", strlen("Entering FSM Thread\r\n"));
 	fsm_setLogFunction(fsm, &CC_LogInfo);
 	fsm_reset(fsm, &startState);
-	//fsm_changeState(fsm, &debugState, "Forcing debug state");
+	fsm_changeState(fsm, &debugState, "Forcing debug state");
 	for(;;)
 	{
+		uint16_t raw;
+		if(HAL_ADC_PollForConversion(&hadc1, 100) != HAL_OK)
+		{
+			CC_LogInfo("Fucked\r\n", sizeof("Fucked\r\n"));
+		} else {
+			raw = HAL_ADC_GetValue(&hadc1);
+			char x[80];
+			int len = sprintf(x, "Read ADC Value of: %i\r\n", raw);
+			CC_LogInfo(x, len);
+		}
+
 		while(HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0)
 		{
 			CC_CAN_Generic_t msg;

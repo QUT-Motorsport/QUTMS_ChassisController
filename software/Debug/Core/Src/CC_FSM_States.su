@@ -11,5 +11,5 @@ CC_FSM_States.c:248:6:state_driving_enter	16	static
 CC_FSM_States.c:264:6:state_driving_iterate	56	static
 CC_FSM_States.c:347:6:state_driving_exit	16	static
 CC_FSM_States.c:355:6:state_debug_enter	16	static
-CC_FSM_States.c:361:6:state_debug_iterate	48	static
+CC_FSM_States.c:361:6:state_debug_iterate	104	static
 CC_FSM_States.c:416:6:state_debug_exit	16	static

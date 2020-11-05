@@ -394,21 +394,21 @@ void state_debug_iterate(fsm_t *fsm)
 	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
 	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
 
-	//	/* Check for CAN Messages */
-	//	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
-	//	{
-	//		CC_CAN_Generic_t msg;
-	//		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
-	//		{
-	//			/* Packet Handler */
-	//			CC_LogInfo("CAN Being Received\r\n", strlen("CAN Being Received\r\n"));
-	//
-	//			if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
-	//			{
-	//				CC_LogInfo("AMS Heartbeat Detected\r\n", strlen("AMS Heartbeat Detected\r\n"));
-	//			}
-	//		}
-	//	}
+	/* Check for CAN Messages */
+	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
+	{
+		CC_CAN_Generic_t msg;
+		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
+		{
+			/* Packet Handler */
+			CC_LogInfo("CAN Being Received\r\n", strlen("CAN Being Received\r\n"));
+
+			if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
+			{
+				CC_LogInfo("AMS Heartbeat Detected\r\n", strlen("AMS Heartbeat Detected\r\n"));
+			}
+		}
+	}
 
 	return;
 }

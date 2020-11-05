@@ -1,0 +1,14 @@
+BMS_CAN_Messages.c:10:22:Compose_BMS_BadCellVoltage	32	static
+BMS_CAN_Messages.c:20:6:Parse_BMS_BadCellVoltage	24	static
+BMS_CAN_Messages.c:27:26:Compose_BMS_BadCellTemperature	32	static
+BMS_CAN_Messages.c:37:6:Parse_BMS_BadCellTemperature	24	static
+BMS_CAN_Messages.c:44:23:Compose_BMS_TransmitVoltage	56	static
+BMS_CAN_Messages.c:63:6:Parse_BMS_TransmitVoltage	48	static
+BMS_CAN_Messages.c:73:27:Compose_BMS_TransmitTemperature	56	static
+BMS_CAN_Messages.c:86:6:Parse_BMS_TransmitTemperature	56	static
+BMS_CAN_Messages.c:96:21:Compose_BMS_ChargeEnabled	32	static
+BMS_CAN_Messages.c:104:6:Parse_ChargeEnabled	32	static
+BMS_CAN_Messages.c:109:24:Compose_BMS_TransmitDeviceId	40	static
+BMS_CAN_Messages.c:122:6:Parse_BMS_TransmitDeviceId	48	static
+BMS_CAN_Messages.c:128:16:Compose_BMS_SetBMSId	56	static
+BMS_CAN_Messages.c:141:6:Parse_BMS_SetBMSId	48	static
