@@ -134,10 +134,6 @@ int main(void)
 
 	HAL_CAN_ConfigFilter(&hcan2, &sFilterConfig2);
 
-	if(HAL_ADC_Start(&hadc1) != HAL_OK)
-	{
-		Error_Handler();
-	}
 	//Create FSM instance
 	fsm_t *fsm = fsm_new(&startState);
 
@@ -237,16 +233,18 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 	fsm_changeState(fsm, &debugState, "Forcing debug state");
 	for(;;)
 	{
+		HAL_ADC_Start(&hadc1);
 		uint16_t raw;
-		if(HAL_ADC_PollForConversion(&hadc1, 100) != HAL_OK)
-		{
-			CC_LogInfo("Fucked\r\n", sizeof("Fucked\r\n"));
-		} else {
+//		if(HAL_ADC_PollForConversion(&hadc1, 100) != HAL_OK)
+//		{
+//			CC_LogInfo("Fucked\r\n", sizeof("Fucked\r\n"));
+//		} else {
 			raw = HAL_ADC_GetValue(&hadc1);
 			char x[80];
-			int len = sprintf(x, "Read ADC Value of: %i\r\n", raw);
+			int len = sprintf(x, "Read ADC Value of: %hu\r\n", raw);
 			CC_LogInfo(x, len);
-		}
+//		}
+//		HAL_ADC_Stop(&hadc1);
 
 		while(HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0)
 		{
