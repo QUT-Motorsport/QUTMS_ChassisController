@@ -39,6 +39,7 @@ typedef struct
 	 * true = Board not connected
 	 * false = Board connected
 	 */
+	bool RTD_Debug;
 	bool PDM_Debug;
 	bool AMS_Debug;
 	bool SHDN_IMD_Debug;

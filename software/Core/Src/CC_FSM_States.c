@@ -46,6 +46,7 @@ void state_start_enter(fsm_t *fsm)
 			CC_GlobalState->PDM_Debug = true;
 			CC_GlobalState->AMS_Debug = true;
 			CC_GlobalState->SHDN_IMD_Debug = true;
+			CC_GlobalState->RTD_Debug = true;
 			//CC_GlobalState->brakePressure;
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
@@ -216,29 +217,20 @@ void state_idle_iterate(fsm_t *fsm)
 		}
 	}
 
-	// TODO Implementation
-
-	/* Compose Test CAN Message */
-	CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-	CAN_TxHeaderTypeDef header =
-	{
-			.ExtId = fatalShutdown.id,
-			.IDE = CAN_ID_EXT,
-			.RTR = CAN_RTR_DATA,
-			.DLC = 1,
-			.TransmitGlobalTime = DISABLE,
-	};
-	uint8_t data[1] = {0xF};
-	HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
-
 	/* If Brake Pressure > 20% */
-	HAL_ADC_Start(&hadc1);
 	uint16_t raw;
-	raw = HAL_ADC_GetValue(&hadc1);
-	char x[80];
-	int len = sprintf(x, "Read ADC Value of: %hu\r\n", raw);
+	if(CC_GlobalState->RTD_Debug)
+	{
+		int brake_threshold_range = BRAKE_PRESSURE_MAX - BRAKE_PRESSURE_MIN;
+		raw = BRAKE_PRESSURE_MIN + (0.3 * brake_threshold_range);
+	}
+	else
+	{
+		HAL_ADC_Start(&hadc1);
+		raw = HAL_ADC_GetValue(&hadc1);
+		//char x[80];
+		//int len = sprintf(x, "Read ADC Value of: %hu\r\n", raw);
+	}
 	if(raw > CC_GlobalState->brakeThreshold)
 	{
 		/* Illuminate RTD Button */
@@ -309,6 +301,21 @@ void state_driving_enter(fsm_t *fsm)
 void state_driving_iterate(fsm_t *fsm)
 {
 	CC_LogInfo("Drivin Drivin\r\n", strlen("Drivin Drivin\r\n"));
+
+	/* Compose Test CAN Message */
+	CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
+	CAN_TxHeaderTypeDef header =
+	{
+			.ExtId = fatalShutdown.id,
+			.IDE = CAN_ID_EXT,
+			.RTR = CAN_RTR_DATA,
+			.DLC = 1,
+			.TransmitGlobalTime = DISABLE,
+	};
+	uint8_t data[1] = {0xF};
+	HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
 
 	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
 	{
@@ -412,55 +419,6 @@ void state_debug_iterate(fsm_t *fsm)
 	char x[80];
 	int len = sprintf(x, "Read ADC Value of: %hu\r\n", raw);
 	CC_LogInfo(x, len);
-
-	/* RTD LED */
-
-	//HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
-	//osDelay(100);
-	//	HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
-	//	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
-	//	{
-	//		if(HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin) && (HAL_GetTick() - CC_GlobalState->rtdTicks) > 5000)
-	//		{
-	//			CC_LogInfo("Button Be Driving\r\n", strlen("Button Be Driving\r\n"));
-	//		}
-	//		osSemaphoreRelease(CC_GlobalState->sem);
-	//	}
-	// osDelay(100);
-
-	/* ADC Value Debugging */
-
-	/* Compose CAN Message */
-	//	CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-	//	CAN_TxHeaderTypeDef header =
-	//	{
-	//			.ExtId = fatalShutdown.id,
-	//			.IDE = CAN_ID_EXT,
-	//			.RTR = CAN_RTR_DATA,
-	//			.DLC = 1,
-	//			.TransmitGlobalTime = DISABLE,
-	//	};
-	//	uint8_t data[1] = {0xF};
-	//	HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-	//	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-	//	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
-
-	//	/* Check for CAN Messages */
-	//	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
-	//	{
-	//		CC_CAN_Generic_t msg;
-	//		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
-	//		{
-	//			/* Packet Handler */
-	//			CC_LogInfo("CAN Being Received\r\n", strlen("CAN Being Received\r\n"));
-	//
-	//			if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
-	//			{
-	//				CC_LogInfo("AMS Heartbeat Detected\r\n", strlen("AMS Heartbeat Detected\r\n"));
-	//			}
-	//		}
-	//	}
-
 	return;
 }
 
