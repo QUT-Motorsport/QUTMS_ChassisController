@@ -14,6 +14,8 @@
 #include <memory.h>
 #include <stdbool.h>
 #include "can.h"
+#include "usart.h"
+#include "adc.h"
 #include "CC_CAN_Messages.h"
 #include "PDM_CAN_Messages.h"
 #include "AMS_CAN_Messages.h"
@@ -45,12 +47,17 @@ typedef struct
 	uint32_t amsTicks;
 	uint32_t shutdownImdTicks;
 
+	/* Analogue Values */
+	int brakeThreshold;
+
 	osMessageQueueId_t CANQueue;
 	osTimerId_t heartbeatTimer;
 	osTimerId_t IDC_AlarmTimer;
 	osSemaphoreId_t sem;
 
 	uint32_t rtdTicks;
+	uint32_t rtdTicksSpan;
+	uint32_t finalRtdTicks;
 } CC_GlobalState_t;
 
 CC_GlobalState_t *CC_GlobalState;

@@ -8,6 +8,9 @@
 #include "CC_FSM_States.h"
 #include "main.h"
 
+#define BRAKE_PRESSURE_MIN 400
+#define BRAKE_PRESSURE_MAX 1400
+
 state_t deadState = {&state_dead_enter, &state_dead_iterate, &state_dead_exit, "Dead_s"};
 
 void state_dead_enter(fsm_t *fsm)
@@ -43,7 +46,7 @@ void state_start_enter(fsm_t *fsm)
 			CC_GlobalState->PDM_Debug = true;
 			CC_GlobalState->AMS_Debug = true;
 			CC_GlobalState->SHDN_IMD_Debug = true;
-
+			//CC_GlobalState->brakePressure;
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
 
@@ -139,6 +142,13 @@ state_t idleState = {&state_idle_enter, &state_idle_iterate, &state_idle_exit, "
 
 void state_idle_enter(fsm_t *fsm)
 {
+	/* Calculate Brake Threshold for RTD */
+	int brake_threshold_range = BRAKE_PRESSURE_MAX - BRAKE_PRESSURE_MIN;
+	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+	{
+		CC_GlobalState->brakeThreshold = BRAKE_PRESSURE_MIN + (0.2 * brake_threshold_range);
+		osSemaphoreRelease(CC_GlobalState->sem);
+	}
 	return;
 }
 
@@ -208,19 +218,45 @@ void state_idle_iterate(fsm_t *fsm)
 
 	// TODO Implementation
 
-	/* If Brake Pressure > 20% */
-
-	/* Illuminate Power Button */
-	// HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
-	/* If RTD Button Engaged */
-	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+	/* Compose Test CAN Message */
+	CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
+	CAN_TxHeaderTypeDef header =
 	{
-		if(HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin) && (HAL_GetTick() - CC_GlobalState->rtdTicks) > 5000)
+			.ExtId = fatalShutdown.id,
+			.IDE = CAN_ID_EXT,
+			.RTR = CAN_RTR_DATA,
+			.DLC = 1,
+			.TransmitGlobalTime = DISABLE,
+	};
+	uint8_t data[1] = {0xF};
+	HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+
+	/* If Brake Pressure > 20% */
+	HAL_ADC_Start(&hadc1);
+	uint16_t raw;
+	raw = HAL_ADC_GetValue(&hadc1);
+	char x[80];
+	int len = sprintf(x, "Read ADC Value of: %hu\r\n", raw);
+	if(raw > CC_GlobalState->brakeThreshold)
+	{
+		/* Illuminate RTD Button */
+		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
+		/* If RTD Button Engaged */
+		if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 		{
-			/* Enter Driving State */
-			fsm_changeState(fsm, &drivingState, "RTD Engaged");
+			if(HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin) && (HAL_GetTick() - CC_GlobalState->finalRtdTicks) >= 5000)
+			{
+				/* Enter Driving State */
+				fsm_changeState(fsm, &drivingState, "RTD Engaged");
+			}
+			osSemaphoreRelease(CC_GlobalState->sem);
 		}
-		osSemaphoreRelease(CC_GlobalState->sem);
+	}
+	else
+	{
+		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
 	}
 }
 
@@ -247,6 +283,15 @@ state_t drivingState = {&state_driving_enter, &state_driving_iterate, &state_dri
 
 void state_driving_enter(fsm_t *fsm)
 {
+	/* Flash RTD */
+	for (int i = 0; i < 15; i++)
+	{
+		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
+		osDelay(60);
+		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
+		osDelay(60);
+	}
+
 	/* If AMS Contactors Closed & BMS' Healthy */
 
 	/* Play RTD Siren for 2 Seconds */
@@ -360,39 +405,45 @@ void state_debug_enter(fsm_t *fsm)
 
 void state_debug_iterate(fsm_t *fsm)
 {
-	// CC_LogInfo("Iterate Debugging\r\n", strlen("Iterate Debugging\r\n"))
+	/* If Brake Pressure > 20% */
+	HAL_ADC_Start(&hadc1);
+	uint16_t raw;
+	raw = HAL_ADC_GetValue(&hadc1);
+	char x[80];
+	int len = sprintf(x, "Read ADC Value of: %hu\r\n", raw);
+	CC_LogInfo(x, len);
 
 	/* RTD LED */
 
 	//HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
 	//osDelay(100);
-	HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
-	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
-	{
-		if(HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin) && (HAL_GetTick() - CC_GlobalState->rtdTicks) > 5000)
-		{
-			CC_LogInfo("Button Be Driving\r\n", strlen("Button Be Driving\r\n"));
-		}
-		osSemaphoreRelease(CC_GlobalState->sem);
-	}
+	//	HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
+	//	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+	//	{
+	//		if(HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin) && (HAL_GetTick() - CC_GlobalState->rtdTicks) > 5000)
+	//		{
+	//			CC_LogInfo("Button Be Driving\r\n", strlen("Button Be Driving\r\n"));
+	//		}
+	//		osSemaphoreRelease(CC_GlobalState->sem);
+	//	}
 	// osDelay(100);
 
 	/* ADC Value Debugging */
 
 	/* Compose CAN Message */
-	CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-	CAN_TxHeaderTypeDef header =
-	{
-			.ExtId = fatalShutdown.id,
-			.IDE = CAN_ID_EXT,
-			.RTR = CAN_RTR_DATA,
-			.DLC = 1,
-			.TransmitGlobalTime = DISABLE,
-	};
-	uint8_t data[1] = {0xF};
-	HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+	//	CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
+	//	CAN_TxHeaderTypeDef header =
+	//	{
+	//			.ExtId = fatalShutdown.id,
+	//			.IDE = CAN_ID_EXT,
+	//			.RTR = CAN_RTR_DATA,
+	//			.DLC = 1,
+	//			.TransmitGlobalTime = DISABLE,
+	//	};
+	//	uint8_t data[1] = {0xF};
+	//	HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+	//	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+	//	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
 
 	//	/* Check for CAN Messages */
 	//	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
