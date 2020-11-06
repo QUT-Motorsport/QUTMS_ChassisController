@@ -172,9 +172,9 @@ void state_idle_iterate(fsm_t *fsm)
 				.TransmitGlobalTime = DISABLE,
 		};
 		uint8_t data[1] = {0xF};
-		HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+		//HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
 		HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-		HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+		//HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
 	}
 	/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 	if((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug)
@@ -414,7 +414,6 @@ void state_debug_enter(fsm_t *fsm)
 
 void state_debug_iterate(fsm_t *fsm)
 {
-	/* If Brake Pressure > 20% */
 	HAL_ADC_Start(&hadc1);
 	uint16_t raw;
 	raw = HAL_ADC_GetValue(&hadc1);
