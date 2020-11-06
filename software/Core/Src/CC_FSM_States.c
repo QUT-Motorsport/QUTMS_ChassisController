@@ -44,7 +44,7 @@ void state_start_enter(fsm_t *fsm)
 		{
 			/* Bind and configure initial global states */
 			CC_GlobalState->PDM_Debug = true;
-			CC_GlobalState->AMS_Debug = true;
+			CC_GlobalState->AMS_Debug = false;
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
 			//CC_GlobalState->brakePressure;
@@ -121,6 +121,7 @@ void state_start_iterate(fsm_t *fsm)
 		/* Set Heartbeat Timers */
 		if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 		{
+			CC_GlobalState->startupTicks = HAL_GetTick();
 			CC_GlobalState->amsTicks = HAL_GetTick();
 			CC_GlobalState->shutdownImdTicks = HAL_GetTick();
 			osSemaphoreRelease(CC_GlobalState->sem);
@@ -160,6 +161,7 @@ void state_idle_iterate(fsm_t *fsm)
 	/* AMS Heartbeat Expiry - Fatal Shutdown */
 	if((HAL_GetTick() - CC_GlobalState->amsTicks) > 100 && !CC_GlobalState->AMS_Debug)
 	{
+		CC_LogInfo("Fatal Shutdown AMS\r\n", strlen("Fatal Shutdown AMS\r\n"));
 		CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
 		CAN_TxHeaderTypeDef header =
 		{
@@ -199,10 +201,10 @@ void state_idle_iterate(fsm_t *fsm)
 		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
 		{
 			/* Packet Handler */
-
 			/* AMS Heartbeat */
 			if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
 			{
+				CC_LogInfo("AMS Heartbeat\r\n", strlen("AMS Heartbeat\r\n"));
 				bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
 				Parse_AMS_HeartbeatResponse(*((AMS_HeartbeatResponse_t*)&(msg.data)), &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
 				CC_GlobalState->amsTicks = HAL_GetTick();

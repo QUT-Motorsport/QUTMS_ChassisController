@@ -45,6 +45,7 @@ typedef struct
 	bool SHDN_IMD_Debug;
 
 	/** Tick Refresh Counter for Individual Board Heartbeats */
+	uint32_t startupTicks;
 	uint32_t amsTicks;
 	uint32_t shutdownImdTicks;
 
