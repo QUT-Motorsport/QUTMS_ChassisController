@@ -63,6 +63,12 @@ __NO_RETURN void fsm_thread_mainLoop(void* arg);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define BRAKE_PRESSURE_Pin GPIO_PIN_2
+#define BRAKE_PRESSURE_GPIO_Port GPIOA
+#define BRAKE_PEDAL_ONE_Pin GPIO_PIN_3
+#define BRAKE_PEDAL_ONE_GPIO_Port GPIOA
+#define BRAKE_PEDAL_TWO_Pin GPIO_PIN_5
+#define BRAKE_PEDAL_TWO_GPIO_Port GPIOA
 #define HSOUT_RTD_LED_Pin GPIO_PIN_8
 #define HSOUT_RTD_LED_GPIO_Port GPIOE
 #define RTD_INPUT_Pin GPIO_PIN_15

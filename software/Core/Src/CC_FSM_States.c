@@ -11,6 +11,26 @@
 #define BRAKE_PRESSURE_MIN 400
 #define BRAKE_PRESSURE_MAX 1400
 
+#define BRAKE_PEDAL_ONE_MIN 240
+#define BRAKE_PEDAL_ONE_MAX 3360
+#define BRAKE_PEDAL_TWO_MIN 292
+#define BRAKE_PEDAL_TWO_MAX 3380
+
+/* Util Functions */
+int map(int x, int in_min, int in_max, int out_min, int out_max)
+{
+	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+void config_ext_channel_ADC(uint32_t channel, uint32_t rank)
+{
+	ADC_ChannelConfTypeDef sConfig;
+	sConfig.Channel = channel;
+	sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+	sConfig.Rank = rank;
+	HAL_ADC_ConfigChannel(&hadc2, &sConfig);
+}
+
 state_t deadState = {&state_dead_enter, &state_dead_iterate, &state_dead_exit, "Dead_s"};
 
 void state_dead_enter(fsm_t *fsm)
@@ -44,7 +64,7 @@ void state_start_enter(fsm_t *fsm)
 		{
 			/* Bind and configure initial global states */
 			CC_GlobalState->PDM_Debug = true;
-			CC_GlobalState->AMS_Debug = false;
+			CC_GlobalState->AMS_Debug = true;
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
 			//CC_GlobalState->brakePressure;
@@ -414,12 +434,24 @@ void state_debug_enter(fsm_t *fsm)
 
 void state_debug_iterate(fsm_t *fsm)
 {
-	HAL_ADC_Start(&hadc1);
-	uint16_t raw;
-	raw = HAL_ADC_GetValue(&hadc1);
-	char x[80];
-	int len = sprintf(x, "Read ADC Value of: %hu\r\n", raw);
+	CC_LogInfo("Brake Travel\r\n", strlen("Brake Travel\r\n"));
+
+	char x[80]; char x_two[80];
+	int len; int len_two;
+
+	HAL_ADC_Start(&hadc2);
+	uint16_t digital_result;
+	digital_result = HAL_ADC_GetValue(&hadc2);
+
+	len = sprintf(x, "Read ADC Value of BP1: %hu\r\n", digital_result);
 	CC_LogInfo(x, len);
+
+	uint16_t digital_result_two;
+	digital_result_two = HAL_ADC_GetValue(&hadc2);
+	len_two = sprintf(x_two, "Read ADC Value of BP2: %hu\r\n", digital_result_two);
+	CC_LogInfo(x_two, len_two);
+
+	HAL_ADC_Stop(&hadc2);
 	return;
 }
 
