@@ -11,24 +11,15 @@
 #define BRAKE_PRESSURE_MIN 400
 #define BRAKE_PRESSURE_MAX 1400
 
-#define BRAKE_PEDAL_ONE_MIN 240
-#define BRAKE_PEDAL_ONE_MAX 3360
-#define BRAKE_PEDAL_TWO_MIN 292
-#define BRAKE_PEDAL_TWO_MAX 3380
+#define BRAKE_PEDAL_ONE_MIN 320
+#define BRAKE_PEDAL_ONE_MAX 3400
+#define BRAKE_PEDAL_TWO_MIN 240
+#define BRAKE_PEDAL_TWO_MAX 3320
 
 /* Util Functions */
 int map(int x, int in_min, int in_max, int out_min, int out_max)
 {
-	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
-void config_ext_channel_ADC(uint32_t channel, uint32_t rank)
-{
-	ADC_ChannelConfTypeDef sConfig;
-	sConfig.Channel = channel;
-	sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
-	sConfig.Rank = rank;
-	HAL_ADC_ConfigChannel(&hadc2, &sConfig);
+	return (x - in_min) * (out_max - out_min) / (float)(in_max - in_min) + out_min;
 }
 
 state_t deadState = {&state_dead_enter, &state_dead_iterate, &state_dead_exit, "Dead_s"};
@@ -67,7 +58,17 @@ void state_start_enter(fsm_t *fsm)
 			CC_GlobalState->AMS_Debug = true;
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
+
+			CC_GlobalState->tractiveActive = true;
+
 			//CC_GlobalState->brakePressure;
+			memset(CC_GlobalState->rollingBrakeValues, 0, 10*sizeof(uint16_t));
+			memset(CC_GlobalState->secondaryRollingBrakeValues, 0, 10*sizeof(uint16_t));
+			CC_GlobalState->brakeOneMin = BRAKE_PEDAL_ONE_MIN;
+			CC_GlobalState->brakeOneMax = BRAKE_PEDAL_ONE_MAX;
+			CC_GlobalState->brakeTwoMin = BRAKE_PEDAL_TWO_MIN;
+			CC_GlobalState->brakeTwoMax = BRAKE_PEDAL_TWO_MAX;
+
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
 
@@ -313,6 +314,11 @@ void state_driving_enter(fsm_t *fsm)
 	/* Enable all channels on PDM */
 	// TODO Fix Bitwise Flip on enter IDLE State under current PDM Startup Sequence
 
+	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+	{
+		CC_GlobalState->tractiveActive = true;
+		osSemaphoreRelease(CC_GlobalState->sem);
+	}
 	/* Else */
 
 	/* Hard Shutdown Power Off */
@@ -429,29 +435,99 @@ state_t debugState = {&state_debug_enter, &state_debug_iterate, &state_debug_exi
 void state_debug_enter(fsm_t *fsm)
 {
 	CC_LogInfo("Enter Debugging\r\n", strlen("Enter Debugging\r\n"));
+	HAL_ADC_Start_DMA(&hadc2, adcValues, 500);
 	return;
 }
 
 void state_debug_iterate(fsm_t *fsm)
 {
-	CC_LogInfo("Brake Travel\r\n", strlen("Brake Travel\r\n"));
+	uint32_t brake_one_sum = 0; uint32_t brake_one_avg = 0;
+	uint32_t brake_two_sum = 0; uint32_t brake_two_avg = 0;
+	uint16_t brake_travel_one; uint16_t brake_travel_two;
+	char x[80];
+	int len;
+	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+	{
+		/* Echo ADC Failure for Debugging */
+		if(!CC_GlobalState->tractiveActive)
+		{
+			CC_LogInfo("ADC Brake Failure\r\n", strlen("ADC Brake Failure\r\n"));
+		}
 
-	char x[80]; char x_two[80];
-	int len; int len_two;
+		/* Check for non-expected ADC Values (Revoke Tractive System Active Status) */
+		if(adcValues[0] <= CC_GlobalState->brakeOneMin - 100 || adcValues[0] >= CC_GlobalState->brakeOneMax + 100 || adcValues[1] <= CC_GlobalState->brakeTwoMin - 100 || adcValues[1] >= CC_GlobalState->brakeTwoMax + 100)
+		{
+			CC_GlobalState->tractiveActive = false;
 
-	HAL_ADC_Start(&hadc2);
-	uint16_t digital_result;
-	digital_result = HAL_ADC_GetValue(&hadc2);
+			/* Debug the Fault*/
+//			CC_LogInfo("Failure\r\n", strlen("Failure\r\n"));
+//			len = sprintf(x, "Data: %li %li\r\n", adcValues[0], adcValues[1]);
+//			CC_LogInfo(x, len);
+		}
 
-	len = sprintf(x, "Read ADC Value of BP1: %hu\r\n", digital_result);
-	CC_LogInfo(x, len);
+		/* Brake Travel Record & Sum 10 Values */
+		for (int i=0; i < 10; i++)
+		{
+			if (i == 9)
+			{
+				CC_GlobalState->rollingBrakeValues[i] = adcValues[0];
+				CC_GlobalState->secondaryRollingBrakeValues[i] = adcValues[1];
+			}
+			else
+			{
+				CC_GlobalState->rollingBrakeValues[i] = CC_GlobalState->rollingBrakeValues[i+1];
+				CC_GlobalState->secondaryRollingBrakeValues[i] = CC_GlobalState->secondaryRollingBrakeValues[i+1];
+			}
+			brake_one_sum += CC_GlobalState->rollingBrakeValues[i];
+			brake_two_sum += CC_GlobalState->secondaryRollingBrakeValues[i];
+		}
 
-	uint16_t digital_result_two;
-	digital_result_two = HAL_ADC_GetValue(&hadc2);
-	len_two = sprintf(x_two, "Read ADC Value of BP2: %hu\r\n", digital_result_two);
-	CC_LogInfo(x_two, len_two);
+		/* Average 10 Latest Brake Travel Values */
+		brake_one_avg = brake_one_sum / 10;
+		brake_two_avg = brake_two_sum / 10;
 
-	HAL_ADC_Stop(&hadc2);
+		/* Check for New Min/Max Brake Values */
+		if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0)
+		{
+			if(brake_one_avg <= CC_GlobalState->brakeOneMin && CC_GlobalState->tractiveActive)
+			{
+				CC_GlobalState->brakeOneMin = brake_one_avg;
+			}
+			if(brake_one_avg >= CC_GlobalState->brakeOneMax && CC_GlobalState->tractiveActive)
+			{
+				CC_GlobalState->brakeOneMax = brake_one_avg;
+			}
+			if(brake_two_avg <= CC_GlobalState->brakeTwoMin && CC_GlobalState->tractiveActive)
+			{
+				CC_GlobalState->brakeTwoMin = brake_two_avg;
+			}
+			if(brake_two_avg >= CC_GlobalState->brakeTwoMax && CC_GlobalState->tractiveActive)
+			{
+				CC_GlobalState->brakeTwoMax = brake_two_avg;
+			}
+		}
+
+		/* Map Travel to Pedal Pos */
+		brake_travel_one = map(brake_one_avg, CC_GlobalState->brakeOneMin+2, CC_GlobalState->brakeOneMax-5, 0, 100);
+		brake_travel_two = map(brake_two_avg, CC_GlobalState->brakeTwoMin+2, CC_GlobalState->brakeTwoMax-5, 0, 100);
+
+		/* Ensure Brake Pots Synced */
+		if(brake_travel_one >= brake_travel_two+10 || brake_travel_one <= brake_travel_two-10)
+		{
+			CC_GlobalState->tractiveActive = false;
+		}
+
+		/* Average 2 Brake Travel Positions */
+		uint16_t brake_travel = (brake_travel_one+brake_travel_two)/2;
+
+		/* Echo Brake Position */
+		if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0 && CC_GlobalState->tractiveActive)
+		{
+			len = sprintf(x, "Data: %li\r\n", brake_travel);
+			CC_LogInfo(x, len);
+		}
+		osSemaphoreRelease(CC_GlobalState->sem);
+	}
 	return;
 }
 

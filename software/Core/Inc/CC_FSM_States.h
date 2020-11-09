@@ -51,6 +51,12 @@ typedef struct
 
 	/* Analogue Values */
 	int brakeThreshold;
+	uint16_t rollingBrakeValues[10];
+	uint16_t secondaryRollingBrakeValues[10];
+	uint16_t brakeOneMin; uint16_t brakeOneMax;
+	uint16_t brakeTwoMin; uint16_t brakeTwoMax;
+
+	bool tractiveActive;
 
 	osMessageQueueId_t CANQueue;
 	osTimerId_t heartbeatTimer;

@@ -7,6 +7,7 @@ C_SRCS += \
 ../Core/Src/CC_FSM_States.c \
 ../Core/Src/adc.c \
 ../Core/Src/can.c \
+../Core/Src/dma.c \
 ../Core/Src/freertos.c \
 ../Core/Src/gpio.c \
 ../Core/Src/main.c \
@@ -22,6 +23,7 @@ OBJS += \
 ./Core/Src/CC_FSM_States.o \
 ./Core/Src/adc.o \
 ./Core/Src/can.o \
+./Core/Src/dma.o \
 ./Core/Src/freertos.o \
 ./Core/Src/gpio.o \
 ./Core/Src/main.o \
@@ -37,6 +39,7 @@ C_DEPS += \
 ./Core/Src/CC_FSM_States.d \
 ./Core/Src/adc.d \
 ./Core/Src/can.d \
+./Core/Src/dma.d \
 ./Core/Src/freertos.d \
 ./Core/Src/gpio.d \
 ./Core/Src/main.d \
@@ -56,6 +59,8 @@ Core/Src/adc.o: ../Core/Src/adc.c
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DSTM32F765xx -DQUTMS_CAN_SHDN_BSPD -DQUTMS_CAN_SHDN -DUSE_HAL_DRIVER -DQUTMS_CAN_SHDN_IMD -DQUTMS_CAN_PDM -DQUTMS_CAN_AMS -DQUTMS_CAN_CC -DDEBUG -DQUTMS_FSM -c -I../Core/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1 -I"/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/adc.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Core/Src/can.o: ../Core/Src/can.c
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DSTM32F765xx -DQUTMS_CAN_SHDN_BSPD -DQUTMS_CAN_SHDN -DUSE_HAL_DRIVER -DQUTMS_CAN_SHDN_IMD -DQUTMS_CAN_PDM -DQUTMS_CAN_AMS -DQUTMS_CAN_CC -DDEBUG -DQUTMS_FSM -c -I../Core/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1 -I"/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/can.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
+Core/Src/dma.o: ../Core/Src/dma.c
+	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DSTM32F765xx -DQUTMS_CAN_SHDN_BSPD -DQUTMS_CAN_SHDN -DUSE_HAL_DRIVER -DQUTMS_CAN_SHDN_IMD -DQUTMS_CAN_PDM -DQUTMS_CAN_AMS -DQUTMS_CAN_CC -DDEBUG -DQUTMS_FSM -c -I../Core/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1 -I"/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/dma.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Core/Src/freertos.o: ../Core/Src/freertos.c
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DSTM32F765xx -DQUTMS_CAN_SHDN_BSPD -DQUTMS_CAN_SHDN -DUSE_HAL_DRIVER -DQUTMS_CAN_SHDN_IMD -DQUTMS_CAN_PDM -DQUTMS_CAN_AMS -DQUTMS_CAN_CC -DDEBUG -DQUTMS_FSM -c -I../Core/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1 -I"/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/freertos.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Core/Src/gpio.o: ../Core/Src/gpio.c

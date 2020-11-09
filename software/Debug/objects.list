@@ -10,6 +10,7 @@
 "Core/Src/CC_FSM_States.o"
 "Core/Src/adc.o"
 "Core/Src/can.o"
+"Core/Src/dma.o"
 "Core/Src/freertos.o"
 "Core/Src/gpio.o"
 "Core/Src/main.o"

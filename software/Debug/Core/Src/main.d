@@ -43,7 +43,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
- ../Core/Inc/adc.h ../Core/Inc/main.h ../Core/Inc/can.h \
+ ../Core/Inc/adc.h ../Core/Inc/main.h ../Core/Inc/can.h ../Core/Inc/dma.h \
  ../Core/Inc/usart.h ../Core/Inc/gpio.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/FSM.h \
  ../Core/Inc/CC_FSM_States.h ../Core/Inc/can.h ../Core/Inc/usart.h \
@@ -151,6 +151,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/main.h:
 
 ../Core/Inc/can.h:
+
+../Core/Inc/dma.h:
 
 ../Core/Inc/usart.h:
 
