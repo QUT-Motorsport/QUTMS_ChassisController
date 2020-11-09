@@ -46,6 +46,7 @@ typedef struct
 
 	/** Tick Refresh Counter for Individual Board Heartbeats */
 	uint32_t startupTicks;
+	uint32_t readyToDriveTicks;
 	uint32_t amsTicks;
 	uint32_t shutdownImdTicks;
 
@@ -57,6 +58,7 @@ typedef struct
 	uint16_t brakeTwoMin; uint16_t brakeTwoMax;
 
 	bool tractiveActive;
+	bool rtdLightActive;
 
 	osMessageQueueId_t CANQueue;
 	osTimerId_t heartbeatTimer;

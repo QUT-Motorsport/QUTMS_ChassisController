@@ -117,7 +117,7 @@ int main(void)
 	{
 		Error_Handler();
 	}
-	if(HAL_CAN_Start(&hcan2) != HAL_OK)
+	if(HAL_CAN_Start(&hcan3) != HAL_OK)
 	{
 		Error_Handler();
 	}
@@ -151,7 +151,7 @@ int main(void)
 
 	CAN_FilterTypeDef sFilterConfig3;
 
-	sFilterConfig3.FilterBank = 0;
+	sFilterConfig3.FilterBank = 28;
 	sFilterConfig3.FilterMode = CAN_FILTERMODE_IDMASK;
 	sFilterConfig3.FilterScale = CAN_FILTERSCALE_32BIT;
 	sFilterConfig3.FilterIdHigh = 0x0000;
@@ -274,7 +274,7 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 	CC_LogInfo("Entering FSM Thread\r\n", strlen("Entering FSM Thread\r\n"));
 	fsm_setLogFunction(fsm, &CC_LogInfo);
 	fsm_reset(fsm, &startState);
-	fsm_changeState(fsm, &debugState, "Forcing debug state");
+	//fsm_changeState(fsm, &debugState, "Forcing debug state");
 	for(;;)
 	{
 		while(HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0)
