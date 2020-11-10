@@ -670,99 +670,25 @@ state_t debugState = {&state_debug_enter, &state_debug_iterate, &state_debug_exi
 void state_debug_enter(fsm_t *fsm)
 {
 	CC_LogInfo("Enter Debugging\r\n", strlen("Enter Debugging\r\n"));
-	HAL_ADC_Start_DMA(&hadc2, CC_GlobalState->brakeAdcValues, 500);
 	return;
 }
 
 void state_debug_iterate(fsm_t *fsm)
 {
-	uint32_t brake_one_sum = 0; uint32_t brake_one_avg = 0;
-	uint32_t brake_two_sum = 0; uint32_t brake_two_avg = 0;
-	uint16_t brake_travel_one; uint16_t brake_travel_two;
-	char x[80];
-	int len;
-	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+	/* Broadcast Soft Shutdown on all CAN lines */
+	CC_SoftShutdown_t softShutdown = Compose_CC_SoftShutdown();
+	CAN_TxHeaderTypeDef header =
 	{
-		/* Echo ADC Failure for Debugging */
-		if(!CC_GlobalState->tractiveActive)
-		{
-			CC_LogInfo("ADC Brake Failure\r\n", strlen("ADC Brake Failure\r\n"));
-		}
-
-		/* Check for non-expected ADC Values (Revoke Tractive System Active Status) */
-		if(CC_GlobalState->brakeAdcValues[0] <= CC_GlobalState->brakeOneMin - 100 || CC_GlobalState->brakeAdcValues[0] >= CC_GlobalState->brakeOneMax + 100 || CC_GlobalState->brakeAdcValues[1] <= CC_GlobalState->brakeTwoMin - 100 || CC_GlobalState->brakeAdcValues[1] >= CC_GlobalState->brakeTwoMax + 100)
-		{
-			CC_GlobalState->tractiveActive = false;
-
-			/* Debug the Fault*/
-			//			CC_LogInfo("Failure\r\n", strlen("Failure\r\n"));
-			//			len = sprintf(x, "Data: %li %li\r\n", CC_GlobalState->brakeAdcValues[0], CC_GlobalState->brakeAdcValues[1]);
-			//			CC_LogInfo(x, len);
-		}
-
-		/* Brake Travel Record & Sum 10 Values */
-		for (int i=0; i < 10; i++)
-		{
-			if (i == 9)
-			{
-				CC_GlobalState->rollingBrakeValues[i] = CC_GlobalState->brakeAdcValues[0];
-				CC_GlobalState->secondaryRollingBrakeValues[i] = CC_GlobalState->brakeAdcValues[1];
-			}
-			else
-			{
-				CC_GlobalState->rollingBrakeValues[i] = CC_GlobalState->rollingBrakeValues[i+1];
-				CC_GlobalState->secondaryRollingBrakeValues[i] = CC_GlobalState->secondaryRollingBrakeValues[i+1];
-			}
-			brake_one_sum += CC_GlobalState->rollingBrakeValues[i];
-			brake_two_sum += CC_GlobalState->secondaryRollingBrakeValues[i];
-		}
-
-		/* Average 10 Latest Brake Travel Values */
-		brake_one_avg = brake_one_sum / 10;
-		brake_two_avg = brake_two_sum / 10;
-
-		/* Check for New Min/Max Brake Values */
-		if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0)
-		{
-			if(brake_one_avg <= CC_GlobalState->brakeOneMin && CC_GlobalState->tractiveActive)
-			{
-				CC_GlobalState->brakeOneMin = brake_one_avg;
-			}
-			if(brake_one_avg >= CC_GlobalState->brakeOneMax && CC_GlobalState->tractiveActive)
-			{
-				CC_GlobalState->brakeOneMax = brake_one_avg;
-			}
-			if(brake_two_avg <= CC_GlobalState->brakeTwoMin && CC_GlobalState->tractiveActive)
-			{
-				CC_GlobalState->brakeTwoMin = brake_two_avg;
-			}
-			if(brake_two_avg >= CC_GlobalState->brakeTwoMax && CC_GlobalState->tractiveActive)
-			{
-				CC_GlobalState->brakeTwoMax = brake_two_avg;
-			}
-		}
-
-		/* Map Travel to Pedal Pos */
-		brake_travel_one = map(brake_one_avg, CC_GlobalState->brakeOneMin+2, CC_GlobalState->brakeOneMax-5, 0, 100);
-		brake_travel_two = map(brake_two_avg, CC_GlobalState->brakeTwoMin+2, CC_GlobalState->brakeTwoMax-5, 0, 100);
-
-		/* Ensure Brake Pots Synced */
-		if(brake_travel_one >= brake_travel_two+10 || brake_travel_one <= brake_travel_two-10)
-		{
-			CC_GlobalState->tractiveActive = false;
-		}
-
-		/* Average 2 Brake Travel Positions */
-		uint16_t brake_travel = (brake_travel_one+brake_travel_two)/2;
-
-		/* Echo Brake Position */
-		if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0 && CC_GlobalState->tractiveActive)
-		{
-			len = sprintf(x, "Data: %li\r\n", brake_travel);
-			CC_LogInfo(x, len);
-		}
-		osSemaphoreRelease(CC_GlobalState->sem);
-	}
+			.ExtId = softShutdown.id,
+			.IDE = CAN_ID_EXT,
+			.RTR = CAN_RTR_DATA,
+			.DLC = 1,
+			.TransmitGlobalTime = DISABLE,
+	};
+	uint8_t data[1] = {0xF};
+	HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
 	return;
 }
 
