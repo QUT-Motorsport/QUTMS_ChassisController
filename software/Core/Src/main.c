@@ -275,7 +275,7 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 	CC_LogInfo("Entering FSM Thread\r\n", strlen("Entering FSM Thread\r\n"));
 	fsm_setLogFunction(fsm, &CC_LogInfo);
 	fsm_reset(fsm, &startState);
-	fsm_changeState(fsm, &debugState, "Forcing debug state");
+//	fsm_changeState(fsm, &debugState, "Forcing debug state");
 	for(;;)
 	{
 		while(HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0)

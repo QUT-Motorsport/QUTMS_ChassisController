@@ -20,6 +20,7 @@
 #include "PDM_CAN_Messages.h"
 #include "AMS_CAN_Messages.h"
 #include "SHDN_IMD_CAN_Messages.h"
+#include "SHDN_CAN_Messages.h"
 
 /**
  * @brief Chassis Global State
@@ -43,12 +44,14 @@ typedef struct
 	bool PDM_Debug;
 	bool AMS_Debug;
 	bool SHDN_IMD_Debug;
+	bool SHDN_Debug;
 
 	/** Tick Refresh Counter for Individual Board Heartbeats */
 	uint32_t startupTicks;
 	uint32_t readyToDriveTicks;
 	uint32_t implausibleTicks;
 	uint32_t amsTicks;
+	uint32_t shutdownTicks;
 	uint32_t shutdownImdTicks;
 
 	/* Analogue Values */

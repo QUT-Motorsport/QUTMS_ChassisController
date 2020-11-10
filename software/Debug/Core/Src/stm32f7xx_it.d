@@ -52,7 +52,8 @@ Core/Src/stm32f7xx_it.o: ../Core/Src/stm32f7xx_it.c ../Core/Inc/main.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/PDM_CAN_Messages.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/AMS_CAN_Messages.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_IMD_CAN_Messages.h
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_IMD_CAN_Messages.h \
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h
 
 ../Core/Inc/main.h:
 
@@ -169,3 +170,5 @@ Core/Src/stm32f7xx_it.o: ../Core/Src/stm32f7xx_it.c ../Core/Inc/main.h \
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/AMS_CAN_Messages.h:
 
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_IMD_CAN_Messages.h:
+
+/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h:

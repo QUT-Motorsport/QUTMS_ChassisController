@@ -53,8 +53,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/PDM_CAN_Messages.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/AMS_CAN_Messages.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_IMD_CAN_Messages.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_BSPD_CAN_Messages.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h \
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_BSPD_CAN_Messages.h
 
 ../Core/Inc/main.h:
 
@@ -178,6 +178,6 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_IMD_CAN_Messages.h:
 
-/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_BSPD_CAN_Messages.h:
-
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h:
+
+/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_BSPD_CAN_Messages.h:
