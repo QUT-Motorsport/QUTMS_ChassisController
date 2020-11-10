@@ -66,7 +66,7 @@ void state_start_enter(fsm_t *fsm)
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
 
-			CC_GlobalState->tractiveActive = true;
+			CC_GlobalState->tractiveActive = false;
 
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
@@ -319,6 +319,7 @@ void state_driving_enter(fsm_t *fsm)
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
 		CC_GlobalState->tractiveActive = true;
+		CC_GlobalState->faultDetected = false;
 		CC_GlobalState->rtdLightActive = true;
 
 		memset(CC_GlobalState->rollingBrakeValues, 0, 10*sizeof(uint32_t));
@@ -353,7 +354,6 @@ void state_driving_enter(fsm_t *fsm)
 
 void state_driving_iterate(fsm_t *fsm)
 {
-
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
 		/* Flash RTD */
@@ -448,25 +448,28 @@ void state_driving_iterate(fsm_t *fsm)
 	 */
 	uint16_t brake_travel_one; uint16_t brake_travel_two;
 	uint16_t accel_travel_one; uint16_t accel_travel_two; uint16_t accel_travel_three;
-	char x[80];
-	uint32_t len;
+	char x[80]; uint32_t len;
+
 	/* Echo ADC Failure for Debugging */
-	if(!CC_GlobalState->tractiveActive)
+	if(CC_GlobalState->faultDetected)
 	{
-		CC_LogInfo("ADC Pot Failure\r\n", strlen("ADC Pot Failure\r\n"));
+		CC_LogInfo("ADC Fault Detected\r\n", strlen("ADC Fault Detected\r\n"));
 	}
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
-
-		/* Check for non-expected ADC Values (Revoke Tractive System Active Status) */
-
-		if(CC_GlobalState->brakeAdcValues[0] <= CC_GlobalState->brakeOneMin - 100 || CC_GlobalState->brakeAdcValues[0] >= CC_GlobalState->brakeOneMax + 100 || CC_GlobalState->brakeAdcValues[1] <= CC_GlobalState->brakeTwoMin - 100 || CC_GlobalState->brakeAdcValues[1] >= CC_GlobalState->brakeTwoMax + 100)
+		/* Check for non-expected ADC Values
+		 * Trigger Fault outside expected range
+		 * Power trip, surge to sensor etc.
+		 */
+		if(!CC_GlobalState->faultDetected && CC_GlobalState->brakeAdcValues[0] <= CC_GlobalState->brakeOneMin - 100 || CC_GlobalState->brakeAdcValues[0] >= CC_GlobalState->brakeOneMax + 100 || CC_GlobalState->brakeAdcValues[1] <= CC_GlobalState->brakeTwoMin - 100 || CC_GlobalState->brakeAdcValues[1] >= CC_GlobalState->brakeTwoMax + 100)
 		{
-			CC_GlobalState->tractiveActive = false;
+			CC_GlobalState->faultDetected = true;
+			CC_GlobalState->implausibleTicks = HAL_GetTick();
 		}
-		if(CC_GlobalState->accelAdcValues[0] <= CC_GlobalState->accelOneMin - 100 || CC_GlobalState->accelAdcValues[0] >= CC_GlobalState->accelOneMax + 100 || CC_GlobalState->accelAdcValues[1] <= CC_GlobalState->accelTwoMin - 100 || CC_GlobalState->accelAdcValues[1] >= CC_GlobalState->accelTwoMax + 100 || CC_GlobalState->accelAdcValues[2] <= CC_GlobalState->accelThreeMin - 100 || CC_GlobalState->accelAdcValues[2] >= CC_GlobalState->accelThreeMax + 100)
+		if(!CC_GlobalState->faultDetected && CC_GlobalState->accelAdcValues[0] <= CC_GlobalState->accelOneMin - 100 || CC_GlobalState->accelAdcValues[0] >= CC_GlobalState->accelOneMax + 100 || CC_GlobalState->accelAdcValues[1] <= CC_GlobalState->accelTwoMin - 100 || CC_GlobalState->accelAdcValues[1] >= CC_GlobalState->accelTwoMax + 100 || CC_GlobalState->accelAdcValues[2] <= CC_GlobalState->accelThreeMin - 100 || CC_GlobalState->accelAdcValues[2] >= CC_GlobalState->accelThreeMax + 100)
 		{
-			CC_GlobalState->tractiveActive = false;
+			CC_GlobalState->faultDetected = true;
+			CC_GlobalState->implausibleTicks = HAL_GetTick();
 		}
 
 		/* Brake Travel Record & Sum 10 Values */
@@ -495,6 +498,7 @@ void state_driving_iterate(fsm_t *fsm)
 	uint32_t brake_one_sum = 0; uint32_t brake_one_avg = 0;uint32_t brake_two_sum = 0;uint32_t brake_two_avg = 0;
 	uint32_t accel_one_sum = 0; uint32_t accel_one_avg = 0; uint32_t accel_two_avg = 0; uint32_t accel_three_sum = 0; uint32_t accel_three_avg = 0;
 	uint32_t accel_two_sum = 0;
+
 	for (int i=0; i < 10; i++)
 	{
 		brake_one_sum += CC_GlobalState->rollingBrakeValues[i];
@@ -517,46 +521,46 @@ void state_driving_iterate(fsm_t *fsm)
 		/* Check for New Min/Max Brake Values */
 		if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0)
 		{
-			if(brake_one_avg <= CC_GlobalState->brakeOneMin && CC_GlobalState->tractiveActive)
+			if(brake_one_avg <= CC_GlobalState->brakeOneMin && !CC_GlobalState->faultDetected)
 			{
 				CC_GlobalState->brakeOneMin = brake_one_avg;
 			}
-			if(brake_one_avg >= CC_GlobalState->brakeOneMax && CC_GlobalState->tractiveActive)
+			if(brake_one_avg >= CC_GlobalState->brakeOneMax && !CC_GlobalState->faultDetected)
 			{
 				CC_GlobalState->brakeOneMax = brake_one_avg;
 			}
-			if(brake_two_avg <= CC_GlobalState->brakeTwoMin && CC_GlobalState->tractiveActive)
+			if(brake_two_avg <= CC_GlobalState->brakeTwoMin && !CC_GlobalState->faultDetected)
 			{
 				CC_GlobalState->brakeTwoMin = brake_two_avg;
 			}
-			if(brake_two_avg >= CC_GlobalState->brakeTwoMax && CC_GlobalState->tractiveActive)
+			if(brake_two_avg >= CC_GlobalState->brakeTwoMax && !CC_GlobalState->faultDetected)
 			{
 				CC_GlobalState->brakeTwoMax = brake_two_avg;
 			}
 		}
 		if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->secondaryRollingAccelValues[0] > 0 && CC_GlobalState->tertiaryRollingAccelValues[0] > 0)
 		{
-			if(accel_one_avg <= CC_GlobalState->accelOneMin && CC_GlobalState->tractiveActive)
+			if(accel_one_avg <= CC_GlobalState->accelOneMin && !CC_GlobalState->faultDetected)
 			{
 				CC_GlobalState->accelOneMin = accel_one_avg;
 			}
-			if(accel_one_avg >= CC_GlobalState->accelOneMax && CC_GlobalState->tractiveActive)
+			if(accel_one_avg >= CC_GlobalState->accelOneMax && !CC_GlobalState->faultDetected)
 			{
 				CC_GlobalState->accelOneMax = accel_one_avg;
 			}
-			if(accel_two_avg <= CC_GlobalState->accelTwoMin && CC_GlobalState->tractiveActive)
+			if(accel_two_avg <= CC_GlobalState->accelTwoMin && !CC_GlobalState->faultDetected)
 			{
 				CC_GlobalState->accelTwoMin = accel_two_avg;
 			}
-			if(accel_two_avg >= CC_GlobalState->accelTwoMax && CC_GlobalState->tractiveActive)
+			if(accel_two_avg >= CC_GlobalState->accelTwoMax && !CC_GlobalState->faultDetected)
 			{
 				CC_GlobalState->accelTwoMax = accel_two_avg;
 			}
-			if(accel_three_avg <= CC_GlobalState->accelThreeMin && CC_GlobalState->tractiveActive)
+			if(accel_three_avg <= CC_GlobalState->accelThreeMin && !CC_GlobalState->faultDetected)
 			{
 				CC_GlobalState->accelThreeMin = accel_three_avg;
 			}
-			if(accel_three_avg >= CC_GlobalState->accelThreeMax && CC_GlobalState->tractiveActive)
+			if(accel_three_avg >= CC_GlobalState->accelThreeMax && !CC_GlobalState->faultDetected)
 			{
 				CC_GlobalState->accelThreeMax = accel_three_avg;
 			}
@@ -571,13 +575,15 @@ void state_driving_iterate(fsm_t *fsm)
 		accel_travel_three = map(accel_three_avg, CC_GlobalState->accelThreeMin, CC_GlobalState->accelThreeMax-5, 0, 100);
 
 		/* Ensure Brake & Accel Pots Synced */
-		if(brake_travel_one >= brake_travel_two+10 || brake_travel_one <= brake_travel_two-10)
+		if(!CC_GlobalState->faultDetected && brake_travel_one >= brake_travel_two+10 || brake_travel_one <= brake_travel_two-10)
 		{
-			CC_GlobalState->tractiveActive = false;
+			CC_GlobalState->faultDetected = true;
+			CC_GlobalState->implausibleTicks = HAL_GetTick();
 		}
-		if(accel_travel_one >= accel_travel_two+10 || accel_travel_one <= accel_travel_two-10 || accel_travel_one >= accel_travel_three+10 || accel_travel_one <= accel_travel_three-10 || accel_travel_two >= accel_travel_three+10 || accel_travel_two <= accel_travel_three-10)
+		if(!CC_GlobalState->faultDetected && accel_travel_one >= accel_travel_two+10 || accel_travel_one <= accel_travel_two-10 || accel_travel_one >= accel_travel_three+10 || accel_travel_one <= accel_travel_three-10 || accel_travel_two >= accel_travel_three+10 || accel_travel_two <= accel_travel_three-10)
 		{
-			CC_GlobalState->tractiveActive = false;
+			CC_GlobalState->faultDetected = true;
+			CC_GlobalState->implausibleTicks = HAL_GetTick();
 		}
 
 		/* Average 2 Brake Travel Positions */
@@ -589,35 +595,28 @@ void state_driving_iterate(fsm_t *fsm)
 
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
+
 	/* Echo Pedal Positions */
-	if(CC_GlobalState->tractiveActive && CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
+	if(!CC_GlobalState->faultDetected && CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
 	{
 		len = sprintf(x, "Data: %li %li\r\n", CC_GlobalState->brakeTravel, CC_GlobalState->accelTravel);
 		CC_LogInfo(x, len);
 	}
 
 	/*
-	 * Calculate Throttle Implausibility
-	 * Still implausible with only 2 of the 3 ADC values?
-	 * Calculate Brake Implausibility
-	 */
-
-	/*
-	 * Average Throttle Values to Position
-	 * Average Brake Values to Position
-	 */
-
-	/*
-	 * Log Throttle Position
-	 * Log Brake Position
-	 */
-
-	/*
 	 * Read Steering Angle ADC Value
 	 * Log Steering Angle
 	 */
 
-	/* If Throttle and Brake Implausibility State Clock < 100ms */
+	/*
+	 * If Throttle and Brake Implausibility State Clock < 100ms
+	 * Suspend Tractive System Operations
+	 */
+	if(CC_GlobalState->faultDetected && CC_GlobalState->tractiveActive && (HAL_GetTick() - CC_GlobalState->implausibleTicks) >= 100)
+	{
+		CC_GlobalState->tractiveActive = false;
+		CC_LogInfo("Disabling Tractive Operations\r\n", strlen("Disabling Tractive Operations\r\n"));
+	}
 
 	/*
 	 * Call Torque Vectoring Algorithm
@@ -635,7 +634,24 @@ void state_driving_iterate(fsm_t *fsm)
 	 * If Throttle or Brake Implausibility State Clock > 1000ms
 	 * Engage Soft Shutdown (Reset to Idle)
 	 */
-	//fsm_changeState(fsm, &idleState, "Soft Shutdown Requested (CAN)");
+	if(CC_GlobalState->faultDetected && !CC_GlobalState->tractiveActive && (HAL_GetTick() - CC_GlobalState->implausibleTicks) >= 1000)
+	{
+		/* Broadcast Soft Shutdown on all CAN lines */
+		CC_SoftShutdown_t softShutdown = Compose_CC_SoftShutdown();
+		CAN_TxHeaderTypeDef header =
+		{
+				.ExtId = softShutdown.id,
+				.IDE = CAN_ID_EXT,
+				.RTR = CAN_RTR_DATA,
+				.DLC = 1,
+				.TransmitGlobalTime = DISABLE,
+		};
+		uint8_t data[1] = {0xF};
+		HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+		HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+		HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+		fsm_changeState(fsm, &idleState, "Soft Shutdown Requested (CAN)");
+	}
 
 	/*
 	 * If 500ms has exceeded since SoC Request
