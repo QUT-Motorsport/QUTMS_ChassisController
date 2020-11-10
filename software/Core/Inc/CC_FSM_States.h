@@ -51,11 +51,20 @@ typedef struct
 	uint32_t shutdownImdTicks;
 
 	/* Analogue Values */
-	int brakeThreshold;
-	uint16_t rollingBrakeValues[10];
-	uint16_t secondaryRollingBrakeValues[10];
+	uint32_t brakeAdcValues[100];
+	uint32_t accelAdcValues[150];
+	uint32_t brakePressureThreshold;
+	uint16_t rollingBrakeValues[10]; uint16_t secondaryRollingBrakeValues[10];
 	uint16_t brakeOneMin; uint16_t brakeOneMax;
 	uint16_t brakeTwoMin; uint16_t brakeTwoMax;
+	uint32_t rollingAccelValues[10]; uint32_t secondaryRollingAccelValues[10]; uint32_t tertiaryRollingAccelValues[10];
+	uint16_t accelOneMin; uint16_t accelOneMax;
+	uint16_t accelTwoMin; uint16_t accelTwoMax;
+	uint16_t accelThreeMin; uint16_t accelThreeMax;
+
+	/* Formatted Pedal Travel Positions */
+	uint8_t accelTravel;
+	uint8_t brakeTravel;
 
 	bool tractiveActive;
 	bool rtdLightActive;

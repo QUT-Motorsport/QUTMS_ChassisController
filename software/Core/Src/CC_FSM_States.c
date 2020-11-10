@@ -16,6 +16,13 @@
 #define BRAKE_PEDAL_TWO_MIN 240
 #define BRAKE_PEDAL_TWO_MAX 3320
 
+#define ACCEL_PEDAL_ONE_MIN 320
+#define ACCEL_PEDAL_ONE_MAX 3350
+#define ACCEL_PEDAL_TWO_MIN 320
+#define ACCEL_PEDAL_TWO_MAX 3400
+#define ACCEL_PEDAL_THREE_MIN 320
+#define ACCEL_PEDAL_THREE_MAX 3380
+
 /* Util Functions */
 int map(int x, int in_min, int in_max, int out_min, int out_max)
 {
@@ -60,14 +67,6 @@ void state_start_enter(fsm_t *fsm)
 			CC_GlobalState->RTD_Debug = true;
 
 			CC_GlobalState->tractiveActive = true;
-
-			//CC_GlobalState->brakePressure;
-			memset(CC_GlobalState->rollingBrakeValues, 0, 10*sizeof(uint16_t));
-			memset(CC_GlobalState->secondaryRollingBrakeValues, 0, 10*sizeof(uint16_t));
-			CC_GlobalState->brakeOneMin = BRAKE_PEDAL_ONE_MIN;
-			CC_GlobalState->brakeOneMax = BRAKE_PEDAL_ONE_MAX;
-			CC_GlobalState->brakeTwoMin = BRAKE_PEDAL_TWO_MIN;
-			CC_GlobalState->brakeTwoMax = BRAKE_PEDAL_TWO_MAX;
 
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
@@ -169,7 +168,7 @@ void state_idle_enter(fsm_t *fsm)
 	int brake_threshold_range = BRAKE_PRESSURE_MAX - BRAKE_PRESSURE_MIN;
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
-		CC_GlobalState->brakeThreshold = BRAKE_PRESSURE_MIN + (0.2 * brake_threshold_range);
+		CC_GlobalState->brakePressureThreshold = BRAKE_PRESSURE_MIN + (0.2 * brake_threshold_range);
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 	return;
@@ -256,10 +255,10 @@ void state_idle_iterate(fsm_t *fsm)
 	}
 	else
 	{
-		HAL_ADC_Start(&hadc1);
-		raw = HAL_ADC_GetValue(&hadc1);
+		HAL_ADC_Start(&hadc3);
+		raw = HAL_ADC_GetValue(&hadc3);
 	}
-	if(raw > CC_GlobalState->brakeThreshold)
+	if(raw > CC_GlobalState->brakePressureThreshold)
 	{
 		/* Illuminate RTD Button */
 		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
@@ -321,10 +320,30 @@ void state_driving_enter(fsm_t *fsm)
 	{
 		CC_GlobalState->tractiveActive = true;
 		CC_GlobalState->rtdLightActive = true;
+
+		memset(CC_GlobalState->rollingBrakeValues, 0, 10*sizeof(uint32_t));
+		memset(CC_GlobalState->secondaryRollingBrakeValues, 0, 10*sizeof(uint32_t));
+		memset(CC_GlobalState->rollingAccelValues, 0, 10*sizeof(uint32_t));
+		memset(CC_GlobalState->secondaryRollingAccelValues, 0, 10*sizeof(uint32_t));
+		memset(CC_GlobalState->tertiaryRollingAccelValues, 0, 10*sizeof(uint32_t));
+
+		CC_GlobalState->brakeOneMin = BRAKE_PEDAL_ONE_MIN;
+		CC_GlobalState->brakeOneMax = BRAKE_PEDAL_ONE_MAX;
+		CC_GlobalState->brakeTwoMin = BRAKE_PEDAL_TWO_MIN;
+		CC_GlobalState->brakeTwoMax = BRAKE_PEDAL_TWO_MAX;
+
+		CC_GlobalState->accelOneMin = ACCEL_PEDAL_ONE_MIN;
+		CC_GlobalState->accelOneMax = ACCEL_PEDAL_ONE_MAX;
+		CC_GlobalState->accelTwoMin = ACCEL_PEDAL_TWO_MIN;
+		CC_GlobalState->accelTwoMax = ACCEL_PEDAL_TWO_MAX;
+		CC_GlobalState->accelThreeMin = ACCEL_PEDAL_THREE_MIN;
+		CC_GlobalState->accelThreeMax = ACCEL_PEDAL_THREE_MAX;
+
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 	/* Start Polling ADC */
-	HAL_ADC_Start_DMA(&hadc2, adcValues, 500);
+	HAL_ADC_Start_DMA(&hadc2, CC_GlobalState->brakeAdcValues, 100);
+	HAL_ADC_Start_DMA(&hadc1, CC_GlobalState->accelAdcValues, 150);
 	/* Else */
 
 	/* Hard Shutdown Power Off */
@@ -334,10 +353,11 @@ void state_driving_enter(fsm_t *fsm)
 
 void state_driving_iterate(fsm_t *fsm)
 {
+
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
 		/* Flash RTD */
-		if((HAL_GetTick() - CC_GlobalState->readyToDriveTicks) > 100)
+		if((HAL_GetTick() - CC_GlobalState->readyToDriveTicks) > 1000)
 		{
 			if(!CC_GlobalState->rtdLightActive)
 			{
@@ -426,27 +446,27 @@ void state_driving_iterate(fsm_t *fsm)
 	 * Read 3 Throttle ADC Values
 	 * Read 2 Brake ADC Values
 	 */
-	uint32_t brake_one_sum; uint32_t brake_one_avg; uint32_t brake_two_sum; uint32_t brake_two_avg;
 	uint16_t brake_travel_one; uint16_t brake_travel_two;
+	uint16_t accel_travel_one; uint16_t accel_travel_two; uint16_t accel_travel_three;
 	char x[80];
 	uint32_t len;
+	/* Echo ADC Failure for Debugging */
+	if(!CC_GlobalState->tractiveActive)
+	{
+		CC_LogInfo("ADC Pot Failure\r\n", strlen("ADC Pot Failure\r\n"));
+	}
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
-		/* Echo ADC Failure for Debugging */
-		if(!CC_GlobalState->tractiveActive)
-		{
-			CC_LogInfo("ADC Brake Failure\r\n", strlen("ADC Brake Failure\r\n"));
-		}
 
 		/* Check for non-expected ADC Values (Revoke Tractive System Active Status) */
-		if(adcValues[0] <= CC_GlobalState->brakeOneMin - 100 || adcValues[0] >= CC_GlobalState->brakeOneMax + 100 || adcValues[1] <= CC_GlobalState->brakeTwoMin - 100 || adcValues[1] >= CC_GlobalState->brakeTwoMax + 100)
+
+		if(CC_GlobalState->brakeAdcValues[0] <= CC_GlobalState->brakeOneMin - 100 || CC_GlobalState->brakeAdcValues[0] >= CC_GlobalState->brakeOneMax + 100 || CC_GlobalState->brakeAdcValues[1] <= CC_GlobalState->brakeTwoMin - 100 || CC_GlobalState->brakeAdcValues[1] >= CC_GlobalState->brakeTwoMax + 100)
 		{
 			CC_GlobalState->tractiveActive = false;
-
-			/* Debug the Fault*/
-			CC_LogInfo("Failure\r\n", strlen("Failure\r\n"));
-			len = sprintf(x, "Data: %li %li\r\n", adcValues[0], adcValues[1]);
-			CC_LogInfo(x, len);
+		}
+		if(CC_GlobalState->accelAdcValues[0] <= CC_GlobalState->accelOneMin - 100 || CC_GlobalState->accelAdcValues[0] >= CC_GlobalState->accelOneMax + 100 || CC_GlobalState->accelAdcValues[1] <= CC_GlobalState->accelTwoMin - 100 || CC_GlobalState->accelAdcValues[1] >= CC_GlobalState->accelTwoMax + 100 || CC_GlobalState->accelAdcValues[2] <= CC_GlobalState->accelThreeMin - 100 || CC_GlobalState->accelAdcValues[2] >= CC_GlobalState->accelThreeMax + 100)
+		{
+			CC_GlobalState->tractiveActive = false;
 		}
 
 		/* Brake Travel Record & Sum 10 Values */
@@ -454,22 +474,46 @@ void state_driving_iterate(fsm_t *fsm)
 		{
 			if (i == 9)
 			{
-				CC_GlobalState->rollingBrakeValues[i] = adcValues[0];
-				CC_GlobalState->secondaryRollingBrakeValues[i] = adcValues[1];
+				CC_GlobalState->rollingBrakeValues[i] = CC_GlobalState->brakeAdcValues[0];
+				CC_GlobalState->secondaryRollingBrakeValues[i] = CC_GlobalState->brakeAdcValues[1];
+				CC_GlobalState->rollingAccelValues[i] = CC_GlobalState->accelAdcValues[0];
+				CC_GlobalState->secondaryRollingAccelValues[i] = CC_GlobalState->accelAdcValues[1];
+				CC_GlobalState->tertiaryRollingAccelValues[i] = CC_GlobalState->accelAdcValues[2];
 			}
 			else
 			{
 				CC_GlobalState->rollingBrakeValues[i] = CC_GlobalState->rollingBrakeValues[i+1];
 				CC_GlobalState->secondaryRollingBrakeValues[i] = CC_GlobalState->secondaryRollingBrakeValues[i+1];
+				CC_GlobalState->rollingAccelValues[i] = CC_GlobalState->rollingAccelValues[i+1];
+				CC_GlobalState->secondaryRollingAccelValues[i] = CC_GlobalState->secondaryRollingAccelValues[i+1];
+				CC_GlobalState->tertiaryRollingAccelValues[i] = CC_GlobalState->tertiaryRollingAccelValues[i+1];
 			}
-			brake_one_sum += CC_GlobalState->rollingBrakeValues[i];
-			brake_two_sum += CC_GlobalState->secondaryRollingBrakeValues[i];
 		}
+		osSemaphoreRelease(CC_GlobalState->sem);
+	}
 
-		/* Average 10 Latest Brake Travel Values */
-		brake_one_avg = brake_one_sum / 10;
-		brake_two_avg = brake_two_sum / 10;
+	uint32_t brake_one_sum = 0; uint32_t brake_one_avg = 0;uint32_t brake_two_sum = 0;uint32_t brake_two_avg = 0;
+	uint32_t accel_one_sum = 0; uint32_t accel_one_avg = 0; uint32_t accel_two_avg = 0; uint32_t accel_three_sum = 0; uint32_t accel_three_avg = 0;
+	uint32_t accel_two_sum = 0;
+	for (int i=0; i < 10; i++)
+	{
+		brake_one_sum += CC_GlobalState->rollingBrakeValues[i];
+		brake_two_sum += CC_GlobalState->secondaryRollingBrakeValues[i];
+		accel_one_sum += CC_GlobalState->rollingAccelValues[i];
+		accel_two_sum += CC_GlobalState->secondaryRollingAccelValues[i];
+		accel_three_sum += CC_GlobalState->tertiaryRollingAccelValues[i];
+	}
 
+	/* Average 10 Latest Brake Travel Values */
+	brake_one_avg = brake_one_sum / 10;
+	brake_two_avg = brake_two_sum / 10;
+
+	accel_one_avg = accel_one_sum / 10;
+	accel_two_avg = accel_two_sum / 10;
+	accel_three_avg = accel_three_sum / 10;
+
+	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+	{
 		/* Check for New Min/Max Brake Values */
 		if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0)
 		{
@@ -490,27 +534,66 @@ void state_driving_iterate(fsm_t *fsm)
 				CC_GlobalState->brakeTwoMax = brake_two_avg;
 			}
 		}
+		if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->secondaryRollingAccelValues[0] > 0 && CC_GlobalState->tertiaryRollingAccelValues[0] > 0)
+		{
+			if(accel_one_avg <= CC_GlobalState->accelOneMin && CC_GlobalState->tractiveActive)
+			{
+				CC_GlobalState->accelOneMin = accel_one_avg;
+			}
+			if(accel_one_avg >= CC_GlobalState->accelOneMax && CC_GlobalState->tractiveActive)
+			{
+				CC_GlobalState->accelOneMax = accel_one_avg;
+			}
+			if(accel_two_avg <= CC_GlobalState->accelTwoMin && CC_GlobalState->tractiveActive)
+			{
+				CC_GlobalState->accelTwoMin = accel_two_avg;
+			}
+			if(accel_two_avg >= CC_GlobalState->accelTwoMax && CC_GlobalState->tractiveActive)
+			{
+				CC_GlobalState->accelTwoMax = accel_two_avg;
+			}
+			if(accel_three_avg <= CC_GlobalState->accelThreeMin && CC_GlobalState->tractiveActive)
+			{
+				CC_GlobalState->accelThreeMin = accel_three_avg;
+			}
+			if(accel_three_avg >= CC_GlobalState->accelThreeMax && CC_GlobalState->tractiveActive)
+			{
+				CC_GlobalState->accelThreeMax = accel_three_avg;
+			}
+		}
 
 		/* Map Travel to Pedal Pos */
 		brake_travel_one = map(brake_one_avg, CC_GlobalState->brakeOneMin+2, CC_GlobalState->brakeOneMax-5, 0, 100);
 		brake_travel_two = map(brake_two_avg, CC_GlobalState->brakeTwoMin+2, CC_GlobalState->brakeTwoMax-5, 0, 100);
 
-		/* Ensure Brake Pots Synced */
+		accel_travel_one = map(accel_one_avg, CC_GlobalState->accelOneMin, CC_GlobalState->accelOneMax-5, 0, 100);
+		accel_travel_two = map(accel_two_avg, CC_GlobalState->accelTwoMin, CC_GlobalState->accelTwoMax-5, 0, 100);
+		accel_travel_three = map(accel_three_avg, CC_GlobalState->accelThreeMin, CC_GlobalState->accelThreeMax-5, 0, 100);
+
+		/* Ensure Brake & Accel Pots Synced */
 		if(brake_travel_one >= brake_travel_two+10 || brake_travel_one <= brake_travel_two-10)
+		{
+			CC_GlobalState->tractiveActive = false;
+		}
+		if(accel_travel_one >= accel_travel_two+10 || accel_travel_one <= accel_travel_two-10 || accel_travel_one >= accel_travel_three+10 || accel_travel_one <= accel_travel_three-10 || accel_travel_two >= accel_travel_three+10 || accel_travel_two <= accel_travel_three-10)
 		{
 			CC_GlobalState->tractiveActive = false;
 		}
 
 		/* Average 2 Brake Travel Positions */
-		uint16_t brake_travel = (brake_travel_one+brake_travel_two)/2;
+		if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
+		{
+			CC_GlobalState->brakeTravel = (brake_travel_one+brake_travel_two)/2;
+			CC_GlobalState->accelTravel = (accel_travel_one+accel_travel_two+accel_travel_three)/3;
+		}
 
-		/* Echo Brake Position */
-		//		if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0 && CC_GlobalState->tractiveActive)
-		//		{
-		//			len = sprintf(x, "Data: %li\r\n", brake_travel);
-		//			CC_LogInfo(x, len);
-		//		}
 		osSemaphoreRelease(CC_GlobalState->sem);
+	}
+	/* Echo Pedal Positions */
+	if(CC_GlobalState->tractiveActive && CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
+	{
+		len = sprintf(x, "Data: %li %li\r\n", CC_GlobalState->brakeTravel, CC_GlobalState->accelTravel);
+		CC_LogInfo(x, len);
 	}
 
 	/*
@@ -571,7 +654,7 @@ state_t debugState = {&state_debug_enter, &state_debug_iterate, &state_debug_exi
 void state_debug_enter(fsm_t *fsm)
 {
 	CC_LogInfo("Enter Debugging\r\n", strlen("Enter Debugging\r\n"));
-	HAL_ADC_Start_DMA(&hadc2, adcValues, 500);
+	HAL_ADC_Start_DMA(&hadc2, CC_GlobalState->brakeAdcValues, 500);
 	return;
 }
 
@@ -591,13 +674,13 @@ void state_debug_iterate(fsm_t *fsm)
 		}
 
 		/* Check for non-expected ADC Values (Revoke Tractive System Active Status) */
-		if(adcValues[0] <= CC_GlobalState->brakeOneMin - 100 || adcValues[0] >= CC_GlobalState->brakeOneMax + 100 || adcValues[1] <= CC_GlobalState->brakeTwoMin - 100 || adcValues[1] >= CC_GlobalState->brakeTwoMax + 100)
+		if(CC_GlobalState->brakeAdcValues[0] <= CC_GlobalState->brakeOneMin - 100 || CC_GlobalState->brakeAdcValues[0] >= CC_GlobalState->brakeOneMax + 100 || CC_GlobalState->brakeAdcValues[1] <= CC_GlobalState->brakeTwoMin - 100 || CC_GlobalState->brakeAdcValues[1] >= CC_GlobalState->brakeTwoMax + 100)
 		{
 			CC_GlobalState->tractiveActive = false;
 
 			/* Debug the Fault*/
 			//			CC_LogInfo("Failure\r\n", strlen("Failure\r\n"));
-			//			len = sprintf(x, "Data: %li %li\r\n", adcValues[0], adcValues[1]);
+			//			len = sprintf(x, "Data: %li %li\r\n", CC_GlobalState->brakeAdcValues[0], CC_GlobalState->brakeAdcValues[1]);
 			//			CC_LogInfo(x, len);
 		}
 
@@ -606,8 +689,8 @@ void state_debug_iterate(fsm_t *fsm)
 		{
 			if (i == 9)
 			{
-				CC_GlobalState->rollingBrakeValues[i] = adcValues[0];
-				CC_GlobalState->secondaryRollingBrakeValues[i] = adcValues[1];
+				CC_GlobalState->rollingBrakeValues[i] = CC_GlobalState->brakeAdcValues[0];
+				CC_GlobalState->secondaryRollingBrakeValues[i] = CC_GlobalState->brakeAdcValues[1];
 			}
 			else
 			{

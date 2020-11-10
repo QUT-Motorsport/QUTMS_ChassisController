@@ -51,7 +51,7 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-uint32_t adcValues[500];
+
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
