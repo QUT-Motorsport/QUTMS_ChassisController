@@ -66,6 +66,7 @@ void state_start_enter(fsm_t *fsm)
 			CC_GlobalState->SHDN_Debug = false;
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
+			CC_GlobalState->Inverter_Debug = true;
 
 			CC_GlobalState->tractiveActive = false;
 
@@ -146,6 +147,7 @@ void state_start_iterate(fsm_t *fsm)
 			CC_GlobalState->amsTicks = HAL_GetTick();
 			CC_GlobalState->shutdownTicks = HAL_GetTick();
 			CC_GlobalState->shutdownImdTicks = HAL_GetTick();
+			CC_GlobalState->inverterTicks = HAL_GetTick();
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
 
@@ -178,8 +180,8 @@ void state_idle_enter(fsm_t *fsm)
 
 void state_idle_iterate(fsm_t *fsm)
 {
-	/* Check for Heartbeat Expiry */
 
+	/* Check for Heartbeat Expiry */
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
@@ -234,6 +236,24 @@ void state_idle_iterate(fsm_t *fsm)
 			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
 			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
 		}
+		/* Inverter Heartbeat Expiry - Fatal Shutdown */
+		if((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug)
+		{
+			CC_LogInfo("Inverter Shutdown\r\n", strlen("Inverter Shutdown\r\n"));
+			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
+			CAN_TxHeaderTypeDef header =
+			{
+					.ExtId = fatalShutdown.id,
+					.IDE = CAN_ID_EXT,
+					.RTR = CAN_RTR_DATA,
+					.DLC = 1,
+					.TransmitGlobalTime = DISABLE,
+			};
+			uint8_t data[1] = {0xF};
+			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+		}
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 
@@ -249,9 +269,10 @@ void state_idle_iterate(fsm_t *fsm)
 			{
 				if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 				{
-					bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
-					Parse_AMS_HeartbeatResponse(*((AMS_HeartbeatResponse_t*)&(msg.data)), &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
+					bool initialised; bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
+					Parse_AMS_HeartbeatResponse(msg.data, &initialised, &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
 					CC_GlobalState->amsTicks = HAL_GetTick();
+					CC_GlobalState->amsInit = initialised;
 					osSemaphoreRelease(CC_GlobalState->sem);
 				}
 			}
@@ -273,6 +294,32 @@ void state_idle_iterate(fsm_t *fsm)
 				Parse_SHDN_IMD_HeartbeatResponse(*((SHDN_IMD_HeartbeatResponse_t*)&(msg.data)), &pwmState);
 				CC_GlobalState->shutdownImdTicks = HAL_GetTick();
 			}
+			/* Inverter Heartbeat */
+			else if(msg.header.StdId == 0x59)
+			{
+				CC_GlobalState->inverterTicks = HAL_GetTick();
+				CC_LogInfo("Inverter Heartbeat\r\n", strlen("Inverter Heartbeat\r\n"));
+			}
+			/* Shutdown Triggered Fault */
+			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
+			{
+				// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
+				CC_LogInfo("Fatal Shutdown Trigger Fault\r\n", strlen("Fatal Shutdown Trigger Fault\r\n"));
+				CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
+				CAN_TxHeaderTypeDef header =
+				{
+						.ExtId = fatalShutdown.id,
+						.IDE = CAN_ID_EXT,
+						.RTR = CAN_RTR_DATA,
+						.DLC = 1,
+						.TransmitGlobalTime = DISABLE,
+				};
+				uint8_t data[1] = {0xF};
+				HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+				HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+				HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+				fsm_changeState(fsm, &idleState, "Soft Shutdown Requested (CAN)");
+			}
 		}
 	}
 
@@ -288,7 +335,7 @@ void state_idle_iterate(fsm_t *fsm)
 		HAL_ADC_Start(&hadc3);
 		raw = HAL_ADC_GetValue(&hadc3);
 	}
-	if(raw > CC_GlobalState->brakePressureThreshold)
+	if(raw > CC_GlobalState->brakePressureThreshold && CC_GlobalState->amsInit)
 	{
 		/* Illuminate RTD Button */
 		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
@@ -454,6 +501,23 @@ void state_driving_iterate(fsm_t *fsm)
 			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
 			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
 		}
+		/* Inverter Heartbeat Expiry - Fatal Shutdown */
+		if((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug)
+		{
+			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
+			CAN_TxHeaderTypeDef header =
+			{
+					.ExtId = fatalShutdown.id,
+					.IDE = CAN_ID_EXT,
+					.RTR = CAN_RTR_DATA,
+					.DLC = 1,
+					.TransmitGlobalTime = DISABLE,
+			};
+			uint8_t data[1] = {0xF};
+			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+		}
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 
@@ -469,9 +533,10 @@ void state_driving_iterate(fsm_t *fsm)
 			{
 				if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 				{
-					bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
-					Parse_AMS_HeartbeatResponse(*((AMS_HeartbeatResponse_t*)&(msg.data)), &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
+					bool initialised; bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
+					Parse_AMS_HeartbeatResponse(msg.data, &initialised, &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
 					CC_GlobalState->amsTicks = HAL_GetTick();
+					CC_GlobalState->amsInit = initialised;
 					osSemaphoreRelease(CC_GlobalState->sem);
 				}
 			}
@@ -496,6 +561,31 @@ void state_driving_iterate(fsm_t *fsm)
 					CC_GlobalState->shutdownImdTicks = HAL_GetTick();
 					osSemaphoreRelease(CC_GlobalState->sem);
 				}
+			}
+			/* Inverter Heartbeat */
+			else if(msg.header.ExtId == 0x59)
+			{
+				CC_GlobalState->inverterTicks = HAL_GetTick();
+			}
+			/* Shutdown Triggered Fault */
+			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
+			{
+				// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
+				CC_LogInfo("Fatal Shutdown Trigger Fault\r\n", strlen("Fatal Shutdown Trigger Fault\r\n"));
+				CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
+				CAN_TxHeaderTypeDef header =
+				{
+						.ExtId = fatalShutdown.id,
+						.IDE = CAN_ID_EXT,
+						.RTR = CAN_RTR_DATA,
+						.DLC = 1,
+						.TransmitGlobalTime = DISABLE,
+				};
+				uint8_t data[1] = {0xF};
+				HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+				HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+				HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+				fsm_changeState(fsm, &idleState, "Soft Shutdown Requested (CAN)");
 			}
 		}
 	}
@@ -531,11 +621,11 @@ void state_driving_iterate(fsm_t *fsm)
 		}
 		if(!CC_GlobalState->faultDetected
 				&& (CC_GlobalState->accelAdcValues[0] <= CC_GlobalState->accelOneMin - 100
-				|| CC_GlobalState->accelAdcValues[0] >= CC_GlobalState->accelOneMax + 100
-				|| CC_GlobalState->accelAdcValues[1] <= CC_GlobalState->accelTwoMin - 100
-				|| CC_GlobalState->accelAdcValues[1] >= CC_GlobalState->accelTwoMax + 100
-				|| CC_GlobalState->accelAdcValues[2] <= CC_GlobalState->accelThreeMin - 100
-				|| CC_GlobalState->accelAdcValues[2] >= CC_GlobalState->accelThreeMax + 100))
+						|| CC_GlobalState->accelAdcValues[0] >= CC_GlobalState->accelOneMax + 100
+						|| CC_GlobalState->accelAdcValues[1] <= CC_GlobalState->accelTwoMin - 100
+						|| CC_GlobalState->accelAdcValues[1] >= CC_GlobalState->accelTwoMax + 100
+						|| CC_GlobalState->accelAdcValues[2] <= CC_GlobalState->accelThreeMin - 100
+						|| CC_GlobalState->accelAdcValues[2] >= CC_GlobalState->accelThreeMax + 100))
 		{
 			CC_GlobalState->faultDetected = true;
 			CC_GlobalState->implausibleTicks = HAL_GetTick();
@@ -647,18 +737,18 @@ void state_driving_iterate(fsm_t *fsm)
 		/* Ensure Brake & Accel Pots Synced */
 		if(!CC_GlobalState->faultDetected
 				&& (brake_travel_one >= brake_travel_two+10
-				|| brake_travel_one <= brake_travel_two-10))
+						|| brake_travel_one <= brake_travel_two-10))
 		{
 			CC_GlobalState->faultDetected = true;
 			CC_GlobalState->implausibleTicks = HAL_GetTick();
 		}
 		if(!CC_GlobalState->faultDetected
 				&& (accel_travel_one >= accel_travel_two+10
-				|| accel_travel_one <= accel_travel_two-10
-				|| accel_travel_one >= accel_travel_three+10
-				|| accel_travel_one <= accel_travel_three-10
-				|| accel_travel_two >= accel_travel_three+10
-				|| accel_travel_two <= accel_travel_three-10))
+						|| accel_travel_one <= accel_travel_two-10
+						|| accel_travel_one >= accel_travel_three+10
+						|| accel_travel_one <= accel_travel_three-10
+						|| accel_travel_two >= accel_travel_three+10
+						|| accel_travel_two <= accel_travel_three-10))
 		{
 			CC_GlobalState->faultDetected = true;
 			CC_GlobalState->implausibleTicks = HAL_GetTick();

@@ -285,7 +285,7 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 			osMessageQueuePut(CC_GlobalState->CANQueue, &msg, 0U, 0U);
 			char x[80];
 			int len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
-			//CC_LogInfo(x, len);
+			CC_LogInfo(x, len);
 		}
 
 		while(HAL_CAN_GetRxFifoFillLevel(&hcan2, CAN_RX_FIFO0) > 0)

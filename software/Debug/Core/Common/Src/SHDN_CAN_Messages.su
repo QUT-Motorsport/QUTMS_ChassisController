@@ -1,4 +1,4 @@
-SHDN_CAN_Messages.c:12:25:Compose_SHDN_HeartbeatRequest	24	static
+SHDN_CAN_Messages.c:12:26:Compose_SHDN_ShudownTriggered	24	static
 SHDN_CAN_Messages.c:19:26:Compose_SHDN_One_HeartbeatResponse	32	static
 SHDN_CAN_Messages.c:27:26:Compose_SHDN_Two_HeartbeatResponse	32	static
 SHDN_CAN_Messages.c:35:26:Compose_SHDN_Three_HeartbeatResponse	32	static

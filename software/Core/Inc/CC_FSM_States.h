@@ -43,6 +43,7 @@ typedef struct
 	bool RTD_Debug;
 	bool PDM_Debug;
 	bool AMS_Debug;
+	bool Inverter_Debug;
 	bool SHDN_IMD_Debug;
 	bool SHDN_Debug;
 
@@ -51,8 +52,12 @@ typedef struct
 	uint32_t readyToDriveTicks;
 	uint32_t implausibleTicks;
 	uint32_t amsTicks;
+	uint32_t inverterTicks;
 	uint32_t shutdownTicks;
 	uint32_t shutdownImdTicks;
+
+	/* Initialisation Confirmation */
+	bool amsInit;
 
 	/* Analogue Values */
 	uint32_t brakeAdcValues[100];
