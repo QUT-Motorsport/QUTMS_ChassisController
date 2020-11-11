@@ -35,26 +35,7 @@ Core/Common/Src/CC_CAN_Wrapper.o: ../Core/Common/Src/CC_CAN_Wrapper.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
  ../Core/Inc/can.h ../Core/Inc/main.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h \
- ../Core/Inc/usart.h ../Core/Inc/CC_FSM_States.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/FSM.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
- ../Core/Inc/FreeRTOSConfig.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/portmacro.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
- ../Core/Inc/can.h ../Core/Inc/usart.h ../Core/Inc/adc.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/CC_CAN_Messages.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/PDM_CAN_Messages.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/AMS_CAN_Messages.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_IMD_CAN_Messages.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/Util.h \
+ ../Core/Inc/usart.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/CC_CAN_Messages.h
 
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/CC_CAN_Wrapper.h:
@@ -134,49 +115,5 @@ Core/Common/Src/CC_CAN_Wrapper.o: ../Core/Common/Src/CC_CAN_Wrapper.c \
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h:
 
 ../Core/Inc/usart.h:
-
-../Core/Inc/CC_FSM_States.h:
-
-/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/FSM.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
-
-../Core/Inc/FreeRTOSConfig.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/portmacro.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/include/list.h:
-
-../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h:
-
-../Core/Inc/can.h:
-
-../Core/Inc/usart.h:
-
-../Core/Inc/adc.h:
-
-/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/CC_CAN_Messages.h:
-
-/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/PDM_CAN_Messages.h:
-
-/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/AMS_CAN_Messages.h:
-
-/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_IMD_CAN_Messages.h:
-
-/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h:
-
-/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/Util.h:
 
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/CC_CAN_Messages.h:

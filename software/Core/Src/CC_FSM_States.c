@@ -194,28 +194,28 @@ void state_idle_iterate(fsm_t *fsm)
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->amsTicks) > 100 && !CC_GlobalState->AMS_Debug)
 		{
-			Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownTicks) > 100 && !CC_GlobalState->SHDN_Debug)
 		{
-			Send_CC_FatalShutdown("Fatal Shutdown SHDN\r\n", true,
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN\r\n", true,
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug)
 		{
-			Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Inverter Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug)
 		{
-			Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
@@ -260,16 +260,16 @@ void state_idle_iterate(fsm_t *fsm)
 				CC_GlobalState->shutdownImdTicks = HAL_GetTick();
 			}
 			/* Inverter Heartbeat */
-			else if(msg.header.ExtId == 0x59)
+			else if(msg.header.ExtId == 0xA5A5A5A5)
 			{
+				CC_LogInfo("GO BRRRRRRRR\r\n", strlen("GO BRRRRRRRR\r\n"));
 				CC_GlobalState->inverterTicks = HAL_GetTick();
-				CC_LogInfo("Inverter Heartbeat\r\n", strlen("Inverter Heartbeat\r\n"));
 			}
 			/* Shutdown Triggered Fault */
 			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
 			{
 				// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
-				Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
+				CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
 						&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 						&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 			}
@@ -356,17 +356,17 @@ void state_driving_enter(fsm_t *fsm)
 		memset(CC_GlobalState->secondaryRollingAccelValues, 0, 10*sizeof(uint32_t));
 		memset(CC_GlobalState->tertiaryRollingAccelValues, 0, 10*sizeof(uint32_t));
 
-		CC_GlobalState->brakeOneMin = BRAKE_PEDAL_ONE_MIN;
-		CC_GlobalState->brakeOneMax = BRAKE_PEDAL_ONE_MAX;
-		CC_GlobalState->brakeTwoMin = BRAKE_PEDAL_TWO_MIN;
-		CC_GlobalState->brakeTwoMax = BRAKE_PEDAL_TWO_MAX;
+		CC_GlobalState->brakeMin[0] = BRAKE_PEDAL_ONE_MIN;
+		CC_GlobalState->brakeMin[1] = BRAKE_PEDAL_TWO_MIN;
+		CC_GlobalState->brakeMax[0] = BRAKE_PEDAL_ONE_MAX;
+		CC_GlobalState->brakeMax[1] = BRAKE_PEDAL_TWO_MAX;
 
-		CC_GlobalState->accelOneMin = ACCEL_PEDAL_ONE_MIN;
-		CC_GlobalState->accelOneMax = ACCEL_PEDAL_ONE_MAX;
-		CC_GlobalState->accelTwoMin = ACCEL_PEDAL_TWO_MIN;
-		CC_GlobalState->accelTwoMax = ACCEL_PEDAL_TWO_MAX;
-		CC_GlobalState->accelThreeMin = ACCEL_PEDAL_THREE_MIN;
-		CC_GlobalState->accelThreeMax = ACCEL_PEDAL_THREE_MAX;
+		CC_GlobalState->accelMin[0] = ACCEL_PEDAL_ONE_MIN;
+		CC_GlobalState->accelMax[0] = ACCEL_PEDAL_ONE_MAX;
+		CC_GlobalState->accelMin[1] = ACCEL_PEDAL_TWO_MIN;
+		CC_GlobalState->accelMax[1] = ACCEL_PEDAL_TWO_MAX;
+		CC_GlobalState->accelMin[2] = ACCEL_PEDAL_THREE_MIN;
+		CC_GlobalState->accelMax[2] = ACCEL_PEDAL_THREE_MAX;
 
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
@@ -395,28 +395,28 @@ void state_driving_iterate(fsm_t *fsm)
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->amsTicks) > 100 && !CC_GlobalState->AMS_Debug)
 		{
-			Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownTicks) > 100 && !CC_GlobalState->SHDN_Debug)
 		{
-			Send_CC_FatalShutdown("Fatal Shutdown SHDN\r\n", true,
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN\r\n", true,
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug)
 		{
-			Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Inverter Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug)
 		{
-			Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
@@ -465,7 +465,7 @@ void state_driving_iterate(fsm_t *fsm)
 				}
 			}
 			/* Inverter Heartbeat */
-			else if(msg.header.ExtId == 0x59)
+			else if(msg.header.ExtId == 0xA5A5A5A5)
 			{
 				CC_GlobalState->inverterTicks = HAL_GetTick();
 			}
@@ -473,9 +473,10 @@ void state_driving_iterate(fsm_t *fsm)
 			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
 			{
 				// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
-				Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
-							&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
-							&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
+				CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
+						&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+						&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
+				fsm_changeState(fsm, &idleState, "Resetting to Idle to Clean");
 			}
 		}
 	}
@@ -499,27 +500,24 @@ void state_driving_iterate(fsm_t *fsm)
 		 * Trigger Fault outside expected range
 		 * Power trip, surge to sensor etc.
 		 */
-		if(!CC_GlobalState->faultDetected
-				&& (CC_GlobalState->brakeAdcValues[0] <= CC_GlobalState->brakeOneMin - 100
-						|| CC_GlobalState->brakeAdcValues[0] >= CC_GlobalState->brakeOneMax + 100
-						|| CC_GlobalState->brakeAdcValues[1] <= CC_GlobalState->brakeTwoMin - 100
-						|| CC_GlobalState->brakeAdcValues[1] >= CC_GlobalState->brakeTwoMax + 100))
+		if(!CC_GlobalState->faultDetected)
 		{
-			CC_GlobalState->faultDetected = true;
-			CC_GlobalState->implausibleTicks = HAL_GetTick();
-			CC_LogInfo("Dumb Catch\r\n", strlen("Dumb Catch\r\n"));
-		}
-		if(!CC_GlobalState->faultDetected
-				&& (CC_GlobalState->accelAdcValues[0] <= CC_GlobalState->accelOneMin - 100
-						|| CC_GlobalState->accelAdcValues[0] >= CC_GlobalState->accelOneMax + 100
-						|| CC_GlobalState->accelAdcValues[1] <= CC_GlobalState->accelTwoMin - 100
-						|| CC_GlobalState->accelAdcValues[1] >= CC_GlobalState->accelTwoMax + 100
-						|| CC_GlobalState->accelAdcValues[2] <= CC_GlobalState->accelThreeMin - 100
-						|| CC_GlobalState->accelAdcValues[2] >= CC_GlobalState->accelThreeMax + 100))
-		{
-			CC_GlobalState->faultDetected = true;
-			CC_GlobalState->implausibleTicks = HAL_GetTick();
-			CC_LogInfo("Dumb Catch\r\n", strlen("Dumb Catch\r\n"));
+			for (int i = 0; i < 2; i++) {
+				if (CC_GlobalState->brakeAdcValues[i] <= CC_GlobalState->brakeMin[i] - 100
+						|| CC_GlobalState->brakeAdcValues[i] >= CC_GlobalState->brakeMax[i] + 100)
+				{
+					CC_GlobalState->faultDetected = true;
+					CC_GlobalState->implausibleTicks = HAL_GetTick();
+				}
+			}
+			for (int i = 0; i < 3; i++) {
+				if (CC_GlobalState->accelAdcValues[i] <= CC_GlobalState->accelMin[i] - 100
+						|| CC_GlobalState->accelAdcValues[i] >= CC_GlobalState->accelMax[i] + 100)
+				{
+					CC_GlobalState->faultDetected = true;
+					CC_GlobalState->implausibleTicks = HAL_GetTick();
+				}
+			}
 		}
 
 		/* Brake Travel Record & Sum 10 Values */
@@ -571,58 +569,58 @@ void state_driving_iterate(fsm_t *fsm)
 		/* Check for New Min/Max Brake Values */
 		if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0)
 		{
-			if(brake_one_avg <= CC_GlobalState->brakeOneMin && !CC_GlobalState->faultDetected)
+			if(brake_one_avg <= CC_GlobalState->brakeMin[0] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->brakeOneMin = brake_one_avg;
+				CC_GlobalState->brakeMin[0] = brake_one_avg;
 			}
-			if(brake_one_avg >= CC_GlobalState->brakeOneMax && !CC_GlobalState->faultDetected)
+			if(brake_one_avg >= CC_GlobalState->brakeMax[0] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->brakeOneMax = brake_one_avg;
+				CC_GlobalState->brakeMax[0] = brake_one_avg;
 			}
-			if(brake_two_avg <= CC_GlobalState->brakeTwoMin && !CC_GlobalState->faultDetected)
+			if(brake_two_avg <= CC_GlobalState->brakeMin[1] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->brakeTwoMin = brake_two_avg;
+				CC_GlobalState->brakeMin[1] = brake_two_avg;
 			}
-			if(brake_two_avg >= CC_GlobalState->brakeTwoMax && !CC_GlobalState->faultDetected)
+			if(brake_two_avg >= CC_GlobalState->brakeMax[1] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->brakeTwoMax = brake_two_avg;
+				CC_GlobalState->brakeMax[1] = brake_two_avg;
 			}
 		}
 		if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->secondaryRollingAccelValues[0] > 0 && CC_GlobalState->tertiaryRollingAccelValues[0] > 0)
 		{
-			if(accel_one_avg <= CC_GlobalState->accelOneMin && !CC_GlobalState->faultDetected)
+			if(accel_one_avg <= CC_GlobalState->accelMin[0] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelOneMin = accel_one_avg;
+				CC_GlobalState->accelMin[0] = accel_one_avg;
 			}
-			if(accel_one_avg >= CC_GlobalState->accelOneMax && !CC_GlobalState->faultDetected)
+			if(accel_one_avg >= CC_GlobalState->accelMax[0] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelOneMax = accel_one_avg;
+				CC_GlobalState->accelMax[0] = accel_one_avg;
 			}
-			if(accel_two_avg <= CC_GlobalState->accelTwoMin && !CC_GlobalState->faultDetected)
+			if(accel_two_avg <= CC_GlobalState->accelMin[1] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelTwoMin = accel_two_avg;
+				CC_GlobalState->accelMin[1] = accel_two_avg;
 			}
-			if(accel_two_avg >= CC_GlobalState->accelTwoMax && !CC_GlobalState->faultDetected)
+			if(accel_two_avg >= CC_GlobalState->accelMax[1] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelTwoMax = accel_two_avg;
+				CC_GlobalState->accelMax[1] = accel_two_avg;
 			}
-			if(accel_three_avg <= CC_GlobalState->accelThreeMin && !CC_GlobalState->faultDetected)
+			if(accel_three_avg <= CC_GlobalState->accelMin[2] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelThreeMin = accel_three_avg;
+				CC_GlobalState->accelMin[2] = accel_three_avg;
 			}
-			if(accel_three_avg >= CC_GlobalState->accelThreeMax && !CC_GlobalState->faultDetected)
+			if(accel_three_avg >= CC_GlobalState->accelMax[2] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelThreeMax = accel_three_avg;
+				CC_GlobalState->accelMax[2] = accel_three_avg;
 			}
 		}
 
 		/* Map Travel to Pedal Pos */
-		brake_travel_one = map(brake_one_avg, CC_GlobalState->brakeOneMin+2, CC_GlobalState->brakeOneMax-5, 0, 100);
-		brake_travel_two = map(brake_two_avg, CC_GlobalState->brakeTwoMin+2, CC_GlobalState->brakeTwoMax-5, 0, 100);
+		brake_travel_one = map(brake_one_avg, CC_GlobalState->brakeMin[0]+2, CC_GlobalState->brakeMax[0]-5, 0, 100);
+		brake_travel_two = map(brake_two_avg, CC_GlobalState->brakeMin[1]+2, CC_GlobalState->brakeMax[1]-5, 0, 100);
 
-		accel_travel_one = map(accel_one_avg, CC_GlobalState->accelOneMin, CC_GlobalState->accelOneMax-5, 0, 100);
-		accel_travel_two = map(accel_two_avg, CC_GlobalState->accelTwoMin, CC_GlobalState->accelTwoMax-5, 0, 100);
-		accel_travel_three = map(accel_three_avg, CC_GlobalState->accelThreeMin, CC_GlobalState->accelThreeMax-5, 0, 100);
+		accel_travel_one = map(accel_one_avg, CC_GlobalState->accelMin[0], CC_GlobalState->accelMax[0]-5, 0, 100);
+		accel_travel_two = map(accel_two_avg, CC_GlobalState->accelMin[1], CC_GlobalState->accelMax[1]-5, 0, 100);
+		accel_travel_three = map(accel_three_avg, CC_GlobalState->accelMin[2], CC_GlobalState->accelMax[2]-5, 0, 100);
 
 		/* Ensure Brake & Accel Pots Synced */
 		if(!CC_GlobalState->faultDetected
