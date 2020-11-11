@@ -17,10 +17,12 @@
 #include "usart.h"
 #include "adc.h"
 #include "CC_CAN_Messages.h"
+#include "CC_CAN_Wrapper.h"
 #include "PDM_CAN_Messages.h"
 #include "AMS_CAN_Messages.h"
 #include "SHDN_IMD_CAN_Messages.h"
 #include "SHDN_CAN_Messages.h"
+#include "Util.h"
 
 /**
  * @brief Chassis Global State
@@ -57,6 +59,7 @@ typedef struct
 	uint32_t shutdownImdTicks;
 
 	/* Initialisation Confirmation */
+	bool ccInit;
 	bool amsInit;
 
 	/* Analogue Values */

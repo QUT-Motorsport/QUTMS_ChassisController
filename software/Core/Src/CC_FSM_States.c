@@ -23,11 +23,9 @@
 #define ACCEL_PEDAL_THREE_MIN 320
 #define ACCEL_PEDAL_THREE_MAX 3380
 
-/* Util Functions */
-int map(int x, int in_min, int in_max, int out_min, int out_max)
-{
-	return (x - in_min) * (out_max - out_min) / (float)(in_max - in_min) + out_min;
-}
+#define CAN_1 hcan1
+#define CAN_2 hcan2
+#define CAN_3 hcan3
 
 state_t deadState = {&state_dead_enter, &state_dead_iterate, &state_dead_exit, "Dead_s"};
 
@@ -53,11 +51,15 @@ void state_start_enter(fsm_t *fsm)
 {
 	if(CC_GlobalState == NULL)
 	{
+		/* Assign memory and nullify Global State */
 		CC_GlobalState = malloc(sizeof(CC_GlobalState_t));
 		memset(CC_GlobalState, 0, sizeof(CC_GlobalState_t));
 
-		// As CC_GlobalState is accessible across threads, we need to use a semaphore to access it
+		/* As CC_GlobalState is accessible across threads
+		 * we need to use a semaphore to access and lock it
+		 */
 		CC_GlobalState->sem = osSemaphoreNew(3U, 3U, NULL);
+
 		if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 		{
 			/* Bind and configure initial global states */
@@ -67,13 +69,12 @@ void state_start_enter(fsm_t *fsm)
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
 			CC_GlobalState->Inverter_Debug = true;
-
 			CC_GlobalState->tractiveActive = false;
-
+			CC_GlobalState->CANQueue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
 
-		CC_GlobalState->CANQueue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
+		/* Ensure CANQueue exists */
 		if(CC_GlobalState->CANQueue == NULL)
 		{
 			Error_Handler();
@@ -82,6 +83,7 @@ void state_start_enter(fsm_t *fsm)
 
 	/* Set initial pin states */
 	HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
+
 	/* Initiate Startup on PDM */
 	PDM_InitiateStartup_t pdmStartup = Compose_PDM_InitiateStartup();
 	CAN_TxHeaderTypeDef header =
@@ -96,7 +98,7 @@ void state_start_enter(fsm_t *fsm)
 	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
 
 	/* Debug Tracing */
-	CC_LogInfo("Enter Start\r\n", strlen("Enter Start\r\n"));
+	//CC_LogInfo("Enter Start\r\n", strlen("Enter Start\r\n"));
 	return;
 }
 
@@ -159,7 +161,9 @@ void state_start_iterate(fsm_t *fsm)
 
 void state_start_exit(fsm_t *fsm)
 {
-	/* Wake/Ready to Idle over CAN */
+	/* All CAN Wake or
+	 * Confirmation to Idle
+	 * Messages go here over CAN */
 	//CC_LogInfo("Exit Start\r\n", strlen("Exit Start\r\n"));
 	return;
 }
@@ -172,7 +176,11 @@ void state_idle_enter(fsm_t *fsm)
 	int brake_threshold_range = BRAKE_PRESSURE_MAX - BRAKE_PRESSURE_MIN;
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
+		/* Assign Threshold to 20% of Brake Pressure */
 		CC_GlobalState->brakePressureThreshold = BRAKE_PRESSURE_MIN + (0.2 * brake_threshold_range);
+
+		/* Init Chassis Controller On */
+		CC_GlobalState->ccInit = true;
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 	return;
@@ -180,79 +188,36 @@ void state_idle_enter(fsm_t *fsm)
 
 void state_idle_iterate(fsm_t *fsm)
 {
-
 	/* Check for Heartbeat Expiry */
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->amsTicks) > 100 && !CC_GlobalState->AMS_Debug)
 		{
-			CC_LogInfo("Fatal Shutdown AMS\r\n", strlen("Fatal Shutdown AMS\r\n"));
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownTicks) > 100 && !CC_GlobalState->SHDN_Debug)
 		{
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			Send_CC_FatalShutdown("Fatal Shutdown SHDN\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug)
 		{
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Inverter Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug)
 		{
-			CC_LogInfo("Inverter Shutdown\r\n", strlen("Inverter Shutdown\r\n"));
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
@@ -295,7 +260,7 @@ void state_idle_iterate(fsm_t *fsm)
 				CC_GlobalState->shutdownImdTicks = HAL_GetTick();
 			}
 			/* Inverter Heartbeat */
-			else if(msg.header.StdId == 0x59)
+			else if(msg.header.ExtId == 0x59)
 			{
 				CC_GlobalState->inverterTicks = HAL_GetTick();
 				CC_LogInfo("Inverter Heartbeat\r\n", strlen("Inverter Heartbeat\r\n"));
@@ -304,21 +269,9 @@ void state_idle_iterate(fsm_t *fsm)
 			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
 			{
 				// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
-				CC_LogInfo("Fatal Shutdown Trigger Fault\r\n", strlen("Fatal Shutdown Trigger Fault\r\n"));
-				CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-				CAN_TxHeaderTypeDef header =
-				{
-						.ExtId = fatalShutdown.id,
-						.IDE = CAN_ID_EXT,
-						.RTR = CAN_RTR_DATA,
-						.DLC = 1,
-						.TransmitGlobalTime = DISABLE,
-				};
-				uint8_t data[1] = {0xF};
-				HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-				HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-				HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
-				fsm_changeState(fsm, &idleState, "Soft Shutdown Requested (CAN)");
+				Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
+						&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+						&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 			}
 		}
 	}
@@ -335,7 +288,7 @@ void state_idle_iterate(fsm_t *fsm)
 		HAL_ADC_Start(&hadc3);
 		raw = HAL_ADC_GetValue(&hadc3);
 	}
-	if(raw > CC_GlobalState->brakePressureThreshold && CC_GlobalState->amsInit)
+	if(raw > CC_GlobalState->brakePressureThreshold && CC_GlobalState->amsInit && CC_GlobalState->ccInit)
 	{
 		/* Illuminate RTD Button */
 		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
@@ -388,8 +341,6 @@ void state_driving_enter(fsm_t *fsm)
 
 	/* If AMS Contactors Closed & BMS' Healthy */
 
-	/* Play RTD Siren for 2 Seconds */
-
 	/* Enable all channels on PDM */
 	// TODO Fix Bitwise Flip on enter IDLE State under current PDM Startup Sequence
 
@@ -436,87 +387,38 @@ void state_driving_iterate(fsm_t *fsm)
 		/* Flash RTD */
 		if((HAL_GetTick() - CC_GlobalState->readyToDriveTicks) > 1000)
 		{
-			if(!CC_GlobalState->rtdLightActive)
-			{
-				HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
-				CC_GlobalState->rtdLightActive = true;
-			}
-			else
-			{
-				HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
-				CC_GlobalState->rtdLightActive = false;
-			}
+			HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, !CC_GlobalState->rtdLightActive);
+			CC_GlobalState->rtdLightActive = !CC_GlobalState->rtdLightActive;
 			CC_GlobalState->readyToDriveTicks = HAL_GetTick();
 		}
 
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->amsTicks) > 100 && !CC_GlobalState->AMS_Debug)
 		{
-			CC_LogInfo("Fatal Shutdown AMS Driving\r\n", strlen("Fatal Shutdown AMS Driving\r\n"));
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownTicks) > 100 && !CC_GlobalState->SHDN_Debug)
 		{
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			Send_CC_FatalShutdown("Fatal Shutdown SHDN\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug)
 		{
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Inverter Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug)
 		{
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
@@ -571,21 +473,9 @@ void state_driving_iterate(fsm_t *fsm)
 			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
 			{
 				// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
-				CC_LogInfo("Fatal Shutdown Trigger Fault\r\n", strlen("Fatal Shutdown Trigger Fault\r\n"));
-				CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-				CAN_TxHeaderTypeDef header =
-				{
-						.ExtId = fatalShutdown.id,
-						.IDE = CAN_ID_EXT,
-						.RTR = CAN_RTR_DATA,
-						.DLC = 1,
-						.TransmitGlobalTime = DISABLE,
-				};
-				uint8_t data[1] = {0xF};
-				HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-				HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-				HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
-				fsm_changeState(fsm, &idleState, "Soft Shutdown Requested (CAN)");
+				Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
+							&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+							&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 			}
 		}
 	}

@@ -49,10 +49,14 @@ Core/Src/CC_FSM_States.o: ../Core/Src/CC_FSM_States.c \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/CC_CAN_Messages.h \
  ../Core/Inc/main.h ../Core/Inc/can.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h \
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/CC_CAN_Wrapper.h \
+ ../Core/Inc/usart.h \
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/CC_CAN_Messages.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/PDM_CAN_Messages.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/AMS_CAN_Messages.h \
  /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_IMD_CAN_Messages.h \
- /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h \
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/Util.h
 
 ../Core/Inc/CC_FSM_States.h:
 
@@ -162,6 +166,12 @@ Core/Src/CC_FSM_States.o: ../Core/Src/CC_FSM_States.c \
 
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h:
 
+/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/CC_CAN_Wrapper.h:
+
+../Core/Inc/usart.h:
+
+/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/CC_CAN_Messages.h:
+
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/PDM_CAN_Messages.h:
 
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/AMS_CAN_Messages.h:
@@ -169,3 +179,5 @@ Core/Src/CC_FSM_States.o: ../Core/Src/CC_FSM_States.c \
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_IMD_CAN_Messages.h:
 
 /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/SHDN_CAN_Messages.h:
+
+/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/Util.h:
