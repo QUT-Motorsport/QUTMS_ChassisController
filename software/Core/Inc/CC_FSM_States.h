@@ -17,10 +17,12 @@
 #include "usart.h"
 #include "adc.h"
 #include "CC_CAN_Messages.h"
+#include "CC_CAN_Wrapper.h"
 #include "PDM_CAN_Messages.h"
 #include "AMS_CAN_Messages.h"
 #include "SHDN_IMD_CAN_Messages.h"
 #include "SHDN_CAN_Messages.h"
+#include "Util.h"
 
 /**
  * @brief Chassis Global State
@@ -45,26 +47,29 @@ typedef struct
 	bool AMS_Debug;
 	bool SHDN_IMD_Debug;
 	bool SHDN_Debug;
+	bool Inverter_Debug;
 
 	/** Tick Refresh Counter for Individual Board Heartbeats */
 	uint32_t startupTicks;
 	uint32_t readyToDriveTicks;
 	uint32_t implausibleTicks;
 	uint32_t amsTicks;
+	uint32_t inverterTicks;
 	uint32_t shutdownTicks;
 	uint32_t shutdownImdTicks;
+
+	/* Init Confirmation Tracking */
+	bool ccInit;
+	bool amsInit;
 
 	/* Analogue Values */
 	uint32_t brakeAdcValues[100];
 	uint32_t accelAdcValues[150];
 	uint32_t brakePressureThreshold;
 	uint16_t rollingBrakeValues[10]; uint16_t secondaryRollingBrakeValues[10];
-	uint16_t brakeOneMin; uint16_t brakeOneMax;
-	uint16_t brakeTwoMin; uint16_t brakeTwoMax;
+	uint16_t brakeMin[2]; uint16_t brakeMax[2];
 	uint32_t rollingAccelValues[10]; uint32_t secondaryRollingAccelValues[10]; uint32_t tertiaryRollingAccelValues[10];
-	uint16_t accelOneMin; uint16_t accelOneMax;
-	uint16_t accelTwoMin; uint16_t accelTwoMax;
-	uint16_t accelThreeMin; uint16_t accelThreeMax;
+	uint16_t accelMin[3]; uint16_t accelMax[3];
 
 	/* Formatted Pedal Travel Positions */
 	uint8_t accelTravel;

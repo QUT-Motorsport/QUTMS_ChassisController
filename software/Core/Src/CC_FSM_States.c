@@ -23,11 +23,9 @@
 #define ACCEL_PEDAL_THREE_MIN 320
 #define ACCEL_PEDAL_THREE_MAX 3380
 
-/* Util Functions */
-int map(int x, int in_min, int in_max, int out_min, int out_max)
-{
-	return (x - in_min) * (out_max - out_min) / (float)(in_max - in_min) + out_min;
-}
+#define CAN_1 hcan1
+#define CAN_2 hcan2
+#define CAN_3 hcan3
 
 state_t deadState = {&state_dead_enter, &state_dead_iterate, &state_dead_exit, "Dead_s"};
 
@@ -53,26 +51,34 @@ void state_start_enter(fsm_t *fsm)
 {
 	if(CC_GlobalState == NULL)
 	{
+		/* Assign memory and nullify Global State */
 		CC_GlobalState = malloc(sizeof(CC_GlobalState_t));
 		memset(CC_GlobalState, 0, sizeof(CC_GlobalState_t));
 
-		// As CC_GlobalState is accessible across threads, we need to use a semaphore to access it
+		/* As CC_GlobalState is accessible across threads
+		 * we need to use a semaphore to access and lock it
+		 */
 		CC_GlobalState->sem = osSemaphoreNew(3U, 3U, NULL);
+
 		if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 		{
-			/* Bind and configure initial global states */
+			/* Bind and configure initial global states
+			 * Set to false if board in harness and expecting
+			 * operations
+			 */
 			CC_GlobalState->PDM_Debug = true;
 			CC_GlobalState->AMS_Debug = false;
 			CC_GlobalState->SHDN_Debug = false;
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
-
+			CC_GlobalState->Inverter_Debug = true;
 			CC_GlobalState->tractiveActive = false;
 
+			CC_GlobalState->CANQueue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
 
-		CC_GlobalState->CANQueue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
+		/* Ensure CANQueue exists */
 		if(CC_GlobalState->CANQueue == NULL)
 		{
 			Error_Handler();
@@ -81,6 +87,7 @@ void state_start_enter(fsm_t *fsm)
 
 	/* Set initial pin states */
 	HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
+
 	/* Initiate Startup on PDM */
 	PDM_InitiateStartup_t pdmStartup = Compose_PDM_InitiateStartup();
 	CAN_TxHeaderTypeDef header =
@@ -93,9 +100,6 @@ void state_start_enter(fsm_t *fsm)
 	};
 	uint8_t data[1] = {0xF};
 	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-
-	/* Debug Tracing */
-	CC_LogInfo("Enter Start\r\n", strlen("Enter Start\r\n"));
 	return;
 }
 
@@ -116,7 +120,7 @@ void state_start_iterate(fsm_t *fsm)
 			{
 				/* Get Power Channel Values at Boot */
 				getPowerChannels = 0;
-				Parse_PDM_StartupOk(*((PDM_StartupOk_t*)&(msg.data)), &getPowerChannels);
+				Parse_PDM_StartupOk(msg.data, &getPowerChannels);
 
 				/* Initialise Boot with Bitwise OR on Power Channels */
 				boot = true;
@@ -146,6 +150,7 @@ void state_start_iterate(fsm_t *fsm)
 			CC_GlobalState->amsTicks = HAL_GetTick();
 			CC_GlobalState->shutdownTicks = HAL_GetTick();
 			CC_GlobalState->shutdownImdTicks = HAL_GetTick();
+			CC_GlobalState->inverterTicks = HAL_GetTick();
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
 
@@ -157,8 +162,6 @@ void state_start_iterate(fsm_t *fsm)
 
 void state_start_exit(fsm_t *fsm)
 {
-	/* Wake/Ready to Idle over CAN */
-	//CC_LogInfo("Exit Start\r\n", strlen("Exit Start\r\n"));
 	return;
 }
 
@@ -170,7 +173,11 @@ void state_idle_enter(fsm_t *fsm)
 	int brake_threshold_range = BRAKE_PRESSURE_MAX - BRAKE_PRESSURE_MIN;
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
+		/* Assign Threshold to 20% of Brake Pressure */
 		CC_GlobalState->brakePressureThreshold = BRAKE_PRESSURE_MIN + (0.2 * brake_threshold_range);
+
+		/* Init Chassis Controller */
+		CC_GlobalState->ccInit = true;
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 	return;
@@ -185,54 +192,30 @@ void state_idle_iterate(fsm_t *fsm)
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->amsTicks) > 100 && !CC_GlobalState->AMS_Debug)
 		{
-			CC_LogInfo("Fatal Shutdown AMS\r\n", strlen("Fatal Shutdown AMS\r\n"));
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownTicks) > 100 && !CC_GlobalState->SHDN_Debug)
 		{
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug)
 		{
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
+		}
+		/* Inverter Heartbeat Expiry - Fatal Shutdown */
+		if((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug)
+		{
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
@@ -247,24 +230,17 @@ void state_idle_iterate(fsm_t *fsm)
 			/* AMS Heartbeat */
 			if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
 			{
-				if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
-				{
-					bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
-					Parse_AMS_HeartbeatResponse(*((AMS_HeartbeatResponse_t*)&(msg.data)), &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
-					CC_GlobalState->amsTicks = HAL_GetTick();
-					osSemaphoreRelease(CC_GlobalState->sem);
-				}
+				bool initialised; bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
+				Parse_AMS_HeartbeatResponse(msg.data, &initialised, &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
+				CC_GlobalState->amsTicks = HAL_GetTick();
+				CC_GlobalState->amsInit = initialised;
 			}
 			/* Shutdown Heartbeat */
 			else if(msg.header.ExtId == Compose_CANId(0x1, 0x06, 0x0, 0x01, 0x01, 0x0))
 			{
-				if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
-				{
-					uint8_t segmentState;
-					Parse_SHDN_HeartbeatResponse(*((SHDN_HeartbeatResponse_t*)&(msg.data)), &segmentState);
-					CC_GlobalState->shutdownTicks = HAL_GetTick();
-					osSemaphoreRelease(CC_GlobalState->sem);
-				}
+				uint8_t segmentState;
+				Parse_SHDN_HeartbeatResponse(*((SHDN_HeartbeatResponse_t*)&(msg.data)), &segmentState);
+				CC_GlobalState->shutdownTicks = HAL_GetTick();
 			}
 			/* Shutdown IMD Heartbeat */
 			else if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
@@ -272,6 +248,20 @@ void state_idle_iterate(fsm_t *fsm)
 				uint8_t pwmState;
 				Parse_SHDN_IMD_HeartbeatResponse(*((SHDN_IMD_HeartbeatResponse_t*)&(msg.data)), &pwmState);
 				CC_GlobalState->shutdownImdTicks = HAL_GetTick();
+			}
+			/* Inverter Heartbeat */
+			else if(msg.header.ExtId == 0xA5A5A5A5)
+			{
+				CC_LogInfo("GO BRRRRRRRR\r\n", strlen("GO BRRRRRRRR\r\n"));
+				CC_GlobalState->inverterTicks = HAL_GetTick();
+			}
+			/* Shutdown Triggered Fault */
+			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
+			{
+				// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
+				CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
+						&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+						&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 			}
 		}
 	}
@@ -288,7 +278,7 @@ void state_idle_iterate(fsm_t *fsm)
 		HAL_ADC_Start(&hadc3);
 		raw = HAL_ADC_GetValue(&hadc3);
 	}
-	if(raw > CC_GlobalState->brakePressureThreshold)
+	if(raw > CC_GlobalState->brakePressureThreshold && CC_GlobalState->amsInit && CC_GlobalState->ccInit)
 	{
 		/* Illuminate RTD Button */
 		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
@@ -358,17 +348,17 @@ void state_driving_enter(fsm_t *fsm)
 		memset(CC_GlobalState->secondaryRollingAccelValues, 0, 10*sizeof(uint32_t));
 		memset(CC_GlobalState->tertiaryRollingAccelValues, 0, 10*sizeof(uint32_t));
 
-		CC_GlobalState->brakeOneMin = BRAKE_PEDAL_ONE_MIN;
-		CC_GlobalState->brakeOneMax = BRAKE_PEDAL_ONE_MAX;
-		CC_GlobalState->brakeTwoMin = BRAKE_PEDAL_TWO_MIN;
-		CC_GlobalState->brakeTwoMax = BRAKE_PEDAL_TWO_MAX;
+		CC_GlobalState->brakeMin[0] = BRAKE_PEDAL_ONE_MIN;
+		CC_GlobalState->brakeMin[1] = BRAKE_PEDAL_TWO_MIN;
+		CC_GlobalState->brakeMax[0] = BRAKE_PEDAL_ONE_MAX;
+		CC_GlobalState->brakeMax[1] = BRAKE_PEDAL_TWO_MAX;
 
-		CC_GlobalState->accelOneMin = ACCEL_PEDAL_ONE_MIN;
-		CC_GlobalState->accelOneMax = ACCEL_PEDAL_ONE_MAX;
-		CC_GlobalState->accelTwoMin = ACCEL_PEDAL_TWO_MIN;
-		CC_GlobalState->accelTwoMax = ACCEL_PEDAL_TWO_MAX;
-		CC_GlobalState->accelThreeMin = ACCEL_PEDAL_THREE_MIN;
-		CC_GlobalState->accelThreeMax = ACCEL_PEDAL_THREE_MAX;
+		CC_GlobalState->accelMin[0] = ACCEL_PEDAL_ONE_MIN;
+		CC_GlobalState->accelMax[0] = ACCEL_PEDAL_ONE_MAX;
+		CC_GlobalState->accelMin[1] = ACCEL_PEDAL_TWO_MIN;
+		CC_GlobalState->accelMax[1] = ACCEL_PEDAL_TWO_MAX;
+		CC_GlobalState->accelMin[2] = ACCEL_PEDAL_THREE_MIN;
+		CC_GlobalState->accelMax[2] = ACCEL_PEDAL_THREE_MAX;
 
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
@@ -389,70 +379,38 @@ void state_driving_iterate(fsm_t *fsm)
 		/* Flash RTD */
 		if((HAL_GetTick() - CC_GlobalState->readyToDriveTicks) > 1000)
 		{
-			if(!CC_GlobalState->rtdLightActive)
-			{
-				HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
-				CC_GlobalState->rtdLightActive = true;
-			}
-			else
-			{
-				HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
-				CC_GlobalState->rtdLightActive = false;
-			}
+			HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, !CC_GlobalState->rtdLightActive);
+			CC_GlobalState->rtdLightActive = !CC_GlobalState->rtdLightActive;
 			CC_GlobalState->readyToDriveTicks = HAL_GetTick();
 		}
 
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->amsTicks) > 100 && !CC_GlobalState->AMS_Debug)
 		{
-			CC_LogInfo("Fatal Shutdown AMS Driving\r\n", strlen("Fatal Shutdown AMS Driving\r\n"));
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownTicks) > 100 && !CC_GlobalState->SHDN_Debug)
 		{
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 		if((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug)
 		{
-			CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-			CAN_TxHeaderTypeDef header =
-			{
-					.ExtId = fatalShutdown.id,
-					.IDE = CAN_ID_EXT,
-					.RTR = CAN_RTR_DATA,
-					.DLC = 1,
-					.TransmitGlobalTime = DISABLE,
-			};
-			uint8_t data[1] = {0xF};
-			HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
+		}
+		/* Inverter Heartbeat Expiry - Fatal Shutdown */
+		if((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug)
+		{
+			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
+					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+					&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 		}
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
@@ -467,35 +425,37 @@ void state_driving_iterate(fsm_t *fsm)
 			/* AMS Heartbeat */
 			if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
 			{
-				if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
-				{
-					bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
-					Parse_AMS_HeartbeatResponse(*((AMS_HeartbeatResponse_t*)&(msg.data)), &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
-					CC_GlobalState->amsTicks = HAL_GetTick();
-					osSemaphoreRelease(CC_GlobalState->sem);
-				}
+				bool initialised; bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
+				Parse_AMS_HeartbeatResponse(msg.data, &initialised, &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
+				CC_GlobalState->amsTicks = HAL_GetTick();
 			}
 			/* Shutdown Heartbeat */
 			else if(msg.header.ExtId == Compose_CANId(0x1, 0x06, 0x0, 0x01, 0x01, 0x0))
 			{
-				if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
-				{
-					uint8_t segmentState;
-					Parse_SHDN_HeartbeatResponse(*((SHDN_HeartbeatResponse_t*)&(msg.data)), &segmentState);
-					CC_GlobalState->shutdownTicks = HAL_GetTick();
-					osSemaphoreRelease(CC_GlobalState->sem);
-				}
+				uint8_t segmentState;
+				Parse_SHDN_HeartbeatResponse(*((SHDN_HeartbeatResponse_t*)&(msg.data)), &segmentState);
+				CC_GlobalState->shutdownTicks = HAL_GetTick();
 			}
 			/* Shutdown IMD Heartbeat */
 			else if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
 			{
-				if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
-				{
-					uint8_t pwmState;
-					Parse_SHDN_IMD_HeartbeatResponse(*((SHDN_IMD_HeartbeatResponse_t*)&(msg.data)), &pwmState);
-					CC_GlobalState->shutdownImdTicks = HAL_GetTick();
-					osSemaphoreRelease(CC_GlobalState->sem);
-				}
+				uint8_t pwmState;
+				Parse_SHDN_IMD_HeartbeatResponse(*((SHDN_IMD_HeartbeatResponse_t*)&(msg.data)), &pwmState);
+				CC_GlobalState->shutdownImdTicks = HAL_GetTick();
+			}
+			/* Inverter Heartbeat */
+			else if(msg.header.ExtId == 0xA5A5A5A5)
+			{
+				CC_LogInfo("DRIVING GO BRRRRRRRR\r\n", strlen("DRIVING GO BRRRRRRRR\r\n"));
+				CC_GlobalState->inverterTicks = HAL_GetTick();
+			}
+			/* Shutdown Triggered Fault */
+			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
+			{
+				// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
+				CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault - Driving\r\n", true,
+						&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+						&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 			}
 		}
 	}
@@ -519,27 +479,24 @@ void state_driving_iterate(fsm_t *fsm)
 		 * Trigger Fault outside expected range
 		 * Power trip, surge to sensor etc.
 		 */
-		if(!CC_GlobalState->faultDetected
-				&& (CC_GlobalState->brakeAdcValues[0] <= CC_GlobalState->brakeOneMin - 100
-						|| CC_GlobalState->brakeAdcValues[0] >= CC_GlobalState->brakeOneMax + 100
-						|| CC_GlobalState->brakeAdcValues[1] <= CC_GlobalState->brakeTwoMin - 100
-						|| CC_GlobalState->brakeAdcValues[1] >= CC_GlobalState->brakeTwoMax + 100))
+		if(!CC_GlobalState->faultDetected)
 		{
-			CC_GlobalState->faultDetected = true;
-			CC_GlobalState->implausibleTicks = HAL_GetTick();
-			CC_LogInfo("Dumb Catch\r\n", strlen("Dumb Catch\r\n"));
-		}
-		if(!CC_GlobalState->faultDetected
-				&& (CC_GlobalState->accelAdcValues[0] <= CC_GlobalState->accelOneMin - 100
-				|| CC_GlobalState->accelAdcValues[0] >= CC_GlobalState->accelOneMax + 100
-				|| CC_GlobalState->accelAdcValues[1] <= CC_GlobalState->accelTwoMin - 100
-				|| CC_GlobalState->accelAdcValues[1] >= CC_GlobalState->accelTwoMax + 100
-				|| CC_GlobalState->accelAdcValues[2] <= CC_GlobalState->accelThreeMin - 100
-				|| CC_GlobalState->accelAdcValues[2] >= CC_GlobalState->accelThreeMax + 100))
-		{
-			CC_GlobalState->faultDetected = true;
-			CC_GlobalState->implausibleTicks = HAL_GetTick();
-			CC_LogInfo("Dumb Catch\r\n", strlen("Dumb Catch\r\n"));
+			for (int i = 0; i < 2; i++) {
+				if (CC_GlobalState->brakeAdcValues[i] <= CC_GlobalState->brakeMin[i] - 100
+						|| CC_GlobalState->brakeAdcValues[i] >= CC_GlobalState->brakeMax[i] + 100)
+				{
+					CC_GlobalState->faultDetected = true;
+					CC_GlobalState->implausibleTicks = HAL_GetTick();
+				}
+			}
+			for (int i = 0; i < 3; i++) {
+				if (CC_GlobalState->accelAdcValues[i] <= CC_GlobalState->accelMin[i] - 100
+						|| CC_GlobalState->accelAdcValues[i] >= CC_GlobalState->accelMax[i] + 100)
+				{
+					CC_GlobalState->faultDetected = true;
+					CC_GlobalState->implausibleTicks = HAL_GetTick();
+				}
+			}
 		}
 
 		/* Brake Travel Record & Sum 10 Values */
@@ -591,74 +548,74 @@ void state_driving_iterate(fsm_t *fsm)
 		/* Check for New Min/Max Brake Values */
 		if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0)
 		{
-			if(brake_one_avg <= CC_GlobalState->brakeOneMin && !CC_GlobalState->faultDetected)
+			if(brake_one_avg <= CC_GlobalState->brakeMin[0] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->brakeOneMin = brake_one_avg;
+				CC_GlobalState->brakeMin[0] = brake_one_avg;
 			}
-			if(brake_one_avg >= CC_GlobalState->brakeOneMax && !CC_GlobalState->faultDetected)
+			if(brake_one_avg >= CC_GlobalState->brakeMax[0] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->brakeOneMax = brake_one_avg;
+				CC_GlobalState->brakeMax[0] = brake_one_avg;
 			}
-			if(brake_two_avg <= CC_GlobalState->brakeTwoMin && !CC_GlobalState->faultDetected)
+			if(brake_two_avg <= CC_GlobalState->brakeMin[1] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->brakeTwoMin = brake_two_avg;
+				CC_GlobalState->brakeMin[1] = brake_two_avg;
 			}
-			if(brake_two_avg >= CC_GlobalState->brakeTwoMax && !CC_GlobalState->faultDetected)
+			if(brake_two_avg >= CC_GlobalState->brakeMax[1] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->brakeTwoMax = brake_two_avg;
+				CC_GlobalState->brakeMax[1] = brake_two_avg;
 			}
 		}
 		if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->secondaryRollingAccelValues[0] > 0 && CC_GlobalState->tertiaryRollingAccelValues[0] > 0)
 		{
-			if(accel_one_avg <= CC_GlobalState->accelOneMin && !CC_GlobalState->faultDetected)
+			if(accel_one_avg <= CC_GlobalState->accelMin[0] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelOneMin = accel_one_avg;
+				CC_GlobalState->accelMin[0] = accel_one_avg;
 			}
-			if(accel_one_avg >= CC_GlobalState->accelOneMax && !CC_GlobalState->faultDetected)
+			if(accel_one_avg >= CC_GlobalState->accelMax[0] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelOneMax = accel_one_avg;
+				CC_GlobalState->accelMax[0] = accel_one_avg;
 			}
-			if(accel_two_avg <= CC_GlobalState->accelTwoMin && !CC_GlobalState->faultDetected)
+			if(accel_two_avg <= CC_GlobalState->accelMin[1] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelTwoMin = accel_two_avg;
+				CC_GlobalState->accelMin[1] = accel_two_avg;
 			}
-			if(accel_two_avg >= CC_GlobalState->accelTwoMax && !CC_GlobalState->faultDetected)
+			if(accel_two_avg >= CC_GlobalState->accelMax[1] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelTwoMax = accel_two_avg;
+				CC_GlobalState->accelMax[1] = accel_two_avg;
 			}
-			if(accel_three_avg <= CC_GlobalState->accelThreeMin && !CC_GlobalState->faultDetected)
+			if(accel_three_avg <= CC_GlobalState->accelMin[2] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelThreeMin = accel_three_avg;
+				CC_GlobalState->accelMin[2] = accel_three_avg;
 			}
-			if(accel_three_avg >= CC_GlobalState->accelThreeMax && !CC_GlobalState->faultDetected)
+			if(accel_three_avg >= CC_GlobalState->accelMax[2] && !CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->accelThreeMax = accel_three_avg;
+				CC_GlobalState->accelMax[2] = accel_three_avg;
 			}
 		}
 
 		/* Map Travel to Pedal Pos */
-		brake_travel_one = map(brake_one_avg, CC_GlobalState->brakeOneMin+2, CC_GlobalState->brakeOneMax-5, 0, 100);
-		brake_travel_two = map(brake_two_avg, CC_GlobalState->brakeTwoMin+2, CC_GlobalState->brakeTwoMax-5, 0, 100);
+		brake_travel_one = map(brake_one_avg, CC_GlobalState->brakeMin[0]+2, CC_GlobalState->brakeMax[0]-5, 0, 100);
+		brake_travel_two = map(brake_two_avg, CC_GlobalState->brakeMin[1]+2, CC_GlobalState->brakeMax[1]-5, 0, 100);
 
-		accel_travel_one = map(accel_one_avg, CC_GlobalState->accelOneMin, CC_GlobalState->accelOneMax-5, 0, 100);
-		accel_travel_two = map(accel_two_avg, CC_GlobalState->accelTwoMin, CC_GlobalState->accelTwoMax-5, 0, 100);
-		accel_travel_three = map(accel_three_avg, CC_GlobalState->accelThreeMin, CC_GlobalState->accelThreeMax-5, 0, 100);
+		accel_travel_one = map(accel_one_avg, CC_GlobalState->accelMin[0], CC_GlobalState->accelMax[0]-5, 0, 100);
+		accel_travel_two = map(accel_two_avg, CC_GlobalState->accelMin[1], CC_GlobalState->accelMax[1]-5, 0, 100);
+		accel_travel_three = map(accel_three_avg, CC_GlobalState->accelMin[2], CC_GlobalState->accelMax[2]-5, 0, 100);
 
 		/* Ensure Brake & Accel Pots Synced */
 		if(!CC_GlobalState->faultDetected
 				&& (brake_travel_one >= brake_travel_two+10
-				|| brake_travel_one <= brake_travel_two-10))
+						|| brake_travel_one <= brake_travel_two-10))
 		{
 			CC_GlobalState->faultDetected = true;
 			CC_GlobalState->implausibleTicks = HAL_GetTick();
 		}
 		if(!CC_GlobalState->faultDetected
 				&& (accel_travel_one >= accel_travel_two+10
-				|| accel_travel_one <= accel_travel_two-10
-				|| accel_travel_one >= accel_travel_three+10
-				|| accel_travel_one <= accel_travel_three-10
-				|| accel_travel_two >= accel_travel_three+10
-				|| accel_travel_two <= accel_travel_three-10))
+						|| accel_travel_one <= accel_travel_two-10
+						|| accel_travel_one >= accel_travel_three+10
+						|| accel_travel_one <= accel_travel_three-10
+						|| accel_travel_two >= accel_travel_three+10
+						|| accel_travel_two <= accel_travel_three-10))
 		{
 			CC_GlobalState->faultDetected = true;
 			CC_GlobalState->implausibleTicks = HAL_GetTick();
