@@ -65,10 +65,11 @@ void state_start_enter(fsm_t *fsm)
 			/* Bind and configure initial global states */
 			CC_GlobalState->PDM_Debug = true;
 			CC_GlobalState->AMS_Debug = false;
+			CC_GlobalState->ADC_Debug = false;
 			CC_GlobalState->SHDN_Debug = false;
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
-			CC_GlobalState->Inverter_Debug = true;
+			CC_GlobalState->Inverter_Debug = false;
 			CC_GlobalState->tractiveActive = false;
 			CC_GlobalState->CAN1Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
 			CC_GlobalState->CAN2Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
@@ -224,7 +225,23 @@ void state_idle_iterate(fsm_t *fsm)
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 
-	/* Check for Queued CAN Packets */
+	/* Check for Queued CAN Packets on CAN1 */
+	while(osMessageQueueGetCount(CC_GlobalState->CAN1Queue) >= 1)
+	{
+		CC_CAN_Generic_t msg;
+		if(osMessageQueueGet(CC_GlobalState->CAN1Queue, &msg, 0U, 0U) == osOK)
+		{
+			if(msg.header.IDE == CAN_ID_STD) {
+				/* Inverter Heartbeat */
+				if(msg.header.StdId == 0x764)
+				{
+					CC_GlobalState->inverterTicks = HAL_GetTick();
+				}
+			}
+		}
+	}
+
+	/* Check for Queued CAN Packets on CAN2 */
 	while(osMessageQueueGetCount(CC_GlobalState->CAN2Queue) >= 1)
 	{
 		CC_CAN_Generic_t msg;
@@ -235,7 +252,6 @@ void state_idle_iterate(fsm_t *fsm)
 			if(msg.header.IDE == CAN_ID_EXT) {
 				if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
 				{
-	//				CC_LogInfo("Got AMS CAN\r\n", strlen("Got AMS CAN\r\n"));
 					if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 					{
 						bool initialised = false; bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
@@ -243,10 +259,6 @@ void state_idle_iterate(fsm_t *fsm)
 						CC_GlobalState->amsTicks = HAL_GetTick();
 						CC_GlobalState->amsInit = initialised;
 						char x[80];
-	//					int len = snprintf(x, 80, "AMSInit?: %i\r\n", CC_GlobalState->amsInit);
-						int len = snprintf(x, 80, "0x%x\r\n", msg.data[0]);
-						CC_LogInfo(x, len);
-	//					CC_GlobalState->amsInit = true;
 						osSemaphoreRelease(CC_GlobalState->sem);
 					}
 				}
@@ -268,12 +280,6 @@ void state_idle_iterate(fsm_t *fsm)
 					Parse_SHDN_IMD_HeartbeatResponse(*((SHDN_IMD_HeartbeatResponse_t*)&(msg.data)), &pwmState);
 					CC_GlobalState->shutdownImdTicks = HAL_GetTick();
 				}
-				/* Inverter Heartbeat */
-				else if(msg.header.ExtId == 0xA5A5A5A5)
-				{
-	//				CC_LogInfo("GO BRRRRRRRR\r\n", strlen("GO BRRRRRRRR\r\n"));
-					CC_GlobalState->inverterTicks = HAL_GetTick();
-				}
 				/* Shutdown Triggered Fault */
 				else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
 				{
@@ -283,6 +289,8 @@ void state_idle_iterate(fsm_t *fsm)
 							&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
 				}
 			}
+
+
 		}
 	}
 
@@ -433,7 +441,23 @@ void state_driving_iterate(fsm_t *fsm)
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 
-	/* Check for Queued CAN Packets */
+	/* Check for Queued CAN Packets on CAN1 */
+	while(osMessageQueueGetCount(CC_GlobalState->CAN1Queue) >= 1)
+	{
+		CC_CAN_Generic_t msg;
+		if(osMessageQueueGet(CC_GlobalState->CAN1Queue, &msg, 0U, 0U) == osOK)
+		{
+			if(msg.header.IDE == CAN_ID_STD) {
+				/* Inverter Heartbeat */
+				if(msg.header.StdId == 0x764)
+				{
+					CC_GlobalState->inverterTicks = HAL_GetTick();
+				}
+			}
+		}
+	}
+
+	/* Check for Queued CAN Packets on CAN2 */
 	while(osMessageQueueGetCount(CC_GlobalState->CAN2Queue) >= 1)
 	{
 		CC_CAN_Generic_t msg;
@@ -474,11 +498,6 @@ void state_driving_iterate(fsm_t *fsm)
 					osSemaphoreRelease(CC_GlobalState->sem);
 				}
 			}
-			/* Inverter Heartbeat */
-			else if(msg.header.ExtId == 0xA5A5A5A5)
-			{
-				CC_GlobalState->inverterTicks = HAL_GetTick();
-			}
 			/* Shutdown Triggered Fault */
 			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
 			{
@@ -500,7 +519,7 @@ void state_driving_iterate(fsm_t *fsm)
 	char x[80]; uint32_t len;
 
 	/* Echo ADC Failure for Debugging */
-	if(CC_GlobalState->faultDetected)
+	if(CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug)
 	{
 		CC_LogInfo("ADC Fault Detected\r\n", strlen("ADC Fault Detected\r\n"));
 	}
@@ -666,7 +685,7 @@ void state_driving_iterate(fsm_t *fsm)
 	}
 
 	/* Echo Pedal Positions */
-	if(!CC_GlobalState->faultDetected && CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
+	if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug && CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
 	{
 		len = sprintf(x, "Pedal Positions: %i %i\r\n", CC_GlobalState->brakeTravel, CC_GlobalState->accelTravel);
 		CC_LogInfo(x, len);
@@ -681,7 +700,7 @@ void state_driving_iterate(fsm_t *fsm)
 	 * If Throttle and Brake Implausibility State Clock < 100ms
 	 * Suspend Tractive System Operations
 	 */
-	if(CC_GlobalState->faultDetected && CC_GlobalState->tractiveActive && (HAL_GetTick() - CC_GlobalState->implausibleTicks) >= 100)
+	if(CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug && CC_GlobalState->tractiveActive && (HAL_GetTick() - CC_GlobalState->implausibleTicks) >= 100)
 	{
 		CC_GlobalState->tractiveActive = false;
 		CC_LogInfo("Disabling Tractive Operations\r\n", strlen("Disabling Tractive Operations\r\n"));
@@ -703,7 +722,7 @@ void state_driving_iterate(fsm_t *fsm)
 	 * If Throttle or Brake Implausibility State Clock > 1000ms
 	 * Engage Soft Shutdown (Reset to Idle)
 	 */
-	if(CC_GlobalState->faultDetected && !CC_GlobalState->tractiveActive && (HAL_GetTick() - CC_GlobalState->implausibleTicks) >= 1000)
+	if(CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug && !CC_GlobalState->tractiveActive && (HAL_GetTick() - CC_GlobalState->implausibleTicks) >= 1000)
 	{
 		/* Broadcast Soft Shutdown on all CAN lines */
 		CC_SoftShutdown_t softShutdown = Compose_CC_SoftShutdown();
