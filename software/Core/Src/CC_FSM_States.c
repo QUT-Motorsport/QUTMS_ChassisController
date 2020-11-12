@@ -121,7 +121,7 @@ void state_start_iterate(fsm_t *fsm)
 			{
 				/* Get Power Channel Values at Boot */
 				getPowerChannels = 0;
-				Parse_PDM_StartupOk(*((PDM_StartupOk_t*)&(msg.data)), &getPowerChannels);
+				Parse_PDM_StartupOk(msg.data, &getPowerChannels);
 
 				/* Initialise Boot with Bitwise OR on Power Channels */
 				boot = true;

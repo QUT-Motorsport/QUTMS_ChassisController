@@ -51,8 +51,8 @@ ChassisController.bin \
 all: ChassisController.elf secondary-outputs
 
 # Tool invocations
-ChassisController.elf: $(OBJS) $(USER_OBJS) /home/alistair/Dev/repos/QUTMS/QUTMS_ChassisController/software/STM32F765VITX_FLASH.ld
-	arm-none-eabi-gcc -o "ChassisController.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/alistair/Dev/repos/QUTMS/QUTMS_ChassisController/software/STM32F765VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ChassisController.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+ChassisController.elf: $(OBJS) $(USER_OBJS) /home/alex/Desktop/embedded/QUTMS_ChassisController/software/STM32F765VITX_FLASH.ld
+	arm-none-eabi-gcc -o "ChassisController.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/alex/Desktop/embedded/QUTMS_ChassisController/software/STM32F765VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ChassisController.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

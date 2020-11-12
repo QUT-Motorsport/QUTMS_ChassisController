@@ -275,7 +275,6 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 	CC_LogInfo("Entering FSM Thread\r\n", strlen("Entering FSM Thread\r\n"));
 	fsm_setLogFunction(fsm, &CC_LogInfo);
 	fsm_reset(fsm, &startState);
-	uint32_t threadTimer = HAL_GetTick();
 //	fsm_changeState(fsm, &debugState, "Forcing debug state");
 	for(;;)
 	{
