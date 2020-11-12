@@ -566,51 +566,54 @@ void state_driving_iterate(fsm_t *fsm)
 
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
-		/* Check for New Min/Max Brake Values */
-		if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0)
+		if(!CC_GlobalState->faultDetected)
 		{
-			if(brake_one_avg <= CC_GlobalState->brakeMin[0] && !CC_GlobalState->faultDetected)
+			/* Check for New Min/Max Brake Values */
+			if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0)
 			{
-				CC_GlobalState->brakeMin[0] = brake_one_avg;
+				if(brake_one_avg <= CC_GlobalState->brakeMin[0])
+				{
+					CC_GlobalState->brakeMin[0] = brake_one_avg;
+				}
+				if(brake_one_avg >= CC_GlobalState->brakeMax[0])
+				{
+					CC_GlobalState->brakeMax[0] = brake_one_avg;
+				}
+				if(brake_two_avg <= CC_GlobalState->brakeMin[1])
+				{
+					CC_GlobalState->brakeMin[1] = brake_two_avg;
+				}
+				if(brake_two_avg >= CC_GlobalState->brakeMax[1])
+				{
+					CC_GlobalState->brakeMax[1] = brake_two_avg;
+				}
 			}
-			if(brake_one_avg >= CC_GlobalState->brakeMax[0] && !CC_GlobalState->faultDetected)
+			if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->secondaryRollingAccelValues[0] > 0 && CC_GlobalState->tertiaryRollingAccelValues[0] > 0)
 			{
-				CC_GlobalState->brakeMax[0] = brake_one_avg;
-			}
-			if(brake_two_avg <= CC_GlobalState->brakeMin[1] && !CC_GlobalState->faultDetected)
-			{
-				CC_GlobalState->brakeMin[1] = brake_two_avg;
-			}
-			if(brake_two_avg >= CC_GlobalState->brakeMax[1] && !CC_GlobalState->faultDetected)
-			{
-				CC_GlobalState->brakeMax[1] = brake_two_avg;
-			}
-		}
-		if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->secondaryRollingAccelValues[0] > 0 && CC_GlobalState->tertiaryRollingAccelValues[0] > 0)
-		{
-			if(accel_one_avg <= CC_GlobalState->accelMin[0] && !CC_GlobalState->faultDetected)
-			{
-				CC_GlobalState->accelMin[0] = accel_one_avg;
-			}
-			if(accel_one_avg >= CC_GlobalState->accelMax[0] && !CC_GlobalState->faultDetected)
-			{
-				CC_GlobalState->accelMax[0] = accel_one_avg;
-			}
-			if(accel_two_avg <= CC_GlobalState->accelMin[1] && !CC_GlobalState->faultDetected)
-			{
-				CC_GlobalState->accelMin[1] = accel_two_avg;
-			}
-			if(accel_two_avg >= CC_GlobalState->accelMax[1] && !CC_GlobalState->faultDetected)
-			{
-				CC_GlobalState->accelMax[1] = accel_two_avg;
-			}
-			if(accel_three_avg <= CC_GlobalState->accelMin[2] && !CC_GlobalState->faultDetected)
-			{
-				CC_GlobalState->accelMin[2] = accel_three_avg;
-			}
-			if(accel_three_avg >= CC_GlobalState->accelMax[2] && !CC_GlobalState->faultDetected)
-			{
-				CC_GlobalState->accelMax[2] = accel_three_avg;
+				if(accel_one_avg <= CC_GlobalState->accelMin[0])
+				{
+					CC_GlobalState->accelMin[0] = accel_one_avg;
+				}
+				if(accel_one_avg >= CC_GlobalState->accelMax[0])
+				{
+					CC_GlobalState->accelMax[0] = accel_one_avg;
+				}
+				if(accel_two_avg <= CC_GlobalState->accelMin[1])
+				{
+					CC_GlobalState->accelMin[1] = accel_two_avg;
+				}
+				if(accel_two_avg >= CC_GlobalState->accelMax[1])
+				{
+					CC_GlobalState->accelMax[1] = accel_two_avg;
+				}
+				if(accel_three_avg <= CC_GlobalState->accelMin[2])
+				{
+					CC_GlobalState->accelMin[2] = accel_three_avg;
+				}
+				if(accel_three_avg >= CC_GlobalState->accelMax[2])
+				{
+					CC_GlobalState->accelMax[2] = accel_three_avg;
+				}
 			}
 		}
 
