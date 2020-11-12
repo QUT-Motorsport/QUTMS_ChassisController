@@ -1,3 +1,5 @@
 CC_CAN_Messages.c:12:19:Compose_CC_ReadyToDrive	24	static
 CC_CAN_Messages.c:19:20:Compose_CC_FatalShutdown	24	static
 CC_CAN_Messages.c:26:19:Compose_CC_SoftShutdown	24	static
+CC_CAN_Messages.c:33:17:Compose_CC_RequestRPM	32	static
+CC_CAN_Messages.c:49:6:Parse_CC_RequestRPM	16	static

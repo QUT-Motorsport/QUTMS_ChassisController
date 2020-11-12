@@ -27,6 +27,8 @@
 #define CAN_2 hcan2
 #define CAN_3 hcan3
 
+#define INVERTER_1_NODE_ID 100
+
 state_t deadState = {&state_dead_enter, &state_dead_iterate, &state_dead_exit, "Dead_s"};
 
 void state_dead_enter(fsm_t *fsm)
@@ -64,12 +66,12 @@ void state_start_enter(fsm_t *fsm)
 		{
 			/* Bind and configure initial global states */
 			CC_GlobalState->PDM_Debug = true;
-			CC_GlobalState->AMS_Debug = false;
-			CC_GlobalState->ADC_Debug = false;
-			CC_GlobalState->SHDN_Debug = false;
+			CC_GlobalState->AMS_Debug = true;
+			CC_GlobalState->ADC_Debug = true;
+			CC_GlobalState->SHDN_Debug = true;
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
-			CC_GlobalState->Inverter_Debug = false;
+			CC_GlobalState->Inverter_Debug = true;
 			CC_GlobalState->tractiveActive = false;
 			CC_GlobalState->CAN1Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
 			CC_GlobalState->CAN2Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
@@ -453,6 +455,14 @@ void state_driving_iterate(fsm_t *fsm)
 				{
 					CC_GlobalState->inverterTicks = HAL_GetTick();
 				}
+				else if(msg.header.StdId == 0x580+INVERTER_1_NODE_ID)
+				{
+					int16_t motorRPM = 0;
+					Parse_CC_RequestRPM(msg.data, &motorRPM);
+					char x[80];
+					int len = sprintf(x, "[%li] Got CAN msg from CAN1: %i\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, motorRPM);
+					CC_LogInfo(x, len);
+				}
 			}
 		}
 	}
@@ -717,6 +727,20 @@ void state_driving_iterate(fsm_t *fsm)
 	/*
 	 * Send Desired Accel to Inverters
 	 */
+	if(CC_GlobalState->tractiveActive && (HAL_GetTick() - CC_GlobalState->readyToDriveTicks) % 100 == 0)
+	{
+		/* Broadcast Motor RPM Request on CAN1 */
+		CC_RequestRPM_t requestRPM = Compose_CC_RequestRPM(INVERTER_1_NODE_ID);
+		CAN_TxHeaderTypeDef header =
+		{
+				.StdId = requestRPM.id,
+				.IDE = CAN_ID_STD,
+				.RTR = CAN_RTR_DATA,
+				.DLC = 8,
+				.TransmitGlobalTime = DISABLE,
+		};
+		HAL_CAN_AddTxMessage(&CAN_1, &header, requestRPM.data, &CC_GlobalState->CAN1_TxMailbox);
+	}
 
 	/*
 	 * If Throttle or Brake Implausibility State Clock > 1000ms
@@ -764,19 +788,19 @@ void state_debug_enter(fsm_t *fsm)
 void state_debug_iterate(fsm_t *fsm)
 {
 	/* Broadcast Soft Shutdown on all CAN lines */
-	CC_SoftShutdown_t softShutdown = Compose_CC_SoftShutdown();
-	CAN_TxHeaderTypeDef header =
-	{
-			.ExtId = softShutdown.id,
-			.IDE = CAN_ID_EXT,
-			.RTR = CAN_RTR_DATA,
-			.DLC = 1,
-			.TransmitGlobalTime = DISABLE,
-	};
-	uint8_t data[1] = {0xF};
-	HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+	//	CC_SoftShutdown_t softShutdown = Compose_CC_SoftShutdown();
+	//	CAN_TxHeaderTypeDef header =
+	//	{
+	//			.ExtId = softShutdown.id,
+	//			.IDE = CAN_ID_EXT,
+	//			.RTR = CAN_RTR_DATA,
+	//			.DLC = 1,
+	//			.TransmitGlobalTime = DISABLE,
+	//	};
+	//	uint8_t data[1] = {0xF};
+	//	HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+	//	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+	//	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
 	return;
 }
 
