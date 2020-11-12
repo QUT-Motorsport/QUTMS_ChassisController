@@ -70,12 +70,14 @@ void state_start_enter(fsm_t *fsm)
 			CC_GlobalState->RTD_Debug = true;
 			CC_GlobalState->Inverter_Debug = true;
 			CC_GlobalState->tractiveActive = false;
-			CC_GlobalState->CANQueue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
+			CC_GlobalState->CAN1Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
+			CC_GlobalState->CAN2Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
+			CC_GlobalState->CAN3Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
 
 		/* Ensure CANQueue exists */
-		if(CC_GlobalState->CANQueue == NULL)
+		if(CC_GlobalState->CAN1Queue == NULL || CC_GlobalState->CAN2Queue == NULL || CC_GlobalState->CAN3Queue == NULL)
 		{
 			Error_Handler();
 		}
@@ -109,10 +111,10 @@ void state_start_iterate(fsm_t *fsm)
 	uint32_t getPowerChannels = 0; uint32_t setPowerChannels = 0;
 
 	/* Monitor CAN Queue */
-	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
+	while(osMessageQueueGetCount(CC_GlobalState->CAN2Queue) >= 1)
 	{
 		CC_CAN_Generic_t msg;
-		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
+		if(osMessageQueueGet(CC_GlobalState->CAN2Queue, &msg, 0U, 0U) == osOK)
 		{
 			/* If Startup Ok */
 			if(msg.header.ExtId == Compose_CANId(0x2, 0x14, 0x0, 0x3, 0x00, 0x0))
@@ -223,55 +225,63 @@ void state_idle_iterate(fsm_t *fsm)
 	}
 
 	/* Check for Queued CAN Packets */
-	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
+	while(osMessageQueueGetCount(CC_GlobalState->CAN2Queue) >= 1)
 	{
 		CC_CAN_Generic_t msg;
-		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
+		if(osMessageQueueGet(CC_GlobalState->CAN2Queue, &msg, 0U, 0U) == osOK)
 		{
 			/* Packet Handler */
 			/* AMS Heartbeat */
-			if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
-			{
-				if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+			if(msg.header.IDE == CAN_ID_EXT) {
+				if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
 				{
-					bool initialised; bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
-					Parse_AMS_HeartbeatResponse(msg.data, &initialised, &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
-					CC_GlobalState->amsTicks = HAL_GetTick();
-					CC_GlobalState->amsInit = initialised;
-					osSemaphoreRelease(CC_GlobalState->sem);
+	//				CC_LogInfo("Got AMS CAN\r\n", strlen("Got AMS CAN\r\n"));
+					if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+					{
+						bool initialised = false; bool HVAn; bool HVBn; bool precharge; bool HVAp; bool HVBp; uint16_t averageVoltage; uint16_t runtime;
+						Parse_AMS_HeartbeatResponse(msg.data, &initialised, &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
+						CC_GlobalState->amsTicks = HAL_GetTick();
+						CC_GlobalState->amsInit = initialised;
+						char x[80];
+	//					int len = snprintf(x, 80, "AMSInit?: %i\r\n", CC_GlobalState->amsInit);
+						int len = snprintf(x, 80, "0x%x\r\n", msg.data[0]);
+						CC_LogInfo(x, len);
+	//					CC_GlobalState->amsInit = true;
+						osSemaphoreRelease(CC_GlobalState->sem);
+					}
 				}
-			}
-			/* Shutdown Heartbeat */
-			else if(msg.header.ExtId == Compose_CANId(0x1, 0x06, 0x0, 0x01, 0x01, 0x0))
-			{
-				if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+				/* Shutdown Heartbeat */
+				else if(msg.header.ExtId == Compose_CANId(0x1, 0x06, 0x0, 0x01, 0x01, 0x0))
 				{
-					uint8_t segmentState;
-					Parse_SHDN_HeartbeatResponse(*((SHDN_HeartbeatResponse_t*)&(msg.data)), &segmentState);
-					CC_GlobalState->shutdownTicks = HAL_GetTick();
-					osSemaphoreRelease(CC_GlobalState->sem);
+					if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+					{
+						uint8_t segmentState;
+						Parse_SHDN_HeartbeatResponse(*((SHDN_HeartbeatResponse_t*)&(msg.data)), &segmentState);
+						CC_GlobalState->shutdownTicks = HAL_GetTick();
+						osSemaphoreRelease(CC_GlobalState->sem);
+					}
 				}
-			}
-			/* Shutdown IMD Heartbeat */
-			else if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
-			{
-				uint8_t pwmState;
-				Parse_SHDN_IMD_HeartbeatResponse(*((SHDN_IMD_HeartbeatResponse_t*)&(msg.data)), &pwmState);
-				CC_GlobalState->shutdownImdTicks = HAL_GetTick();
-			}
-			/* Inverter Heartbeat */
-			else if(msg.header.ExtId == 0xA5A5A5A5)
-			{
-				CC_LogInfo("GO BRRRRRRRR\r\n", strlen("GO BRRRRRRRR\r\n"));
-				CC_GlobalState->inverterTicks = HAL_GetTick();
-			}
-			/* Shutdown Triggered Fault */
-			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
-			{
-				// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
-				CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
-						&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
-						&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
+				/* Shutdown IMD Heartbeat */
+				else if(msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0))
+				{
+					uint8_t pwmState;
+					Parse_SHDN_IMD_HeartbeatResponse(*((SHDN_IMD_HeartbeatResponse_t*)&(msg.data)), &pwmState);
+					CC_GlobalState->shutdownImdTicks = HAL_GetTick();
+				}
+				/* Inverter Heartbeat */
+				else if(msg.header.ExtId == 0xA5A5A5A5)
+				{
+	//				CC_LogInfo("GO BRRRRRRRR\r\n", strlen("GO BRRRRRRRR\r\n"));
+					CC_GlobalState->inverterTicks = HAL_GetTick();
+				}
+				/* Shutdown Triggered Fault */
+				else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
+				{
+					// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
+					CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
+							&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+							&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
+				}
 			}
 		}
 	}
@@ -424,10 +434,10 @@ void state_driving_iterate(fsm_t *fsm)
 	}
 
 	/* Check for Queued CAN Packets */
-	while(osMessageQueueGetCount(CC_GlobalState->CANQueue) >= 1)
+	while(osMessageQueueGetCount(CC_GlobalState->CAN2Queue) >= 1)
 	{
 		CC_CAN_Generic_t msg;
-		if(osMessageQueueGet(CC_GlobalState->CANQueue, &msg, 0U, 0U) == osOK)
+		if(osMessageQueueGet(CC_GlobalState->CAN2Queue, &msg, 0U, 0U) == osOK)
 		{
 			/* Packet Handler */
 			/* AMS Heartbeat */
@@ -655,7 +665,7 @@ void state_driving_iterate(fsm_t *fsm)
 	/* Echo Pedal Positions */
 	if(!CC_GlobalState->faultDetected && CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
 	{
-		len = sprintf(x, "Pedal Positions: %li %li\r\n", CC_GlobalState->brakeTravel, CC_GlobalState->accelTravel);
+		len = sprintf(x, "Pedal Positions: %i %i\r\n", CC_GlobalState->brakeTravel, CC_GlobalState->accelTravel);
 		CC_LogInfo(x, len);
 	}
 

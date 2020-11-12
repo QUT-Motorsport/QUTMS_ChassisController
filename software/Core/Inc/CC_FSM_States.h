@@ -82,7 +82,9 @@ typedef struct
 	bool faultDetected;
 	bool rtdLightActive;
 
-	osMessageQueueId_t CANQueue;
+	osMessageQueueId_t CAN1Queue;
+	osMessageQueueId_t CAN2Queue;
+	osMessageQueueId_t CAN3Queue;
 	osTimerId_t heartbeatTimer;
 	osTimerId_t IDC_AlarmTimer;
 	osSemaphoreId_t sem;

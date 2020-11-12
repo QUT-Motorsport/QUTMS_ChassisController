@@ -283,17 +283,17 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 		{
 			CC_CAN_Generic_t msg;
 			HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &(msg.header), msg.data);
-			osMessageQueuePut(CC_GlobalState->CANQueue, &msg, 0U, 0U);
-			char x[80];
-			int len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
-			CC_LogInfo(x, len);
+			osMessageQueuePut(CC_GlobalState->CAN1Queue, &msg, 0U, 0U);
+//			char x[80];
+//			int len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
+//			CC_LogInfo(x, len);
 		}
 
 		while(HAL_CAN_GetRxFifoFillLevel(&hcan2, CAN_RX_FIFO0) > 0)
 		{
 			CC_CAN_Generic_t msg;
 			HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO0, &(msg.header), msg.data);
-			osMessageQueuePut(CC_GlobalState->CANQueue, &msg, 0U, 0U);
+			osMessageQueuePut(CC_GlobalState->CAN2Queue, &msg, 0U, 0U);
 			//char x[80];
 			//int len = sprintf(x, "[%li] Got CAN msg from CAN2: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
 			//CC_LogInfo(x, len);
@@ -303,7 +303,7 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 		{
 			CC_CAN_Generic_t msg;
 			HAL_CAN_GetRxMessage(&hcan3, CAN_RX_FIFO0, &(msg.header), msg.data);
-			osMessageQueuePut(CC_GlobalState->CANQueue, &msg, 0U, 0U);
+			osMessageQueuePut(CC_GlobalState->CAN3Queue, &msg, 0U, 0U);
 			//char x[80];
 			//int len = sprintf(x, "[%li] Got CAN msg from CAN3: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
 			//CC_LogInfo(x, len);
