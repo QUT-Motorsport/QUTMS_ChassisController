@@ -11,16 +11,16 @@
 #define BRAKE_PRESSURE_MIN 400
 #define BRAKE_PRESSURE_MAX 1400
 
-#define BRAKE_PEDAL_ONE_MIN 320
-#define BRAKE_PEDAL_ONE_MAX 3400
-#define BRAKE_PEDAL_TWO_MIN 240
-#define BRAKE_PEDAL_TWO_MAX 3320
+#define BRAKE_PEDAL_ONE_MIN 2360
+#define BRAKE_PEDAL_ONE_MAX 3170
+#define BRAKE_PEDAL_TWO_MIN 2280
+#define BRAKE_PEDAL_TWO_MAX 3110
 
-#define ACCEL_PEDAL_ONE_MIN 320
+#define ACCEL_PEDAL_ONE_MIN 890
 #define ACCEL_PEDAL_ONE_MAX 3350
-#define ACCEL_PEDAL_TWO_MIN 320
+#define ACCEL_PEDAL_TWO_MIN 910
 #define ACCEL_PEDAL_TWO_MAX 3400
-#define ACCEL_PEDAL_THREE_MIN 320
+#define ACCEL_PEDAL_THREE_MIN 910
 #define ACCEL_PEDAL_THREE_MAX 3380
 
 #define CAN_1 hcan1
@@ -67,7 +67,7 @@ void state_start_enter(fsm_t *fsm)
 			/* Bind and configure initial global states */
 			CC_GlobalState->PDM_Debug = true;
 			CC_GlobalState->AMS_Debug = true;
-			CC_GlobalState->ADC_Debug = true;
+			CC_GlobalState->ADC_Debug = false;
 			CC_GlobalState->SHDN_Debug = true;
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
@@ -402,6 +402,7 @@ void state_driving_enter(fsm_t *fsm)
 
 void state_driving_iterate(fsm_t *fsm)
 {
+
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
 		/* Flash RTD */
@@ -529,7 +530,7 @@ void state_driving_iterate(fsm_t *fsm)
 	char x[80]; uint32_t len;
 
 	/* Echo ADC Failure for Debugging */
-	if(CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug)
+	if(CC_GlobalState->faultDetected)
 	{
 		CC_LogInfo("ADC Fault Detected\r\n", strlen("ADC Fault Detected\r\n"));
 	}
@@ -539,12 +540,13 @@ void state_driving_iterate(fsm_t *fsm)
 		 * Trigger Fault outside expected range
 		 * Power trip, surge to sensor etc.
 		 */
-		if(!CC_GlobalState->faultDetected)
+		if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug)
 		{
 			for (int i = 0; i < 2; i++) {
 				if (CC_GlobalState->brakeAdcValues[i] <= CC_GlobalState->brakeMin[i] - 100
 						|| CC_GlobalState->brakeAdcValues[i] >= CC_GlobalState->brakeMax[i] + 100)
 				{
+					CC_LogInfo("Brake ADC Tripped\r\n", strlen("Brake ADC Tripped\r\n"));
 					CC_GlobalState->faultDetected = true;
 					CC_GlobalState->implausibleTicks = HAL_GetTick();
 				}
@@ -553,6 +555,7 @@ void state_driving_iterate(fsm_t *fsm)
 				if (CC_GlobalState->accelAdcValues[i] <= CC_GlobalState->accelMin[i] - 100
 						|| CC_GlobalState->accelAdcValues[i] >= CC_GlobalState->accelMax[i] + 100)
 				{
+					CC_LogInfo("Accel ADC Tripped\r\n", strlen("Accel ADC Tripped\r\n"));
 					CC_GlobalState->faultDetected = true;
 					CC_GlobalState->implausibleTicks = HAL_GetTick();
 				}
@@ -605,7 +608,7 @@ void state_driving_iterate(fsm_t *fsm)
 
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
-		if(!CC_GlobalState->faultDetected)
+		if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug)
 		{
 			/* Check for New Min/Max Brake Values */
 			if(CC_GlobalState->rollingBrakeValues[0] > 0 && CC_GlobalState->secondaryRollingBrakeValues[0] > 0)
@@ -665,14 +668,17 @@ void state_driving_iterate(fsm_t *fsm)
 		accel_travel_three = map(accel_three_avg, CC_GlobalState->accelMin[2], CC_GlobalState->accelMax[2]-5, 0, 100);
 
 		/* Ensure Brake & Accel Pots Synced */
-		if(!CC_GlobalState->faultDetected
+		if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug
+				&& CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0]
 				&& (brake_travel_one >= brake_travel_two+10
 						|| brake_travel_one <= brake_travel_two-10))
 		{
+			CC_LogInfo("Brake ADC Desync\r\n", strlen("Brake ADC Desync\r\n"));
 			CC_GlobalState->faultDetected = true;
 			CC_GlobalState->implausibleTicks = HAL_GetTick();
 		}
-		if(!CC_GlobalState->faultDetected
+		if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug
+				&& CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0]
 				&& (accel_travel_one >= accel_travel_two+10
 						|| accel_travel_one <= accel_travel_two-10
 						|| accel_travel_one >= accel_travel_three+10
@@ -680,6 +686,7 @@ void state_driving_iterate(fsm_t *fsm)
 						|| accel_travel_two >= accel_travel_three+10
 						|| accel_travel_two <= accel_travel_three-10))
 		{
+			CC_LogInfo("Accel ADC Desync\r\n", strlen("Accel ADC Desync\r\n"));
 			CC_GlobalState->faultDetected = true;
 			CC_GlobalState->implausibleTicks = HAL_GetTick();
 		}
@@ -687,17 +694,17 @@ void state_driving_iterate(fsm_t *fsm)
 		/* Average 2 Brake Travel Positions */
 		if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
 		{
-			CC_GlobalState->brakeTravel = (brake_travel_one+brake_travel_two)/2;
-			CC_GlobalState->accelTravel = (accel_travel_one+accel_travel_two+accel_travel_three)/3;
+			CC_GlobalState->brakeTravel = 100-((brake_travel_one+brake_travel_two)/2);
+			CC_GlobalState->accelTravel = 100-((accel_travel_one+accel_travel_two+accel_travel_three)/3);
 		}
 
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 
 	/* Echo Pedal Positions */
-	if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug && CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
+	if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
 	{
-		len = sprintf(x, "Pedal Positions: %i %i\r\n", CC_GlobalState->brakeTravel, CC_GlobalState->accelTravel);
+		len = sprintf(x, "Pedal Positions: %i %i\r\n", brake_travel_one, brake_travel_two);
 		CC_LogInfo(x, len);
 	}
 

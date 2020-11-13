@@ -9,7 +9,7 @@ CC_FSM_States.c:194:6:state_idle_iterate	152	static
 CC_FSM_States.c:332:6:state_idle_exit	56	static
 CC_FSM_States.c:359:6:state_driving_enter	16	static
 CC_FSM_States.c:403:6:state_driving_iterate	408	static
-CC_FSM_States.c:774:6:state_driving_exit	16	static
-CC_FSM_States.c:782:6:state_debug_enter	16	static
-CC_FSM_States.c:788:6:state_debug_iterate	16	static
-CC_FSM_States.c:807:6:state_debug_exit	16	static
+CC_FSM_States.c:781:6:state_driving_exit	16	static
+CC_FSM_States.c:789:6:state_debug_enter	16	static
+CC_FSM_States.c:795:6:state_debug_iterate	16	static
+CC_FSM_States.c:814:6:state_debug_exit	16	static
