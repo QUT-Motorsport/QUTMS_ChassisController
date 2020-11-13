@@ -3,7 +3,11 @@ CC_CAN_Messages.c:19:20:Compose_CC_FatalShutdown	24	static
 CC_CAN_Messages.c:26:19:Compose_CC_SoftShutdown	24	static
 CC_CAN_Messages.c:33:17:Compose_CC_RequestRPM	32	static
 CC_CAN_Messages.c:49:6:Parse_CC_RequestRPM	16	static
-CC_CAN_Messages.c:54:19:Compose_CC_MotorCommand	40	static
-CC_CAN_Messages.c:70:6:Parse_CC_RequestCommand	16	static
-CC_CAN_Messages.c:75:23:Compose_CC_ShutdownInverter	32	static
-CC_CAN_Messages.c:91:6:Parse_CC_ShutdownInverter	16	static
+CC_CAN_Messages.c:54:20:Compose_CC_RunMicroBasic	32	static
+CC_CAN_Messages.c:70:6:Parse_CC_RunMicroBasic	16	static
+CC_CAN_Messages.c:75:19:Compose_CC_MotorCommand	40	static
+CC_CAN_Messages.c:91:6:Parse_CC_RequestCommand	16	static
+CC_CAN_Messages.c:96:23:Compose_CC_ShutdownInverter	32	static
+CC_CAN_Messages.c:112:6:Parse_CC_ShutdownInverter	16	static
+CC_CAN_Messages.c:116:18:Compose_CC_SetVariable	40	static
+CC_CAN_Messages.c:132:6:Parse_CC_SetVariable	16	static

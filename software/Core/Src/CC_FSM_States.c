@@ -69,7 +69,7 @@ void state_start_enter(fsm_t *fsm)
 		{
 			/* Bind and configure initial global states */
 			CC_GlobalState->PDM_Debug = true;
-			CC_GlobalState->AMS_Debug = false;
+			CC_GlobalState->AMS_Debug = true;
 			CC_GlobalState->ADC_Debug = false;
 			CC_GlobalState->SHDN_Debug = false;
 			CC_GlobalState->SHDN_IMD_Debug = true;
@@ -93,17 +93,18 @@ void state_start_enter(fsm_t *fsm)
 	HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
 
 	/* Initiate Startup on PDM */
-	PDM_InitiateStartup_t pdmStartup = Compose_PDM_InitiateStartup();
+	PDM_InitiateStartup_t initiateStartup = Compose_PDM_InitiateStartup();
 	CAN_TxHeaderTypeDef header =
 	{
-			.ExtId = pdmStartup.id,
+			.ExtId = initiateStartup.id,
 			.IDE = CAN_ID_EXT,
 			.RTR = CAN_RTR_DATA,
 			.DLC = 1,
 			.TransmitGlobalTime = DISABLE,
 	};
 	uint8_t data[1] = {0xF};
-	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+	HAL_CAN_AddTxMessage(&CAN_2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+	return;
 
 	/* Debug Tracing */
 	//CC_LogInfo("Enter Start\r\n", strlen("Enter Start\r\n"));
@@ -123,7 +124,8 @@ void state_start_iterate(fsm_t *fsm)
 		if(osMessageQueueGet(CC_GlobalState->CAN2Queue, &msg, 0U, 0U) == osOK)
 		{
 			/* If Startup Ok */
-			if(msg.header.ExtId == Compose_CANId(0x2, 0x14, 0x0, 0x3, 0x00, 0x0))
+			if(msg.header.ExtId == Compose_CANId(CAN_PRIORITY_NORMAL, CAN_SRC_ID_PDM, 0x0,
+					CAN_TYPE_TRANSMIT, 0x00, 0x0))
 			{
 				/* Get Power Channel Values at Boot */
 				getPowerChannels = 0;
@@ -238,7 +240,7 @@ void state_idle_iterate(fsm_t *fsm)
 		{
 			if(msg.header.IDE == CAN_ID_STD) {
 				/* Inverter Heartbeat */
-				if(msg.header.StdId == 0x764)
+				if(msg.header.StdId == 0x700+INVERTER_1_NODE_ID)
 				{
 					CC_GlobalState->inverterTicks = HAL_GetTick();
 				}
@@ -310,7 +312,9 @@ void state_idle_iterate(fsm_t *fsm)
 		HAL_ADC_Start(&hadc3);
 		raw = HAL_ADC_GetValue(&hadc3);
 	}
-	if(raw > CC_GlobalState->brakePressureThreshold && CC_GlobalState->amsInit && CC_GlobalState->ccInit)
+	if(raw > CC_GlobalState->brakePressureThreshold
+			&& (CC_GlobalState->amsInit || CC_GlobalState->AMS_Debug)
+			&& CC_GlobalState->ccInit)
 	{
 		/* Illuminate RTD Button */
 		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
@@ -395,9 +399,18 @@ void state_driving_enter(fsm_t *fsm)
 	/* Start Polling ADC */
 	HAL_ADC_Start_DMA(&hadc2, CC_GlobalState->brakeAdcValues, 100);
 	HAL_ADC_Start_DMA(&hadc1, CC_GlobalState->accelAdcValues, 150);
-	/* Else */
 
-	/* Hard Shutdown Power Off */
+	/* Run MicroBasic Script on Inverter */
+	CC_RunMicroBasic_t runScript = Compose_CC_RunMicroBasic(INVERTER_1_NODE_ID);
+	CAN_TxHeaderTypeDef runHeader =
+	{
+			.StdId = runScript.id,
+			.IDE = CAN_ID_STD,
+			.RTR = CAN_RTR_DATA,
+			.DLC = 8,
+			.TransmitGlobalTime = DISABLE,
+	};
+	HAL_CAN_AddTxMessage(&CAN_1, &runHeader, runScript.data, &CC_GlobalState->CAN1_TxMailbox);
 	return;
 }
 
@@ -454,7 +467,7 @@ void state_driving_iterate(fsm_t *fsm)
 		{
 			if(msg.header.IDE == CAN_ID_STD) {
 				/* Inverter Heartbeat */
-				if(msg.header.StdId == 0x764)
+				if(msg.header.StdId == 0x700+INVERTER_1_NODE_ID)
 				{
 					CC_GlobalState->inverterTicks = HAL_GetTick();
 				}
@@ -471,41 +484,40 @@ void state_driving_iterate(fsm_t *fsm)
 						Parse_CC_RequestRPM(msg.data, &motorRPM);
 
 						/* Echo Motor RPM */
-						//len = sprintf(x, "[%li] Got CAN RPM from CAN1: %i\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, motorRPM);
-						//CC_LogInfo(x, len);
+						len = sprintf(x, "[%li] Got RPM from CAN1: %i\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, motorRPM);
+						CC_LogInfo(x, len);
 
 						/* Generate Desired Motor Command Value */
-						int32_t motorCommandValue = map(CC_GlobalState->accelTravel, 0, 100, 0, 200);
-						//len = sprintf(x, "Motor Command: %i %li\r\n", CC_GlobalState->accelTravel, motorCommand);
-						//CC_LogInfo(x, len);
+						len = sprintf(x, "Motor Command: %li %li\r\n", CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
+						CC_LogInfo(x, len);
 
-						/* Send Motor Command to First Motor */
-						CC_MotorCommand_t MotorCommandOne = Compose_CC_MotorCommand(INVERTER_1_NODE_ID,
-								motorCommandValue,
-								MOTOR_1_SUBINDEX);
-						CAN_TxHeaderTypeDef firstHeader =
+						/* Send Accel Command */
+						CC_SetVariable_t accelCommand = Compose_CC_SetVariable(INVERTER_1_NODE_ID,
+								0x01,
+								CC_GlobalState->accelTravel);
+						CAN_TxHeaderTypeDef accelHeader =
 						{
-								.StdId = MotorCommandOne.id,
+								.StdId = accelCommand.id,
 								.IDE = CAN_ID_STD,
 								.RTR = CAN_RTR_DATA,
 								.DLC = 8,
 								.TransmitGlobalTime = DISABLE,
 						};
-						HAL_CAN_AddTxMessage(&CAN_1, &firstHeader, MotorCommandOne.data, &CC_GlobalState->CAN1_TxMailbox);
+						HAL_CAN_AddTxMessage(&CAN_1, &accelHeader, accelCommand.data, &CC_GlobalState->CAN1_TxMailbox);
 
-						/* Send Motor Command to Second Motor */
-						CC_MotorCommand_t MotorCommandTwo = Compose_CC_MotorCommand(INVERTER_1_NODE_ID,
-								motorCommandValue,
-								MOTOR_2_SUBINDEX);
-						CAN_TxHeaderTypeDef secondHeader =
+						/* Send Brake Command */
+						CC_SetVariable_t brakeCommand = Compose_CC_SetVariable(INVERTER_1_NODE_ID,
+								0x02,
+								CC_GlobalState->brakeTravel);
+						CAN_TxHeaderTypeDef brakeHeader =
 						{
-								.StdId = MotorCommandTwo.id,
+								.StdId = brakeCommand.id,
 								.IDE = CAN_ID_STD,
 								.RTR = CAN_RTR_DATA,
 								.DLC = 8,
 								.TransmitGlobalTime = DISABLE,
 						};
-						HAL_CAN_AddTxMessage(&CAN_1, &secondHeader, MotorCommandTwo.data, &CC_GlobalState->CAN1_TxMailbox);
+						//HAL_CAN_AddTxMessage(&CAN_1, &brakeHeader, brakeCommand.data, &CC_GlobalState->CAN1_TxMailbox);
 					}
 					else{
 						/* Echo CAN Packet if index not recognised */
@@ -585,8 +597,8 @@ void state_driving_iterate(fsm_t *fsm)
 	 * Read 3 Throttle ADC Values
 	 * Read 2 Brake ADC Values
 	 */
-	uint16_t brake_travel_one; uint16_t brake_travel_two;
-	uint16_t accel_travel_one; uint16_t accel_travel_two; uint16_t accel_travel_three;
+	uint32_t brake_travel_one; uint32_t brake_travel_two;
+	uint32_t accel_travel_one; uint32_t accel_travel_two; uint32_t accel_travel_three;
 	char x[80]; uint32_t len;
 
 	/* Echo ADC Failure for Debugging */
@@ -603,17 +615,17 @@ void state_driving_iterate(fsm_t *fsm)
 		if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug)
 		{
 			for (int i = 0; i < 2; i++) {
-				if (CC_GlobalState->brakeAdcValues[i] <= CC_GlobalState->brakeMin[i] - 100
-						|| CC_GlobalState->brakeAdcValues[i] >= CC_GlobalState->brakeMax[i] + 100)
+				if (CC_GlobalState->brakeAdcValues[i] <= CC_GlobalState->brakeMin[i] - 200
+						|| CC_GlobalState->brakeAdcValues[i] >= CC_GlobalState->brakeMax[i] + 200)
 				{
-					CC_LogInfo("Brake ADC Tripped\r\n", strlen("Brake ADC Tripped\r\n"));
-					CC_GlobalState->faultDetected = true;
-					CC_GlobalState->implausibleTicks = HAL_GetTick();
+					//CC_LogInfo("Brake ADC Tripped\r\n", strlen("Brake ADC Tripped\r\n"));
+					//CC_GlobalState->faultDetected = true;
+					//CC_GlobalState->implausibleTicks = HAL_GetTick();
 				}
 			}
 			for (int i = 0; i < 3; i++) {
-				if (CC_GlobalState->accelAdcValues[i] <= CC_GlobalState->accelMin[i] - 100
-						|| CC_GlobalState->accelAdcValues[i] >= CC_GlobalState->accelMax[i] + 100)
+				if (CC_GlobalState->accelAdcValues[i] <= CC_GlobalState->accelMin[i] - 200
+						|| CC_GlobalState->accelAdcValues[i] >= CC_GlobalState->accelMax[i] + 200)
 				{
 					CC_LogInfo("Accel ADC Tripped\r\n", strlen("Accel ADC Tripped\r\n"));
 					CC_GlobalState->faultDetected = true;
@@ -720,42 +732,42 @@ void state_driving_iterate(fsm_t *fsm)
 		}
 
 		/* Map Travel to Pedal Pos */
-		brake_travel_one = map(brake_one_avg, CC_GlobalState->brakeMin[0]+2, CC_GlobalState->brakeMax[0]-5, 0, 100);
-		brake_travel_two = map(brake_two_avg, CC_GlobalState->brakeMin[1]+2, CC_GlobalState->brakeMax[1]-5, 0, 100);
+		brake_travel_one = map(brake_one_avg, CC_GlobalState->brakeMin[0], CC_GlobalState->brakeMax[0], 0, 1000);
+		brake_travel_two = map(brake_two_avg, CC_GlobalState->brakeMin[1], CC_GlobalState->brakeMax[1], 0, 1000);
 
-		accel_travel_one = map(accel_one_avg, CC_GlobalState->accelMin[0]+2, CC_GlobalState->accelMax[0]-6, 0, 100);
-		accel_travel_two = map(accel_two_avg, CC_GlobalState->accelMin[1]+2, CC_GlobalState->accelMax[1]-6, 0, 100);
-		accel_travel_three = map(accel_three_avg, CC_GlobalState->accelMin[2]+2, CC_GlobalState->accelMax[2]-6, 0, 100);
+		accel_travel_one = map(accel_one_avg, CC_GlobalState->accelMin[0], CC_GlobalState->accelMax[0], 0, 1000);
+		accel_travel_two = map(accel_two_avg, CC_GlobalState->accelMin[1], CC_GlobalState->accelMax[1], 0, 1000);
+		accel_travel_three = map(accel_three_avg, CC_GlobalState->accelMin[2], CC_GlobalState->accelMax[2], 0, 1000);
 
 		/* Ensure Brake & Accel Pots Synced */
-		if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug
-				&& CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0]
-																								   && (brake_travel_one >= brake_travel_two+10
-																										   || brake_travel_one <= brake_travel_two-10))
-		{
-			CC_LogInfo("Brake ADC Desync\r\n", strlen("Brake ADC Desync\r\n"));
-			CC_GlobalState->faultDetected = true;
-			CC_GlobalState->implausibleTicks = HAL_GetTick();
-		}
-		if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug
-				&& CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0]
-																								   && (accel_travel_one >= accel_travel_two+10
-																										   || accel_travel_one <= accel_travel_two-10
-																										   || accel_travel_one >= accel_travel_three+10
-																										   || accel_travel_one <= accel_travel_three-10
-																										   || accel_travel_two >= accel_travel_three+10
-																										   || accel_travel_two <= accel_travel_three-10))
-		{
-			CC_LogInfo("Accel ADC Desync\r\n", strlen("Accel ADC Desync\r\n"));
-			CC_GlobalState->faultDetected = true;
-			CC_GlobalState->implausibleTicks = HAL_GetTick();
-		}
+		//		if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug
+		//				&& CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0]
+		//																								   && (brake_travel_one >= brake_travel_two+10
+		//																										   || brake_travel_one <= brake_travel_two-10))
+		//		{
+		//			CC_LogInfo("Brake ADC Desync\r\n", strlen("Brake ADC Desync\r\n"));
+		//			CC_GlobalState->faultDetected = true;
+		//			CC_GlobalState->implausibleTicks = HAL_GetTick();
+		//		}
+		//		if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug
+		//				&& CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0]
+		//																								   && (accel_travel_one >= accel_travel_two+10
+		//																										   || accel_travel_one <= accel_travel_two-10
+		//																										   || accel_travel_one >= accel_travel_three+10
+		//																										   || accel_travel_one <= accel_travel_three-10
+		//																										   || accel_travel_two >= accel_travel_three+10
+		//																										   || accel_travel_two <= accel_travel_three-10))
+		//		{
+		//			CC_LogInfo("Accel ADC Desync\r\n", strlen("Accel ADC Desync\r\n"));
+		//			CC_GlobalState->faultDetected = true;
+		//			CC_GlobalState->implausibleTicks = HAL_GetTick();
+		//		}
 
 		/* Average 2 Brake Travel Positions */
 		if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
 		{
-			CC_GlobalState->brakeTravel = 100-((brake_travel_one+brake_travel_two)/2);
-			CC_GlobalState->accelTravel = 100-((accel_travel_one+accel_travel_two+accel_travel_three)/3);
+			CC_GlobalState->brakeTravel = 1000-((brake_travel_one+brake_travel_two)/2);
+			CC_GlobalState->accelTravel = 1000-((accel_travel_one+accel_travel_two+accel_travel_three)/3);
 		}
 
 		osSemaphoreRelease(CC_GlobalState->sem);
@@ -764,8 +776,8 @@ void state_driving_iterate(fsm_t *fsm)
 	/* Echo Pedal Positions */
 	if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
 	{
-		len = sprintf(x, "Pedal Positions: %i %i\r\n", CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
-		CC_LogInfo(x, len);
+		//len = sprintf(x, "Pedal Positions: %li %li\r\n", CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
+		//CC_LogInfo(x, len);
 	}
 
 	/*
@@ -799,19 +811,68 @@ void state_driving_iterate(fsm_t *fsm)
 	 */
 	if(!CC_GlobalState->Inverter_Debug
 			&& CC_GlobalState->tractiveActive
-			&& (HAL_GetTick() - CC_GlobalState->readyToDriveTicks) % 100 == 0)
+			&& (HAL_GetTick() - CC_GlobalState->readyToDriveTicks) % 5 == 0)
 	{
 		/* Broadcast Motor RPM Request on CAN1 */
-		CC_RequestRPM_t requestRPM = Compose_CC_RequestRPM(INVERTER_1_NODE_ID);
-		CAN_TxHeaderTypeDef header =
+		//		CC_RequestRPM_t requestRPM = Compose_CC_RequestRPM(INVERTER_1_NODE_ID);
+		//		CAN_TxHeaderTypeDef header =
+		//		{
+		//				.StdId = requestRPM.id,
+		//				.IDE = CAN_ID_STD,
+		//				.RTR = CAN_RTR_DATA,
+		//				.DLC = 8,
+		//				.TransmitGlobalTime = DISABLE,
+		//		};
+		//		HAL_CAN_AddTxMessage(&CAN_1, &header, requestRPM.data, &CC_GlobalState->CAN1_TxMailbox);
+	}
+
+	if((HAL_GetTick() - CC_GlobalState->readyToDriveTicks) % 100 == 0
+			&& CC_GlobalState->rollingAccelValues[0] > 0
+			&& CC_GlobalState->rollingBrakeValues[0])
+	{
+		/* Generate Desired Motor Command Value */
+		len = sprintf(x, "Motor Command: %li %li\r\n", CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
+		CC_LogInfo(x, len);
+
+		/* Send Accel Command */
+		CC_SetVariable_t accelCommand = Compose_CC_SetVariable(INVERTER_1_NODE_ID,
+				0x01,
+				CC_GlobalState->accelTravel);
+		CAN_TxHeaderTypeDef accelHeader =
 		{
-				.StdId = requestRPM.id,
+				.StdId = accelCommand.id,
 				.IDE = CAN_ID_STD,
 				.RTR = CAN_RTR_DATA,
 				.DLC = 8,
 				.TransmitGlobalTime = DISABLE,
 		};
-		HAL_CAN_AddTxMessage(&CAN_1, &header, requestRPM.data, &CC_GlobalState->CAN1_TxMailbox);
+		HAL_CAN_AddTxMessage(&CAN_1, &accelHeader, accelCommand.data, &CC_GlobalState->CAN1_TxMailbox);
+
+		//		CC_MotorCommand_t commandOne = Compose_CC_MotorCommand(INVERTER_1_NODE_ID,
+		//				40,
+		//				0x01);
+		//		CAN_TxHeaderTypeDef oneHeader =
+		//		{
+		//				.StdId = commandOne.id,
+		//				.IDE = CAN_ID_STD,
+		//				.RTR = CAN_RTR_DATA,
+		//				.DLC = 8,
+		//				.TransmitGlobalTime = DISABLE,
+		//		};
+		//		HAL_CAN_AddTxMessage(&CAN_1, &oneHeader, commandOne.data, &CC_GlobalState->CAN1_TxMailbox);
+		//
+		//		CC_MotorCommand_t commandTwo = Compose_CC_MotorCommand(INVERTER_1_NODE_ID,
+		//				40,
+		//				0x02);
+		//		CAN_TxHeaderTypeDef twoHeader =
+		//		{
+		//				.StdId = commandTwo.id,
+		//				.IDE = CAN_ID_STD,
+		//				.RTR = CAN_RTR_DATA,
+		//				.DLC = 8,
+		//				.TransmitGlobalTime = DISABLE,
+		//		};
+		//		HAL_CAN_AddTxMessage(&CAN_1, &twoHeader, commandTwo.data, &CC_GlobalState->CAN1_TxMailbox);
 	}
 
 	/*
@@ -853,23 +914,77 @@ state_t debugState = {&state_debug_enter, &state_debug_iterate, &state_debug_exi
 
 void state_debug_enter(fsm_t *fsm)
 {
-	CC_LogInfo("Enter Debugging\r\n", strlen("Enter Debugging\r\n"));
+	PDM_InitiateStartup_t initiateStartup = Compose_PDM_InitiateStartup();
+	CAN_TxHeaderTypeDef header =
+	{
+			.ExtId = initiateStartup.id,
+			.IDE = CAN_ID_EXT,
+			.RTR = CAN_RTR_DATA,
+			.DLC = 1,
+			.TransmitGlobalTime = DISABLE,
+	};
+	uint8_t data[1] = {0xF};
+	HAL_CAN_AddTxMessage(&CAN_2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
 	return;
 }
 
 void state_debug_iterate(fsm_t *fsm)
 {
-	/* Broadcast Motor RPM Request on CAN1 */
-	CC_RequestRPM_t requestRPM = Compose_CC_RequestRPM(INVERTER_1_NODE_ID);
-	CAN_TxHeaderTypeDef header =
+	for(;;){
+		CC_LogInfo("Enter Debugging\r\n", strlen("Enter Debugging\r\n"));
+		CAN_TxHeaderTypeDef header =
+		{
+				.ExtId = 0x1,
+				.IDE = CAN_ID_EXT,
+				.RTR = CAN_RTR_DATA,
+				.DLC = 1,
+				.TransmitGlobalTime = DISABLE,
+		};
+		uint8_t data[1] = {0xF};
+		HAL_CAN_AddTxMessage(&CAN_1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+		osDelay(75);
+	}
+
+	/* Check for Queued CAN Packets on CAN2 */
+	while(osMessageQueueGetCount(CC_GlobalState->CAN2Queue) >= 1)
 	{
-			.StdId = requestRPM.id,
-			.IDE = CAN_ID_STD,
-			.RTR = CAN_RTR_DATA,
-			.DLC = 8,
-			.TransmitGlobalTime = DISABLE,
-	};
-	HAL_CAN_AddTxMessage(&CAN_1, &header, requestRPM.data, &CC_GlobalState->CAN1_TxMailbox);
+		CC_CAN_Generic_t msg;
+		if(osMessageQueueGet(CC_GlobalState->CAN2Queue, &msg, 0U, 0U) == osOK)
+		{
+			/* Packet Handler */
+			//			char x[80];
+			//			int len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
+			//			CC_LogInfo(x, len);
+			/* If Startup Ok */
+			if(msg.header.ExtId == Compose_CANId(CAN_PRIORITY_NORMAL, CAN_SRC_ID_PDM, 0x0,
+					CAN_TYPE_TRANSMIT, 0x00, 0x0))
+			{
+				CC_LogInfo("Startup Ok\r\n", strlen("Startup Ok\r\n"));
+				uint32_t powerChannels = 0;
+				Parse_PDM_StartupOk(msg.data, &powerChannels);
+
+				char x[80];
+				int len = sprintf(x, "[%li] Power Channels: %li\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, powerChannels);
+				CC_LogInfo(x, len);
+
+				PDM_SetChannelStates_t setChannels = Compose_PDM_SetChannelStates(UINT32_MAX);
+				CAN_TxHeaderTypeDef header =
+				{
+						.ExtId = setChannels.id,
+						.IDE = CAN_ID_EXT,
+						.RTR = CAN_RTR_DATA,
+						.DLC = 1,
+						.TransmitGlobalTime = DISABLE,
+				};
+				uint8_t data[1] = {0xF};
+				HAL_CAN_AddTxMessage(&CAN_2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+			}
+			else if(msg.header.ExtId = Compose_CANId(CAN_PRIORITY_HEARTBEAT, CAN_SRC_ID_PDM, 0x0, CAN_TYPE_HEARTBEAT, 0x0, 0x0))
+			{
+				CC_LogInfo("Heartbeat\r\n", strlen("Heartbeat\r\n"));
+			}
+		}
+	}
 	return;
 }
 
