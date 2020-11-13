@@ -66,12 +66,12 @@ void state_start_enter(fsm_t *fsm)
 		{
 			/* Bind and configure initial global states */
 			CC_GlobalState->PDM_Debug = true;
-			CC_GlobalState->AMS_Debug = true;
+			CC_GlobalState->AMS_Debug = false;
 			CC_GlobalState->ADC_Debug = false;
-			CC_GlobalState->SHDN_Debug = true;
+			CC_GlobalState->SHDN_Debug = false;
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
-			CC_GlobalState->Inverter_Debug = true;
+			CC_GlobalState->Inverter_Debug = false;
 			CC_GlobalState->tractiveActive = false;
 			CC_GlobalState->CAN1Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
 			CC_GlobalState->CAN2Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
@@ -458,11 +458,47 @@ void state_driving_iterate(fsm_t *fsm)
 				}
 				else if(msg.header.StdId == 0x580+INVERTER_1_NODE_ID)
 				{
-					int16_t motorRPM = 0;
-					Parse_CC_RequestRPM(msg.data, &motorRPM);
 					char x[80];
-					int len = sprintf(x, "[%li] Got CAN msg from CAN1: %i\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, motorRPM);
-					CC_LogInfo(x, len);
+					int len;
+					if((msg.data[2] << 8 | msg.data[1]) == 0x210A)
+					{
+						int16_t motorRPM = 0;
+						Parse_CC_RequestRPM(msg.data, &motorRPM);
+
+						// Echo Motor RPM
+						//len = sprintf(x, "[%li] Got CAN RPM from CAN1: %i\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, motorRPM);
+						//CC_LogInfo(x, len);
+
+						int32_t motorCommandValue = map(CC_GlobalState->accelTravel, 0, 100, 0, 200);
+						//len = sprintf(x, "Motor Command: %i %li\r\n", CC_GlobalState->accelTravel, motorCommand);
+						//CC_LogInfo(x, len);
+
+						CC_MotorCommand_t MotorCommandOne = Compose_CC_MotorCommand(INVERTER_1_NODE_ID, motorCommandValue, 0x01);
+						CAN_TxHeaderTypeDef firstHeader =
+						{
+								.StdId = MotorCommandOne.id,
+								.IDE = CAN_ID_STD,
+								.RTR = CAN_RTR_DATA,
+								.DLC = 8,
+								.TransmitGlobalTime = DISABLE,
+						};
+						HAL_CAN_AddTxMessage(&CAN_1, &firstHeader, MotorCommandOne.data, &CC_GlobalState->CAN1_TxMailbox);
+
+						CC_MotorCommand_t MotorCommandTwo = Compose_CC_MotorCommand(INVERTER_1_NODE_ID, motorCommandValue, 0x02);
+						CAN_TxHeaderTypeDef secondHeader =
+						{
+								.StdId = MotorCommandTwo.id,
+								.IDE = CAN_ID_STD,
+								.RTR = CAN_RTR_DATA,
+								.DLC = 8,
+								.TransmitGlobalTime = DISABLE,
+						};
+						HAL_CAN_AddTxMessage(&CAN_1, &secondHeader, MotorCommandTwo.data, &CC_GlobalState->CAN1_TxMailbox);
+					}
+					else{
+						len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.StdId);
+						CC_LogInfo(x, len);
+					}
 				}
 			}
 		}
@@ -513,6 +549,17 @@ void state_driving_iterate(fsm_t *fsm)
 			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
 			{
 				// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
+				CC_ShutdownInverter_t shutdownInverter = Compose_CC_ShutdownInverter(INVERTER_1_NODE_ID);
+				CAN_TxHeaderTypeDef header =
+				{
+						.StdId = shutdownInverter.id,
+						.IDE = CAN_ID_STD,
+						.RTR = CAN_RTR_DATA,
+						.DLC = 8,
+						.TransmitGlobalTime = DISABLE,
+				};
+				HAL_CAN_AddTxMessage(&CAN_1, &header, shutdownInverter.data, &CC_GlobalState->CAN1_TxMailbox);
+
 				CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
 						&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 						&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3);
@@ -663,15 +710,15 @@ void state_driving_iterate(fsm_t *fsm)
 		brake_travel_one = map(brake_one_avg, CC_GlobalState->brakeMin[0]+2, CC_GlobalState->brakeMax[0]-5, 0, 100);
 		brake_travel_two = map(brake_two_avg, CC_GlobalState->brakeMin[1]+2, CC_GlobalState->brakeMax[1]-5, 0, 100);
 
-		accel_travel_one = map(accel_one_avg, CC_GlobalState->accelMin[0], CC_GlobalState->accelMax[0]-5, 0, 100);
-		accel_travel_two = map(accel_two_avg, CC_GlobalState->accelMin[1], CC_GlobalState->accelMax[1]-5, 0, 100);
-		accel_travel_three = map(accel_three_avg, CC_GlobalState->accelMin[2], CC_GlobalState->accelMax[2]-5, 0, 100);
+		accel_travel_one = map(accel_one_avg, CC_GlobalState->accelMin[0]+2, CC_GlobalState->accelMax[0]-6, 0, 100);
+		accel_travel_two = map(accel_two_avg, CC_GlobalState->accelMin[1]+2, CC_GlobalState->accelMax[1]-6, 0, 100);
+		accel_travel_three = map(accel_three_avg, CC_GlobalState->accelMin[2]+2, CC_GlobalState->accelMax[2]-6, 0, 100);
 
 		/* Ensure Brake & Accel Pots Synced */
 		if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug
 				&& CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0]
-				&& (brake_travel_one >= brake_travel_two+10
-						|| brake_travel_one <= brake_travel_two-10))
+																								   && (brake_travel_one >= brake_travel_two+10
+																										   || brake_travel_one <= brake_travel_two-10))
 		{
 			CC_LogInfo("Brake ADC Desync\r\n", strlen("Brake ADC Desync\r\n"));
 			CC_GlobalState->faultDetected = true;
@@ -679,12 +726,12 @@ void state_driving_iterate(fsm_t *fsm)
 		}
 		if(!CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug
 				&& CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0]
-				&& (accel_travel_one >= accel_travel_two+10
-						|| accel_travel_one <= accel_travel_two-10
-						|| accel_travel_one >= accel_travel_three+10
-						|| accel_travel_one <= accel_travel_three-10
-						|| accel_travel_two >= accel_travel_three+10
-						|| accel_travel_two <= accel_travel_three-10))
+																								   && (accel_travel_one >= accel_travel_two+10
+																										   || accel_travel_one <= accel_travel_two-10
+																										   || accel_travel_one >= accel_travel_three+10
+																										   || accel_travel_one <= accel_travel_three-10
+																										   || accel_travel_two >= accel_travel_three+10
+																										   || accel_travel_two <= accel_travel_three-10))
 		{
 			CC_LogInfo("Accel ADC Desync\r\n", strlen("Accel ADC Desync\r\n"));
 			CC_GlobalState->faultDetected = true;
@@ -704,8 +751,8 @@ void state_driving_iterate(fsm_t *fsm)
 	/* Echo Pedal Positions */
 	if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
 	{
-		len = sprintf(x, "Pedal Positions: %i %i\r\n", brake_travel_one, brake_travel_two);
-		CC_LogInfo(x, len);
+		len = sprintf(x, "Pedal Positions: %i %i\r\n", CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
+		//CC_LogInfo(x, len);
 	}
 
 	/*
