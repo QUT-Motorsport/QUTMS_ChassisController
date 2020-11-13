@@ -29,6 +29,9 @@
 
 #define INVERTER_1_NODE_ID 100
 
+#define MOTOR_1_SUBINDEX 0x01
+#define MOTOR_2_SUBINDEX 0x02
+
 state_t deadState = {&state_dead_enter, &state_dead_iterate, &state_dead_exit, "Dead_s"};
 
 void state_dead_enter(fsm_t *fsm)
@@ -71,7 +74,7 @@ void state_start_enter(fsm_t *fsm)
 			CC_GlobalState->SHDN_Debug = false;
 			CC_GlobalState->SHDN_IMD_Debug = true;
 			CC_GlobalState->RTD_Debug = true;
-			CC_GlobalState->Inverter_Debug = false;
+			CC_GlobalState->Inverter_Debug = true;
 			CC_GlobalState->tractiveActive = false;
 			CC_GlobalState->CAN1Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
 			CC_GlobalState->CAN2Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
@@ -260,7 +263,6 @@ void state_idle_iterate(fsm_t *fsm)
 						Parse_AMS_HeartbeatResponse(msg.data, &initialised, &HVAn, &HVBn, &precharge, &HVAp, &HVBp, &averageVoltage, &runtime);
 						CC_GlobalState->amsTicks = HAL_GetTick();
 						CC_GlobalState->amsInit = initialised;
-						char x[80];
 						osSemaphoreRelease(CC_GlobalState->sem);
 					}
 				}
@@ -456,24 +458,31 @@ void state_driving_iterate(fsm_t *fsm)
 				{
 					CC_GlobalState->inverterTicks = HAL_GetTick();
 				}
+				/* Inverter Response Packet */
 				else if(msg.header.StdId == 0x580+INVERTER_1_NODE_ID)
 				{
 					char x[80];
 					int len;
+					/* Motor RPM Response Packet */
 					if((msg.data[2] << 8 | msg.data[1]) == 0x210A)
 					{
+						/* Parse Motor RPM */
 						int16_t motorRPM = 0;
 						Parse_CC_RequestRPM(msg.data, &motorRPM);
 
-						// Echo Motor RPM
+						/* Echo Motor RPM */
 						//len = sprintf(x, "[%li] Got CAN RPM from CAN1: %i\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, motorRPM);
 						//CC_LogInfo(x, len);
 
+						/* Generate Desired Motor Command Value */
 						int32_t motorCommandValue = map(CC_GlobalState->accelTravel, 0, 100, 0, 200);
 						//len = sprintf(x, "Motor Command: %i %li\r\n", CC_GlobalState->accelTravel, motorCommand);
 						//CC_LogInfo(x, len);
 
-						CC_MotorCommand_t MotorCommandOne = Compose_CC_MotorCommand(INVERTER_1_NODE_ID, motorCommandValue, 0x01);
+						/* Send Motor Command to First Motor */
+						CC_MotorCommand_t MotorCommandOne = Compose_CC_MotorCommand(INVERTER_1_NODE_ID,
+								motorCommandValue,
+								MOTOR_1_SUBINDEX);
 						CAN_TxHeaderTypeDef firstHeader =
 						{
 								.StdId = MotorCommandOne.id,
@@ -484,7 +493,10 @@ void state_driving_iterate(fsm_t *fsm)
 						};
 						HAL_CAN_AddTxMessage(&CAN_1, &firstHeader, MotorCommandOne.data, &CC_GlobalState->CAN1_TxMailbox);
 
-						CC_MotorCommand_t MotorCommandTwo = Compose_CC_MotorCommand(INVERTER_1_NODE_ID, motorCommandValue, 0x02);
+						/* Send Motor Command to Second Motor */
+						CC_MotorCommand_t MotorCommandTwo = Compose_CC_MotorCommand(INVERTER_1_NODE_ID,
+								motorCommandValue,
+								MOTOR_2_SUBINDEX);
 						CAN_TxHeaderTypeDef secondHeader =
 						{
 								.StdId = MotorCommandTwo.id,
@@ -496,6 +508,7 @@ void state_driving_iterate(fsm_t *fsm)
 						HAL_CAN_AddTxMessage(&CAN_1, &secondHeader, MotorCommandTwo.data, &CC_GlobalState->CAN1_TxMailbox);
 					}
 					else{
+						/* Echo CAN Packet if index not recognised */
 						len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.StdId);
 						CC_LogInfo(x, len);
 					}
@@ -752,7 +765,7 @@ void state_driving_iterate(fsm_t *fsm)
 	if(CC_GlobalState->rollingAccelValues[0] > 0 && CC_GlobalState->rollingBrakeValues[0])
 	{
 		len = sprintf(x, "Pedal Positions: %i %i\r\n", CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
-		//CC_LogInfo(x, len);
+		CC_LogInfo(x, len);
 	}
 
 	/*
@@ -764,7 +777,10 @@ void state_driving_iterate(fsm_t *fsm)
 	 * If Throttle and Brake Implausibility State Clock < 100ms
 	 * Suspend Tractive System Operations
 	 */
-	if(CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug && CC_GlobalState->tractiveActive && (HAL_GetTick() - CC_GlobalState->implausibleTicks) >= 100)
+	if(CC_GlobalState->faultDetected
+			&& !CC_GlobalState->ADC_Debug
+			&& CC_GlobalState->tractiveActive
+			&& (HAL_GetTick() - CC_GlobalState->implausibleTicks) >= 100)
 	{
 		CC_GlobalState->tractiveActive = false;
 		CC_LogInfo("Disabling Tractive Operations\r\n", strlen("Disabling Tractive Operations\r\n"));
@@ -779,9 +795,11 @@ void state_driving_iterate(fsm_t *fsm)
 	 */
 
 	/*
-	 * Send Desired Accel to Inverters
+	 * Request RPM from Motors
 	 */
-	if(CC_GlobalState->tractiveActive && (HAL_GetTick() - CC_GlobalState->readyToDriveTicks) % 100 == 0)
+	if(!CC_GlobalState->Inverter_Debug
+			&& CC_GlobalState->tractiveActive
+			&& (HAL_GetTick() - CC_GlobalState->readyToDriveTicks) % 100 == 0)
 	{
 		/* Broadcast Motor RPM Request on CAN1 */
 		CC_RequestRPM_t requestRPM = Compose_CC_RequestRPM(INVERTER_1_NODE_ID);
@@ -841,20 +859,17 @@ void state_debug_enter(fsm_t *fsm)
 
 void state_debug_iterate(fsm_t *fsm)
 {
-	/* Broadcast Soft Shutdown on all CAN lines */
-	//	CC_SoftShutdown_t softShutdown = Compose_CC_SoftShutdown();
-	//	CAN_TxHeaderTypeDef header =
-	//	{
-	//			.ExtId = softShutdown.id,
-	//			.IDE = CAN_ID_EXT,
-	//			.RTR = CAN_RTR_DATA,
-	//			.DLC = 1,
-	//			.TransmitGlobalTime = DISABLE,
-	//	};
-	//	uint8_t data[1] = {0xF};
-	//	HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-	//	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-	//	HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+	/* Broadcast Motor RPM Request on CAN1 */
+	CC_RequestRPM_t requestRPM = Compose_CC_RequestRPM(INVERTER_1_NODE_ID);
+	CAN_TxHeaderTypeDef header =
+	{
+			.StdId = requestRPM.id,
+			.IDE = CAN_ID_STD,
+			.RTR = CAN_RTR_DATA,
+			.DLC = 8,
+			.TransmitGlobalTime = DISABLE,
+	};
+	HAL_CAN_AddTxMessage(&CAN_1, &header, requestRPM.data, &CC_GlobalState->CAN1_TxMailbox);
 	return;
 }
 
