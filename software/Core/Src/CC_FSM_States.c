@@ -32,6 +32,10 @@
 #define MOTOR_1_SUBINDEX 0x01
 #define MOTOR_2_SUBINDEX 0x02
 
+#define LV_STARTUP 0xB08D1F50
+#define HV_STARTUP 0x06628029
+#define BRAKE_LIGHT_MASK 0x00000080
+
 state_t deadState = {&state_dead_enter, &state_dead_iterate, &state_dead_exit, "Dead_s"};
 
 void state_dead_enter(fsm_t *fsm)
@@ -407,7 +411,7 @@ void state_driving_enter(fsm_t *fsm)
 			.StdId = runScript.id,
 			.IDE = CAN_ID_STD,
 			.RTR = CAN_RTR_DATA,
-			.DLC = 8,
+			.DLC = sizeof(runScript.data),
 			.TransmitGlobalTime = DISABLE,
 	};
 	HAL_CAN_AddTxMessage(&CAN_1, &runHeader, runScript.data, &CC_GlobalState->CAN1_TxMailbox);
@@ -573,7 +577,20 @@ void state_driving_iterate(fsm_t *fsm)
 			/* Shutdown Triggered Fault */
 			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
 			{
-				// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
+				/* Reset Script to Default State */
+				CC_SetVariable_t zeroCommand = Compose_CC_SetVariable(INVERTER_1_NODE_ID,
+						0x01,
+						0x00);
+				CAN_TxHeaderTypeDef zeroHeader =
+				{
+						.StdId = zeroCommand.id,
+						.IDE = CAN_ID_STD,
+						.RTR = CAN_RTR_DATA,
+						.DLC = 8,
+						.TransmitGlobalTime = DISABLE,
+				};
+				HAL_CAN_AddTxMessage(&CAN_1, &zeroHeader, zeroCommand.data, &CC_GlobalState->CAN1_TxMailbox);
+
 				CC_ShutdownInverter_t shutdownInverter = Compose_CC_ShutdownInverter(INVERTER_1_NODE_ID);
 				CAN_TxHeaderTypeDef header =
 				{
@@ -914,77 +931,124 @@ state_t debugState = {&state_debug_enter, &state_debug_iterate, &state_debug_exi
 
 void state_debug_enter(fsm_t *fsm)
 {
-	PDM_InitiateStartup_t initiateStartup = Compose_PDM_InitiateStartup();
-	CAN_TxHeaderTypeDef header =
+	//	PDM_InitiateStartup_t initiateStartup = Compose_PDM_InitiateStartup();
+	//	CAN_TxHeaderTypeDef header =
+	//	{
+	//			.ExtId = initiateStartup.id,
+	//			.IDE = CAN_ID_EXT,
+	//			.RTR = CAN_RTR_DATA,
+	//			.DLC = 1,
+	//			.TransmitGlobalTime = DISABLE,
+	//	};
+	//	uint8_t data[1] = {0xF};
+	//	HAL_CAN_AddTxMessage(&CAN_2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+
+	/* Run MicroBasic Script on Inverter */
+	CC_RunMicroBasic_t runScript = Compose_CC_RunMicroBasic(INVERTER_1_NODE_ID);
+	CAN_TxHeaderTypeDef runHeader =
 	{
-			.ExtId = initiateStartup.id,
-			.IDE = CAN_ID_EXT,
+			.StdId = runScript.id,
+			.IDE = CAN_ID_STD,
 			.RTR = CAN_RTR_DATA,
-			.DLC = 1,
+			.DLC = sizeof(runScript.data),
 			.TransmitGlobalTime = DISABLE,
 	};
-	uint8_t data[1] = {0xF};
-	HAL_CAN_AddTxMessage(&CAN_2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+	HAL_CAN_AddTxMessage(&CAN_1, &runHeader, runScript.data, &CC_GlobalState->CAN1_TxMailbox);
 	return;
 }
 
 void state_debug_iterate(fsm_t *fsm)
 {
-	for(;;){
-		CC_LogInfo("Enter Debugging\r\n", strlen("Enter Debugging\r\n"));
-		CAN_TxHeaderTypeDef header =
+	//	/* Check for Queued CAN Packets on CAN2 */
+	//	while(osMessageQueueGetCount(CC_GlobalState->CAN2Queue) >= 1)
+	//	{
+	//		CC_CAN_Generic_t msg;
+	//		if(osMessageQueueGet(CC_GlobalState->CAN2Queue, &msg, 0U, 0U) == osOK)
+	//		{
+	//			/* Packet Handler */
+	//			char x[80];
+	//			int len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
+	//			//CC_LogInfo(x, len);
+	//			/* If Startup Ok */
+	//			if(msg.header.ExtId == Compose_CANId(CAN_PRIORITY_NORMAL, CAN_SRC_ID_PDM, 0x0,
+	//					CAN_TYPE_TRANSMIT, 0x00, 0x0))
+	//			{
+	//				CC_LogInfo("Startup Ok\r\n", strlen("Startup Ok\r\n"));
+	//				uint32_t startupChannels = 0;
+	//				Parse_PDM_StartupOk(msg.data, &startupChannels);
+	//
+	//				char x[80];
+	//				int len = sprintf(x, "[%li] Power Channels: %li\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, startupChannels);
+	//				CC_LogInfo(x, len);
+	//			}
+	//		}
+	//	}
+	//
+	//	PDM_SetChannelStates_t setChannels = Compose_PDM_SetChannelStates(0x00000000 | LV_STARTUP);
+	//	CAN_TxHeaderTypeDef header =
+	//	{
+	//			.ExtId = setChannels.id,
+	//			.IDE = CAN_ID_EXT,
+	//			.RTR = CAN_RTR_DATA,
+	//			.DLC = sizeof(setChannels.data),
+	//			.TransmitGlobalTime = DISABLE,
+	//	};
+	//	HAL_CAN_AddTxMessage(&CAN_2, &header, setChannels.data, &CC_GlobalState->CAN2_TxMailbox);
+	//	char x[80];
+	//	int len = sprintf(x, "Packet ID: %i\r\n", setChannels.id);
+	//	CC_LogInfo(x, len);
+	//	osDelay(100);
+
+	for(;;)
+	{
+		//		CC_SetVariable_t accelCommand = Compose_CC_SetVariable(INVERTER_1_NODE_ID,
+		//				0x01,
+		//				20);
+		//		CAN_TxHeaderTypeDef accelHeader =
+		//		{
+		//				.StdId = accelCommand.id,
+		//				.IDE = CAN_ID_STD,
+		//				.RTR = CAN_RTR_DATA,
+		//				.DLC = 8,
+		//				.TransmitGlobalTime = DISABLE,
+		//		};
+		//		HAL_CAN_AddTxMessage(&CAN_1, &accelHeader, accelCommand.data, &CC_GlobalState->CAN1_TxMailbox);
+
+		CC_MotorCommand_t accelCommand = Compose_CC_MotorCommand(INVERTER_1_NODE_ID,
+				20,
+				0x01);
+		CAN_TxHeaderTypeDef accelHeader =
 		{
-				.ExtId = 0x1,
-				.IDE = CAN_ID_EXT,
+				.StdId = accelCommand.id,
+				.IDE = CAN_ID_STD,
 				.RTR = CAN_RTR_DATA,
-				.DLC = 1,
+				.DLC = 8,
 				.TransmitGlobalTime = DISABLE,
 		};
-		uint8_t data[1] = {0xF};
-		HAL_CAN_AddTxMessage(&CAN_1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-		osDelay(75);
-	}
+		HAL_CAN_AddTxMessage(&CAN_1, &accelHeader, accelCommand.data, &CC_GlobalState->CAN1_TxMailbox);
 
-	/* Check for Queued CAN Packets on CAN2 */
-	while(osMessageQueueGetCount(CC_GlobalState->CAN2Queue) >= 1)
-	{
-		CC_CAN_Generic_t msg;
-		if(osMessageQueueGet(CC_GlobalState->CAN2Queue, &msg, 0U, 0U) == osOK)
+		osDelay(10);
+
+		CC_MotorCommand_t accelTwoCommand = Compose_CC_MotorCommand(INVERTER_1_NODE_ID,
+				20,
+				0x02);
+		CAN_TxHeaderTypeDef accelTwoHeader =
 		{
-			/* Packet Handler */
-			//			char x[80];
-			//			int len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
-			//			CC_LogInfo(x, len);
-			/* If Startup Ok */
-			if(msg.header.ExtId == Compose_CANId(CAN_PRIORITY_NORMAL, CAN_SRC_ID_PDM, 0x0,
-					CAN_TYPE_TRANSMIT, 0x00, 0x0))
-			{
-				CC_LogInfo("Startup Ok\r\n", strlen("Startup Ok\r\n"));
-				uint32_t powerChannels = 0;
-				Parse_PDM_StartupOk(msg.data, &powerChannels);
+				.StdId = accelCommand.id,
+				.IDE = CAN_ID_STD,
+				.RTR = CAN_RTR_DATA,
+				.DLC = 8,
+				.TransmitGlobalTime = DISABLE,
+		};
+		HAL_CAN_AddTxMessage(&CAN_1, &accelTwoHeader, accelTwoCommand.data, &CC_GlobalState->CAN1_TxMailbox);
 
-				char x[80];
-				int len = sprintf(x, "[%li] Power Channels: %li\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, powerChannels);
-				CC_LogInfo(x, len);
 
-				PDM_SetChannelStates_t setChannels = Compose_PDM_SetChannelStates(UINT32_MAX);
-				CAN_TxHeaderTypeDef header =
-				{
-						.ExtId = setChannels.id,
-						.IDE = CAN_ID_EXT,
-						.RTR = CAN_RTR_DATA,
-						.DLC = 1,
-						.TransmitGlobalTime = DISABLE,
-				};
-				uint8_t data[1] = {0xF};
-				HAL_CAN_AddTxMessage(&CAN_2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-			}
-			else if(msg.header.ExtId = Compose_CANId(CAN_PRIORITY_HEARTBEAT, CAN_SRC_ID_PDM, 0x0, CAN_TYPE_HEARTBEAT, 0x0, 0x0))
-			{
-				CC_LogInfo("Heartbeat\r\n", strlen("Heartbeat\r\n"));
-			}
-		}
+		char x[80];
+		int len = sprintf(x, "Packet ID: %li %li\r\n", accelCommand.id, accelTwoCommand.id);
+		CC_LogInfo(x, len);
+		osDelay(100);
 	}
+
 	return;
 }
 

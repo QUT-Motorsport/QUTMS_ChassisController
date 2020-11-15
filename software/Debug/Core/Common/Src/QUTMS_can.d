@@ -1,5 +1,5 @@
 Core/Common/Src/QUTMS_can.o: ../Core/Common/Src/QUTMS_can.c \
- /home/alistair/Dev/repos/QUTMS/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h \
+ /home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h \
  ../Core/Inc/can.h ../Core/Inc/main.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
@@ -35,7 +35,7 @@ Core/Common/Src/QUTMS_can.o: ../Core/Common/Src/QUTMS_can.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
 
-/home/alistair/Dev/repos/QUTMS/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h:
+/home/alex/Desktop/embedded/QUTMS_ChassisController/software/Core/Common/Inc/QUTMS_can.h:
 
 ../Core/Inc/can.h:
 
