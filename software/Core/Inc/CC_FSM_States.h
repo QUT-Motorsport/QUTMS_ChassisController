@@ -49,7 +49,9 @@ typedef struct
 	bool AMS_Debug;
 	bool Inverter_Debug;
 	bool SHDN_IMD_Debug;
-	bool SHDN_Debug;
+	bool SHDN_1_Debug;
+	bool SHDN_2_Debug;
+	bool SHDN_3_Debug;
 
 	/** Tick Refresh Counter for Individual Board Heartbeats */
 	uint32_t startupTicks;
@@ -57,8 +59,13 @@ typedef struct
 	uint32_t implausibleTicks;
 	uint32_t amsTicks;
 	uint32_t inverterTicks;
-	uint32_t shutdownTicks;
+	uint32_t shutdownOneTicks;
+	uint32_t shutdownTwoTicks;
+	uint32_t shutdownThreeTicks;
 	uint32_t shutdownImdTicks;
+
+	/* PDM Channel Management */
+	uint32_t pdmTrackState;
 
 	/* Initialisation Confirmation */
 	bool ccInit;
@@ -74,8 +81,8 @@ typedef struct
 	uint32_t rollingAccelValues[10]; uint32_t secondaryRollingAccelValues[10]; uint32_t tertiaryRollingAccelValues[10];
 
 	/* Formatted Pedal Travel Positions */
-	int32_t accelTravel;
-	int32_t brakeTravel;
+	uint32_t accelTravel;
+	uint32_t brakeTravel;
 
 	bool tractiveActive;
 	bool faultDetected;

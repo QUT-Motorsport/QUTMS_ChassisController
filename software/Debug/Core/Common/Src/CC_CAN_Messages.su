@@ -11,3 +11,5 @@ CC_CAN_Messages.c:96:23:Compose_CC_ShutdownInverter	32	static
 CC_CAN_Messages.c:112:6:Parse_CC_ShutdownInverter	16	static
 CC_CAN_Messages.c:116:18:Compose_CC_SetVariable	40	static
 CC_CAN_Messages.c:132:6:Parse_CC_SetVariable	16	static
+CC_CAN_Messages.c:137:14:Compose_CC_SetBool	40	static
+CC_CAN_Messages.c:153:6:Parse_CC_SetBool	16	static
