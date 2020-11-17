@@ -883,7 +883,8 @@ void state_driving_iterate(fsm_t *fsm)
 	}
 
 	/* Send Accel Command */
-	if((HAL_GetTick() - CC_GlobalState->readyToDriveTicks) % 85 == 0
+	if((HAL_GetTick() - CC_GlobalState->readyToDriveTicks) % 36 == 0
+			&& CC_GlobalState->faultDetected
 			&& CC_GlobalState->rollingAccelValues[0] > 0
 			&& CC_GlobalState->rollingBrakeValues[0])
 	{
