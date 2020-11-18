@@ -87,9 +87,9 @@ void state_start_enter(fsm_t *fsm)
 			CC_GlobalState->ADC_Debug = false;
 
 			/* Boards w/ Heartbeats */
-			CC_GlobalState->PDM_Debug = true;
-			CC_GlobalState->AMS_Debug = true;
-			CC_GlobalState->SHDN_1_Debug = true;
+			CC_GlobalState->PDM_Debug = false;
+			CC_GlobalState->AMS_Debug = false;
+			CC_GlobalState->SHDN_1_Debug = false;
 			CC_GlobalState->SHDN_2_Debug = true;
 			CC_GlobalState->SHDN_3_Debug = true;
 			CC_GlobalState->SHDN_IMD_Debug = true;
@@ -598,13 +598,13 @@ void state_driving_iterate(fsm_t *fsm)
 
 						/* Echo Motor RPM */
 						len = sprintf(x, "[%li] Got RPM from CAN1: %i\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, motorRPM);
-						CC_LogInfo(x, len);
+						//CC_LogInfo(x, len);
 					}
 					else
 					{
 						/* Echo CAN Packet if index not recognised */
 						len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.StdId);
-						CC_LogInfo(x, len);
+						//CC_LogInfo(x, len);
 					}
 				}
 			}
@@ -700,7 +700,7 @@ void state_driving_iterate(fsm_t *fsm)
 	/* Echo ADC Failure for Debugging */
 	if(CC_GlobalState->faultDetected)
 	{
-		CC_LogInfo("ADC Fault Detected\r\n", strlen("ADC Fault Detected\r\n"));
+		//CC_LogInfo("ADC Fault Detected\r\n", strlen("ADC Fault Detected\r\n"));
 	}
 	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
 	{
@@ -786,14 +786,14 @@ void state_driving_iterate(fsm_t *fsm)
 					if(accel_travel[i] >= (int64_t)accel_travel[y]+POT_DESYNC || accel_travel[i] <= (int64_t)accel_travel[i]-POT_DESYNC)
 					{
 						currentFault = true;
-						CC_LogInfo("ADC Desync\r\n", strlen("ADC Desync\r\n"));
+						//CC_LogInfo("ADC Desync\r\n", strlen("ADC Desync\r\n"));
 					}
 				}
 				if (CC_GlobalState->accelAdcValues[i] <= CC_GlobalState->accelMin[i] - POT_DESYNC
 						|| CC_GlobalState->accelAdcValues[i] >= CC_GlobalState->accelMax[i] + POT_DESYNC)
 				{
 					currentFault = true;
-					CC_LogInfo("ADC Range Error\r\n", strlen("ADC Range Error\r\n"));
+					//CC_LogInfo("ADC Range Error\r\n", strlen("ADC Range Error\r\n"));
 				}
 			}
 			if(currentFault)
@@ -1087,6 +1087,6 @@ void state_debug_iterate(fsm_t *fsm)
 
 void state_debug_exit(fsm_t *fsm)
 {
-	CC_LogInfo("Exit Debugging\r\n", strlen("Exit Debugging\r\n"));
+	//CC_LogInfo("Exit Debugging\r\n", strlen("Exit Debugging\r\n"));
 	return;
 }
