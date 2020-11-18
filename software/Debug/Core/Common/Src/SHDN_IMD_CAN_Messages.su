@@ -1,0 +1,3 @@
+SHDN_IMD_CAN_Messages.c:12:29:Compose_SHDN_IMD_HeartbeatRequest	24	static
+SHDN_IMD_CAN_Messages.c:19:30:Compose_SHDN_IMD_HeartbeatResponse	32	static
+SHDN_IMD_CAN_Messages.c:27:6:Parse_SHDN_IMD_HeartbeatResponse	24	static
