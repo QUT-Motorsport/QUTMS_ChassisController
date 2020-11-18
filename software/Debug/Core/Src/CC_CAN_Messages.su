@@ -1,3 +1,0 @@
-CC_CAN_Messages.c:10:19:Compose_CC_ReadyToDrive	24	static
-CC_CAN_Messages.c:17:20:Compose_CC_FatalShutdown	24	static
-CC_CAN_Messages.c:24:19:Compose_CC_SoftShutdown	24	static
