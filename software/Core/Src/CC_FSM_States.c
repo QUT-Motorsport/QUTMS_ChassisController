@@ -37,10 +37,7 @@
 #define MOTOR_1_SUBINDEX 0x01
 #define MOTOR_2_SUBINDEX 0x02
 
-#define LV_STARTUP 0x908D9F4C
-#define HV_STARTUP 0x06600032
 #define CC_MASK 0x09100000
-#define BRAKE_LIGHT_MASK 0x00000001
 #define RTD_SIREN_MASK 0x00002000
 
 state_t deadState = {&state_dead_enter, &state_dead_iterate, &state_dead_exit, "Dead_s"};
