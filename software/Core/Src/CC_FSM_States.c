@@ -652,31 +652,6 @@ void state_driving_iterate(fsm_t *fsm)
 			/* Shutdown Triggered Fault */
 			else if(msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0))
 			{
-				/* Reset Script to Default State */
-				CC_SetVariable_t zeroCommand = Compose_CC_SetVariable(INVERTER_LEFT_NODE_ID,
-						0x01,
-						0x00);
-				CAN_TxHeaderTypeDef zeroHeader =
-				{
-						.StdId = zeroCommand.id,
-						.IDE = CAN_ID_STD,
-						.RTR = CAN_RTR_DATA,
-						.DLC = 8,
-						.TransmitGlobalTime = DISABLE,
-				};
-				HAL_CAN_AddTxMessage(&CAN_1, &zeroHeader, zeroCommand.data, &CC_GlobalState->CAN1_TxMailbox);
-
-				CC_ShutdownInverter_t shutdownInverter = Compose_CC_ShutdownInverter(INVERTER_LEFT_NODE_ID);
-				CAN_TxHeaderTypeDef header =
-				{
-						.StdId = shutdownInverter.id,
-						.IDE = CAN_ID_STD,
-						.RTR = CAN_RTR_DATA,
-						.DLC = 8,
-						.TransmitGlobalTime = DISABLE,
-				};
-				HAL_CAN_AddTxMessage(&CAN_1, &header, shutdownInverter.data, &CC_GlobalState->CAN1_TxMailbox);
-
 				CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
 						&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 						&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3,
