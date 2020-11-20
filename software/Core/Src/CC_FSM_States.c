@@ -37,8 +37,8 @@
 #define MOTOR_1_SUBINDEX 0x01
 #define MOTOR_2_SUBINDEX 0x02
 
-#define CC_MASK 0x09100000
-#define RTD_SIREN_MASK 0x00002000
+#define CC_MASK PDM_POWER_CC_MASK
+#define RTD_SIREN_MASK PDMFLAG_RTD_SIREN
 
 state_t deadState = {&state_dead_enter, &state_dead_iterate, &state_dead_exit, "Dead_s"};
 
