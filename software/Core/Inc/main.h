@@ -47,6 +47,11 @@ extern "C" {
 #define CC_HEARTBEAT_PERIOD 75U // Milliseconds
 #define CC_IDC_PERIOD 250U // Milliseconds
 #define CC_CAN_QUEUESIZE 10
+
+#define DAC_MAXVALUE 4096
+#define FP_V DAC_MAXVALUE / 2.0f
+#define FP_G DAC_MAXVALUE * 0.015f
+#define BRAKE_ACTIVE_THRESHOLD 0.01
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -60,6 +65,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 void CC_LogInfo(char* msg, size_t length);
 __NO_RETURN void fsm_thread_mainLoop(void* arg);
+uint16_t calculateInverterDACValue();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

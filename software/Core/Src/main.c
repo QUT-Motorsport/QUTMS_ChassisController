@@ -311,6 +311,49 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 	}
 }
 
+uint16_t calculateInverterDACValue()
+{
+	int valueDAC = FP_V;
+
+	float brakeP = 0;
+	float throttleP = 0;
+
+	if(osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK)
+	{
+		brakeP = (CC_GlobalState->brakeTravel / 1000.f);
+		throttleP = (CC_GlobalState->accelTravel / 1000.f);
+
+		osSemaphoreRelease(CC_GlobalState->sem);
+	} else
+	{
+		char msg[] = "Failed to Acquire Global State Semaphore\r\n";
+		CC_LogInfo(msg, strlen(msg));
+		return FP_V; /**< Send no throttle or brake as we are in an unsafe state */
+	}
+
+	if(brakeP > BRAKE_ACTIVE_THRESHOLD)
+	{
+		// Override throttle input as we are breaking at more than 1%.
+		if(brakeP * DAC_MAXVALUE > FP_G)
+		{
+			valueDAC = (FP_V - FP_G) - (FP_V - FP_G) * brakeP;
+		} else
+		{
+			valueDAC = FP_V;
+		}
+	} else
+	{
+		if(throttleP * DAC_MAXVALUE > FP_G)
+		{
+			valueDAC = (FP_V - FP_G)  +  (FP_V + FP_G) * throttleP;
+		} else
+		{
+			valueDAC = FP_V;
+		}
+	}
+	return valueDAC;
+}
+
 /* USER CODE END 4 */
 
 /**

@@ -585,7 +585,6 @@ void state_driving_iterate(fsm_t *fsm)
 				else if(msg.header.StdId == 0x580+INVERTER_LEFT_NODE_ID)
 				{
 					char x[80];
-					int len;
 					/* Motor RPM Response Packet */
 					if((msg.data[2] << 8 | msg.data[1]) == 0x210A)
 					{
@@ -594,13 +593,13 @@ void state_driving_iterate(fsm_t *fsm)
 						Parse_CC_RequestRPM(msg.data, &motorRPM);
 
 						/* Echo Motor RPM */
-						len = sprintf(x, "[%li] Got RPM from CAN1: %i\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, motorRPM);
+						/*int len = */sprintf(x, "[%li] Got RPM from CAN1: %i\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, motorRPM);
 						//CC_LogInfo(x, len);
 					}
 					else
 					{
 						/* Echo CAN Packet if index not recognised */
-						len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.StdId);
+						/*int len = */sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.StdId);
 						//CC_LogInfo(x, len);
 					}
 				}
