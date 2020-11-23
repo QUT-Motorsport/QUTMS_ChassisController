@@ -75,14 +75,19 @@ typedef struct
 	uint32_t brakeAdcValues[100];
 	uint32_t accelAdcValues[150];
 	uint32_t brakePressureThreshold;
-	uint32_t rollingBrakeValues[10]; uint32_t secondaryRollingBrakeValues[10];
-	uint32_t brakeMin[2]; uint32_t brakeMax[2];
-	uint32_t accelMin[3]; uint32_t accelMax[3];
-	uint32_t rollingAccelValues[10]; uint32_t secondaryRollingAccelValues[10]; uint32_t tertiaryRollingAccelValues[10];
+	uint32_t rollingBrakeValues[10];
+	uint32_t secondaryRollingBrakeValues[10];
+	uint32_t brakeMin[2];
+	uint32_t brakeMax[2];
+	uint32_t accelMin[3];
+	uint32_t accelMax[3];
+	uint32_t rollingAccelValues[10];
+	uint32_t secondaryRollingAccelValues[10];
+	uint32_t tertiaryRollingAccelValues[10];
 
 	/* Formatted Pedal Travel Positions */
-	uint32_t accelTravel;
-	uint32_t brakeTravel;
+	int16_t accelTravel;
+	int16_t brakeTravel;
 
 	bool tractiveActive;
 	bool faultDetected;
@@ -98,6 +103,9 @@ typedef struct
 	uint32_t rtdTicks;
 	uint32_t rtdTicksSpan;
 	uint32_t finalRtdTicks;
+
+	uint32_t inverter_cmd_ticks;
+	uint32_t inverter_enable_ticks;
 } CC_GlobalState_t;
 
 CC_GlobalState_t *CC_GlobalState;
