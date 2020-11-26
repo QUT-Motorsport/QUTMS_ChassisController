@@ -93,6 +93,8 @@ typedef struct
 	bool faultDetected;
 	bool rtdLightActive;
 
+	bool shutdown_fault;
+
 	osMessageQueueId_t CAN1Queue;
 	osMessageQueueId_t CAN2Queue;
 	osMessageQueueId_t CAN3Queue;
@@ -106,6 +108,11 @@ typedef struct
 
 	uint32_t inverter_cmd_ticks;
 	uint32_t inverter_enable_ticks;
+
+	uint8_t duty_cycle_left_fan;
+	uint8_t duty_cycle_right_fan;
+
+	uint32_t fan_cmd_ticks;
 } CC_GlobalState_t;
 
 CC_GlobalState_t *CC_GlobalState;

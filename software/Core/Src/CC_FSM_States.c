@@ -23,7 +23,7 @@
 #define ACCEL_PEDAL_THREE_MIN 2800
 #define ACCEL_PEDAL_THREE_MAX 3300
 
-#define DEAD_ZONE_BRAKE 200
+#define DEAD_ZONE_BRAKE 60
 #define DEAD_ZONE_ACCEL 150
 
 #define NUM_BRAKE_SENSORS 2
@@ -52,6 +52,8 @@
 #define NUM_INVERTERS 2
 #define INVERTER_VAR_ACCEL 0x01
 #define INVERTER_VAR_BRAKE 0x02
+
+#define FAN_CMD_TICK_COUNT 400
 
 uint16_t inverter_node_ids[NUM_INVERTERS] = { INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID };
 
@@ -93,7 +95,7 @@ void state_start_enter(fsm_t *fsm) {
 			CC_GlobalState->ADC_Debug = false;
 
 			/* Boards w/ Heartbeats */
-			CC_GlobalState->PDM_Debug = false;
+			CC_GlobalState->PDM_Debug = true;
 			CC_GlobalState->AMS_Debug = true;
 			CC_GlobalState->SHDN_1_Debug = true;
 			CC_GlobalState->SHDN_2_Debug = true;
@@ -103,9 +105,15 @@ void state_start_enter(fsm_t *fsm) {
 			/* Inverters */
 			CC_GlobalState->Inverter_Debug = true;
 
+			// Fans
+			CC_GlobalState->duty_cycle_left_fan = 50;
+			CC_GlobalState->duty_cycle_right_fan = 50;
+
 			/* Bound state for system operations */
 			CC_GlobalState->tractiveActive = false;
 			CC_GlobalState->pdmTrackState = LV_STARTUP | CC_MASK | PDMFLAG_RIGHT_FAN;
+
+			CC_GlobalState->shutdown_fault = false;
 
 			/* Allocate CAN Queues */
 			CC_GlobalState->CAN1Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
@@ -216,6 +224,7 @@ void state_idle_iterate(fsm_t *fsm) {
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
 					&CAN_1, &CAN_2, &CAN_3, &huart3,
 					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown 1 Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownOneTicks) > 100 && !CC_GlobalState->SHDN_1_Debug) {
@@ -223,6 +232,7 @@ void state_idle_iterate(fsm_t *fsm) {
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
 					&CAN_1, &CAN_2, &CAN_3, &huart3,
 					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown 2 Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownTwoTicks) > 100 && !CC_GlobalState->SHDN_2_Debug) {
@@ -230,6 +240,7 @@ void state_idle_iterate(fsm_t *fsm) {
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
 					&CAN_1, &CAN_2, &CAN_3, &huart3,
 					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown 3 Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownThreeTicks) > 100 && !CC_GlobalState->SHDN_3_Debug) {
@@ -237,6 +248,7 @@ void state_idle_iterate(fsm_t *fsm) {
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
 					&CAN_1, &CAN_2, &CAN_3, &huart3,
 					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug) {
@@ -244,6 +256,7 @@ void state_idle_iterate(fsm_t *fsm) {
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
 					&CAN_1, &CAN_2, &CAN_3, &huart3,
 					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Inverter Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug) {
@@ -251,6 +264,7 @@ void state_idle_iterate(fsm_t *fsm) {
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
 					&CAN_1, &CAN_2, &CAN_3, &huart3,
 					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+			CC_GlobalState->shutdown_fault = true;
 		}
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
@@ -331,14 +345,22 @@ void state_idle_iterate(fsm_t *fsm) {
 				/* Shutdown Triggered Fault */
 				else if (msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0)) {
 					// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
-					CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
+					CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault (idle)\r\n", true,
 							&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 							&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3,
 							INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+					CC_GlobalState->shutdown_fault = true;
 				}
 			}
 
 		}
+	}
+
+	fsm_changeState(fsm, &drivingState, "RTD Engaged");
+
+	// don't let continue
+	if (CC_GlobalState->shutdown_fault) {
+		return;
 	}
 
 	/* If Brake Pressure > 20% */
@@ -399,6 +421,11 @@ state_t drivingState = { &state_driving_enter, &state_driving_iterate, &state_dr
 
 void state_driving_enter(fsm_t *fsm) {
 
+	CAN_TxHeaderTypeDef CAN_header;
+	CAN_header.IDE = CAN_ID_EXT;
+	CAN_header.RTR = CAN_RTR_DATA;
+	CAN_header.TransmitGlobalTime = DISABLE;
+
 	/* If AMS Contactors Closed & BMS' Healthy */
 
 	/* Enable all channels on PDM */
@@ -426,6 +453,25 @@ void state_driving_enter(fsm_t *fsm) {
 		CC_GlobalState->accelMin[2] = ACCEL_PEDAL_THREE_MIN;
 		CC_GlobalState->accelMax[2] = ACCEL_PEDAL_THREE_MAX;
 
+		// set duty cycle of left and right fans
+		CC_GlobalState->duty_cycle_left_fan = 0;
+		CC_GlobalState->duty_cycle_right_fan = 0;
+
+		// tell pdm left fan duty cycle
+		PDM_SetDutyCycle_t pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_LEFT_FAN,
+				CC_GlobalState->duty_cycle_left_fan);
+		CAN_header.ExtId = pdm_set_duty_msg.id;
+		CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
+
+		HAL_CAN_AddTxMessage(&CAN_2, &CAN_header, pdm_set_duty_msg.data, &CC_GlobalState->CAN2_TxMailbox);
+		/*
+		 // tell pdm right fan duty cycle
+		 pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_RIGHT_FAN, CC_GlobalState->duty_cycle_right_fan);
+		 CAN_header.ExtId = pdm_set_duty_msg.id;
+		 CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
+
+		 HAL_CAN_AddTxMessage(&CAN_2, &CAN_header, pdm_set_duty_msg.data, &CC_GlobalState->CAN2_TxMailbox);
+		 */
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 	/* Start Polling ADC */
@@ -466,6 +512,7 @@ void state_driving_iterate(fsm_t *fsm) {
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
 					&CAN_1, &CAN_2, &CAN_3, &huart3,
 					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownOneTicks) > 100 && !CC_GlobalState->SHDN_1_Debug) {
@@ -473,6 +520,7 @@ void state_driving_iterate(fsm_t *fsm) {
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
 					&CAN_1, &CAN_2, &CAN_3, &huart3,
 					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug) {
@@ -480,6 +528,7 @@ void state_driving_iterate(fsm_t *fsm) {
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
 					&CAN_1, &CAN_2, &CAN_3, &huart3,
 					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Inverter Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug) {
@@ -487,23 +536,28 @@ void state_driving_iterate(fsm_t *fsm) {
 					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
 					&CAN_1, &CAN_2, &CAN_3, &huart3,
 					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+			CC_GlobalState->shutdown_fault = true;
 		}
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 
 	/* Check for Queued CAN Packets on CAN1 */
 	while (osMessageQueueGetCount(CC_GlobalState->CAN1Queue) >= 1) {
+
+		char x[80];
+		int len;
 		CC_CAN_Generic_t msg;
 		if (osMessageQueueGet(CC_GlobalState->CAN1Queue, &msg, 0U, 0U) == osOK) {
 			if (msg.header.IDE == CAN_ID_STD) {
 				/* Inverter Heartbeat */
 				if (msg.header.StdId == 0x700 + INVERTER_LEFT_NODE_ID) {
 					CC_GlobalState->inverterTicks = HAL_GetTick();
+					len = sprintf(x, "INVERTER HEARTBEAT\r\n");
+					CC_LogInfo(x, len);
 				}
 				/* Inverter Response Packet */
 				else if (msg.header.StdId == 0x580 + INVERTER_LEFT_NODE_ID) {
-					char x[80];
-					int len;
+
 					/* Motor RPM Response Packet */
 					if ((msg.data[2] << 8 | msg.data[1]) == 0x210A) {
 						/* Parse Motor RPM */
@@ -585,10 +639,10 @@ void state_driving_iterate(fsm_t *fsm) {
 	uint32_t accel_travel[3];
 	char x[80];
 	uint32_t len;
-/*
-	len = sprintf(x, "b0: %ld, a0: %ld, \t", CC_GlobalState->brakeAdcValues[0], CC_GlobalState->accelAdcValues[0]);
-	CC_LogInfo(x, len);
-*/
+	/*
+	 len = sprintf(x, "b0: %ld, a0: %ld, \t", CC_GlobalState->brakeAdcValues[0], CC_GlobalState->accelAdcValues[0]);
+	 CC_LogInfo(x, len);
+	 */
 	/* Echo ADC Failure for Debugging */
 	if (CC_GlobalState->faultDetected) {
 		//CC_LogInfo("ADC Fault Detected\r\n", strlen("ADC Fault Detected\r\n"));
@@ -728,6 +782,42 @@ void state_driving_iterate(fsm_t *fsm) {
 		CC_LogInfo(x, len);
 	}
 
+	if ((HAL_GetTick() - CC_GlobalState->fan_cmd_ticks) >= FAN_CMD_TICK_COUNT) {
+
+		// update fan lol
+		CAN_TxHeaderTypeDef CAN_header;
+		CAN_header.IDE = CAN_ID_EXT;
+		CAN_header.RTR = CAN_RTR_DATA;
+		CAN_header.TransmitGlobalTime = DISABLE;
+
+		 // set duty cycle of left and right fans
+		 CC_GlobalState->duty_cycle_left_fan = (CC_GlobalState->accelTravel / (10));
+		 CC_GlobalState->duty_cycle_right_fan = (CC_GlobalState->accelTravel / (10));
+
+		 // tell pdm left fan duty cycle
+		 PDM_SetDutyCycle_t pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_LEFT_FAN,
+		 CC_GlobalState->duty_cycle_left_fan);
+		 CAN_header.ExtId = pdm_set_duty_msg.id;
+		 CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
+
+		 HAL_CAN_AddTxMessage(&hcan2, &CAN_header, pdm_set_duty_msg.data, &CC_GlobalState->CAN2_TxMailbox);
+		 /*
+		 // tell pdm right fan duty cycle
+		 pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_RIGHT_FAN, CC_GlobalState->duty_cycle_right_fan);
+		 CAN_header.ExtId = pdm_set_duty_msg.id;
+		 CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
+
+		 HAL_CAN_AddTxMessage(&CAN_2, &CAN_header, pdm_set_duty_msg.data, &CC_GlobalState->CAN2_TxMailbox);
+
+		 */
+
+		len = sprintf(x, "left: %d right: %d\r\n", CC_GlobalState->duty_cycle_left_fan,
+				CC_GlobalState->duty_cycle_right_fan);
+		CC_LogInfo(x, len);
+
+		CC_GlobalState->fan_cmd_ticks = HAL_GetTick();
+	}
+
 	/*
 	 * If Throttle and Brake Implausibility State Clock < 100ms
 	 * Suspend Tractive System Operations
@@ -747,6 +837,8 @@ void state_driving_iterate(fsm_t *fsm) {
 	inverter_header.RTR = CAN_RTR_DATA;
 	inverter_header.TransmitGlobalTime = DISABLE;
 
+	uint8_t result = 0;
+
 	// send enable command
 	if (((HAL_GetTick() - CC_GlobalState->inverter_enable_ticks) >= INVERTER_ENABLE_TICK_COUNT)) {
 		CC_SetBool_t inverter_enable = { 0 };
@@ -756,7 +848,8 @@ void state_driving_iterate(fsm_t *fsm) {
 			inverter_header.StdId = inverter_enable.id;
 			inverter_header.DLC = 8;
 
-			HAL_CAN_AddTxMessage(&CAN_1, &inverter_header, inverter_enable.data, &CC_GlobalState->CAN1_TxMailbox);
+			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header, inverter_enable.data,
+					&CC_GlobalState->CAN1_TxMailbox);
 
 		}
 
@@ -771,22 +864,23 @@ void state_driving_iterate(fsm_t *fsm) {
 		for (int i = 0; i < NUM_INVERTERS; i++) {
 			len = sprintf(x, "Inverter: %d Command - A: %d B: %d\r\n", i, CC_GlobalState->accelTravel,
 					CC_GlobalState->brakeTravel);
-			CC_LogInfo(x, len);
+			//CC_LogInfo(x, len);
 
 			// accel
 			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i], INVERTER_VAR_ACCEL,
 					CC_GlobalState->accelTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			HAL_CAN_AddTxMessage(&CAN_1, &inverter_header, inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
+			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header, inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 
 			// brake
 			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i], INVERTER_VAR_BRAKE,
 					CC_GlobalState->brakeTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			HAL_CAN_AddTxMessage(&CAN_1, &inverter_header, inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
+			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header, inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 		}
+
 
 		CC_GlobalState->inverter_cmd_ticks = HAL_GetTick();
 	}
