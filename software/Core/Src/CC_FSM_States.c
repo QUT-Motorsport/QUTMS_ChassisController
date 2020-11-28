@@ -89,18 +89,18 @@ void state_start_enter(fsm_t *fsm) {
 			/* Bind and configure initial global states */
 
 			/* Skip RTD Sequencing Requiring Brake Pressure */
-			CC_GlobalState->RTD_Debug = true;
+			CC_GlobalState->RTD_Debug = false;
 
 			/* Ignore ADC Errors */
-			CC_GlobalState->ADC_Debug = false;
+			CC_GlobalState->ADC_Debug = true;
 
 			/* Boards w/ Heartbeats */
 			CC_GlobalState->PDM_Debug = true;
-			CC_GlobalState->AMS_Debug = true;
-			CC_GlobalState->SHDN_1_Debug = true;
-			CC_GlobalState->SHDN_2_Debug = true;
-			CC_GlobalState->SHDN_3_Debug = true;
-			CC_GlobalState->SHDN_IMD_Debug = true;
+			CC_GlobalState->AMS_Debug = false;
+			CC_GlobalState->SHDN_1_Debug = false;
+			CC_GlobalState->SHDN_2_Debug = false;
+			CC_GlobalState->SHDN_3_Debug = false;
+			CC_GlobalState->SHDN_IMD_Debug = false;
 
 			/* Inverters */
 			CC_GlobalState->Inverter_Debug = true;
@@ -220,51 +220,51 @@ void state_idle_iterate(fsm_t *fsm) {
 	if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->amsTicks) > 100 && !CC_GlobalState->AMS_Debug) {
-			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
-					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
-					&CAN_1, &CAN_2, &CAN_3, &huart3,
-					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-			CC_GlobalState->shutdown_fault = true;
+//			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
+//					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
+//					&CAN_1, &CAN_2, &CAN_3, &huart3,
+//					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+//			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown 1 Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownOneTicks) > 100 && !CC_GlobalState->SHDN_1_Debug) {
-			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN1\r\n", true,
-					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
-					&CAN_1, &CAN_2, &CAN_3, &huart3,
-					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-			CC_GlobalState->shutdown_fault = true;
+//			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN1\r\n", true,
+//					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
+//					&CAN_1, &CAN_2, &CAN_3, &huart3,
+//					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+//			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown 2 Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownTwoTicks) > 100 && !CC_GlobalState->SHDN_2_Debug) {
-			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN2\r\n", true,
-					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
-					&CAN_1, &CAN_2, &CAN_3, &huart3,
-					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-			CC_GlobalState->shutdown_fault = true;
+//			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN2\r\n", true,
+//					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
+//					&CAN_1, &CAN_2, &CAN_3, &huart3,
+//					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+//			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown 3 Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownThreeTicks) > 100 && !CC_GlobalState->SHDN_3_Debug) {
-			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN3\r\n", true,
-					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
-					&CAN_1, &CAN_2, &CAN_3, &huart3,
-					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-			CC_GlobalState->shutdown_fault = true;
+//			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN3\r\n", true,
+//					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
+//					&CAN_1, &CAN_2, &CAN_3, &huart3,
+//					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+//			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug) {
-			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
-					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
-					&CAN_1, &CAN_2, &CAN_3, &huart3,
-					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-			CC_GlobalState->shutdown_fault = true;
+//			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
+//					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
+//					&CAN_1, &CAN_2, &CAN_3, &huart3,
+//					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+//			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Inverter Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug) {
-			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
-					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
-					&CAN_1, &CAN_2, &CAN_3, &huart3,
-					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-			CC_GlobalState->shutdown_fault = true;
+//			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
+//					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
+//					&CAN_1, &CAN_2, &CAN_3, &huart3,
+//					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+//			CC_GlobalState->shutdown_fault = true;
 		}
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
@@ -345,18 +345,18 @@ void state_idle_iterate(fsm_t *fsm) {
 				/* Shutdown Triggered Fault */
 				else if (msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0)) {
 					// TODO DEAL WITH INVERTERS HERE WITH SOFT INVERTER SHUTDOWN
-					CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault (idle)\r\n", true,
-							&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
-							&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3,
-							INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-					CC_GlobalState->shutdown_fault = true;
+//					CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault (idle)\r\n", true,
+//							&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
+//							&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3,
+//							INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+//					CC_GlobalState->shutdown_fault = true;
 				}
 			}
 
 		}
 	}
 
-	fsm_changeState(fsm, &drivingState, "RTD Engaged");
+//	fsm_changeState(fsm, &drivingState, "RTD Engaged");
 
 	// don't let continue
 	if (CC_GlobalState->shutdown_fault) {
@@ -373,7 +373,7 @@ void state_idle_iterate(fsm_t *fsm) {
 		raw = HAL_ADC_GetValue(&hadc3);
 	}
 
-	if (raw > CC_GlobalState->brakePressureThreshold && (CC_GlobalState->amsInit || CC_GlobalState->AMS_Debug)
+	if (/*raw > CC_GlobalState->brakePressureThreshold &&*/ (CC_GlobalState->amsInit || CC_GlobalState->AMS_Debug)
 			&& CC_GlobalState->ccInit) {
 		// Illuminate RTD Button
 		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
@@ -508,35 +508,35 @@ void state_driving_iterate(fsm_t *fsm) {
 		}
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->amsTicks) > 100 && !CC_GlobalState->AMS_Debug) {
-			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
-					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
-					&CAN_1, &CAN_2, &CAN_3, &huart3,
-					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-			CC_GlobalState->shutdown_fault = true;
+//			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown AMS\r\n", true,
+//					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
+//					&CAN_1, &CAN_2, &CAN_3, &huart3,
+//					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+//			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownOneTicks) > 100 && !CC_GlobalState->SHDN_1_Debug) {
-			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN1\r\n", true,
-					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
-					&CAN_1, &CAN_2, &CAN_3, &huart3,
-					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-			CC_GlobalState->shutdown_fault = true;
+//			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN1\r\n", true,
+//					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
+//					&CAN_1, &CAN_2, &CAN_3, &huart3,
+//					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+//			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Shutdown IMD Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->shutdownImdTicks) > 100 && !CC_GlobalState->SHDN_IMD_Debug) {
-			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
-					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
-					&CAN_1, &CAN_2, &CAN_3, &huart3,
-					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-			CC_GlobalState->shutdown_fault = true;
+//			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown SHDN IMD\r\n", true,
+//					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
+//					&CAN_1, &CAN_2, &CAN_3, &huart3,
+//					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+//			CC_GlobalState->shutdown_fault = true;
 		}
 		/* Inverter Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->inverterTicks) > 100 && !CC_GlobalState->Inverter_Debug) {
-			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
-					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
-					&CAN_1, &CAN_2, &CAN_3, &huart3,
-					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-			CC_GlobalState->shutdown_fault = true;
+//			CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Inverter\r\n", true,
+//					&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox, &CC_GlobalState->CAN3_TxMailbox,
+//					&CAN_1, &CAN_2, &CAN_3, &huart3,
+//					INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+//			CC_GlobalState->shutdown_fault = true;
 		}
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
