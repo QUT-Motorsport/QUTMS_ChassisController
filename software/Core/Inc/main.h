@@ -43,7 +43,7 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-#define SEM_ACQUIRE_TIMEOUT 32U // Milliseconds
+#define SEM_ACQUIRE_TIMEOUT 100U // Milliseconds
 #define SEM_ACQUIRE_GLOBALSTATE_TIMEOUT 64U // Milliseconds, might need a longer timeout for global states.
 #define CC_HEARTBEAT_PERIOD 75U // Milliseconds
 #define CC_IDC_PERIOD 250U // Milliseconds

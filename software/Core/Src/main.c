@@ -272,7 +272,7 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
 	fsm_reset(fsm, &startState);
 	//fsm_changeState(fsm, &debugState, "Forcing debug state");
 	for (;;) {
-		if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		//if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 			while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0) {
 				CC_CAN_Generic_t msg;
 				HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &(msg.header), msg.data);
@@ -300,8 +300,8 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
 				//CC_LogInfo(x, len);
 			}
 
-			osSemaphoreRelease(CC_CAN_State->sem);
-		}
+			/*osSemaphoreRelease(CC_CAN_State->sem);
+		}*/
 		fsm_iterate(fsm);
 	}
 
@@ -335,6 +335,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
  */
 void Error_Handler(void) {
 	/* USER CODE BEGIN Error_Handler_Debug */
+	int len = 0;
+	char x[80];
+
+	sprintf(x, "error\r\n");
+	CC_LogInfo(x, len);
 	/* User can add his own implementation to report the HAL error return state */
 
 	/* USER CODE END Error_Handler_Debug */

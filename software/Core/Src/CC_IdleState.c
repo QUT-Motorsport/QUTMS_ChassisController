@@ -122,10 +122,10 @@ void thread_idle_read_CAN(void *argument) {
 state_t idleState = { &state_idle_enter, &state_idle_iterate, &state_idle_exit, "Idle_s" };
 
 void state_idle_enter(fsm_t *fsm) {
-	if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+	/*if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 
 		// set LV PDM channels
-		if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {*/
 
 			CC_Global_State->pdm_channel_states = LV_STARTUP | PDM_POWER_CC_MASK;
 
@@ -135,14 +135,14 @@ void state_idle_enter(fsm_t *fsm) {
 
 			HAL_CAN_AddTxMessage(&hcan2, &CAN_header, update_pdm_msg.data, &CC_CAN_State->CAN2_TxMailbox);
 
-			osSemaphoreRelease(CC_CAN_State->sem);
-		}
+			/*osSemaphoreRelease(CC_CAN_State->sem);
+		}*/
 
 		// initialize CC
 		CC_Global_State->CC_initialized = true;
 
-		osSemaphoreRelease(CC_Global_State->sem);
-	}
+		/*osSemaphoreRelease(CC_Global_State->sem);
+	}*/
 
 	// start idle specific threads
 
@@ -153,7 +153,7 @@ void state_idle_enter(fsm_t *fsm) {
 	osThreadAttr_t thread_attributes = { 0 };
 	thread_attributes.name = "idle_read_CAN";
 	thread_attributes.priority = (osPriority_t) osPriorityNormal;
-	thread_attributes.stack_size = 256;
+	thread_attributes.stack_size = 1024;
 
 	CC_idle_threads->idle_read_CAN_handle = osThreadNew(thread_idle_read_CAN, NULL, &thread_attributes);
 
@@ -189,7 +189,7 @@ void state_idle_iterate(fsm_t *fsm) {
 		// Illuminate RTD Button
 		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
 
-		if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		//if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 			// if button is pressed
 			if (HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin)) {
 				if (CC_Global_State->rtd_ticks == 0) {
@@ -199,21 +199,24 @@ void state_idle_iterate(fsm_t *fsm) {
 				if ((HAL_GetTick() - CC_Global_State->rtd_ticks) > RTD_ENTER_TICK_COUNT) {
 					// rtd button held down for 5 seconds
 
-					osSemaphoreRelease(CC_Global_State->sem);
+					//osSemaphoreRelease(CC_Global_State->sem);
 
 					len = sprintf(x, "rtd\r\n");
 					CC_LogInfo(x, len);
 
+					// reset timer
+					CC_Global_State->rtd_ticks = 0;
+
 
 					// Enter Driving State
-					//fsm_changeState(fsm, &drivingState, "RTD Engaged");
+					fsm_changeState(fsm, &drivingState, "RTD Engaged");
 
-					return;
+					//return;
 				}
 			}
-		}
+		/*}
 
-		osSemaphoreRelease(CC_Global_State->sem);
+		osSemaphoreRelease(CC_Global_State->sem);*/
 	} else {
 		// turn off RTD button
 		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
@@ -222,7 +225,7 @@ void state_idle_iterate(fsm_t *fsm) {
 
 void state_idle_exit(fsm_t *fsm) {
 
-	if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+	//if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 		// send RTD on all CAN lines
 		CC_ReadyToDrive_t readyToDrive = Compose_CC_ReadyToDrive();
 		CAN_TxHeaderTypeDef CAN_header = { .ExtId = readyToDrive.id, .IDE = CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = 1,
@@ -233,20 +236,20 @@ void state_idle_exit(fsm_t *fsm) {
 		HAL_CAN_AddTxMessage(&hcan3, &CAN_header, data, &CC_CAN_State->CAN3_TxMailbox);
 
 		// turn RTD siren on and enable HV power
-		if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		//if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 			CC_Global_State->pdm_channel_states = CC_Global_State->pdm_channel_states | PDMFLAG_RTD_SIREN | HV_STARTUP;
 
 			PDM_SetChannelStates_t update_pdm_msg = Compose_PDM_SetChannelStates(CC_Global_State->pdm_channel_states);
 			CAN_header.ExtId = update_pdm_msg.id;
 			CAN_header.DLC = sizeof(update_pdm_msg.data);
 			HAL_CAN_AddTxMessage(&hcan2, &CAN_header, update_pdm_msg.data, &CC_CAN_State->CAN2_TxMailbox);
-
+/*
 			osSemaphoreRelease(CC_Global_State->sem);
 
 		}
 
 		osSemaphoreRelease(CC_CAN_State->sem);
-	}
+	}*/
 
 	// kill idle specific rtos threads and free memory
 

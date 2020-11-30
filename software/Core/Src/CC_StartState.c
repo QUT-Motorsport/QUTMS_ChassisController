@@ -32,11 +32,11 @@ void state_start_enter(fsm_t *fsm) {
 
 		// initialize all startup values
 
-		if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		//if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 			CC_Global_State->ADC_Debug = true;
 
 			// boards with heartbeats
-			CC_Global_State->PDM_Debug = true;
+			CC_Global_State->PDM_Debug = false;
 			CC_Global_State->AMS_Debug = true;
 			CC_Global_State->SHDN_1_Debug = true;
 			CC_Global_State->SHDN_2_Debug = true;
@@ -50,10 +50,10 @@ void state_start_enter(fsm_t *fsm) {
 
 			CC_Global_State->shutdown_fault = false;
 
-			osSemaphoreRelease(CC_Global_State->sem);
-		}
+			/*osSemaphoreRelease(CC_Global_State->sem);
+		}*/
 
-		if (osSemaphoreAcquire(CC_Tractive_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		//if (osSemaphoreAcquire(CC_Tractive_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 			CC_Tractive_State->accel_min[0] = ACCEL_PEDAL_ONE_MIN;
 			CC_Tractive_State->accel_min[1] = ACCEL_PEDAL_TWO_MIN;
 			CC_Tractive_State->accel_min[2] = ACCEL_PEDAL_THREE_MIN;
@@ -71,14 +71,14 @@ void state_start_enter(fsm_t *fsm) {
 			CC_Tractive_State->fault_detected = false;
 			CC_Tractive_State->tractive_active = false;
 
-			osSemaphoreRelease(CC_Tractive_State->sem);
-		}
+			/*osSemaphoreRelease(CC_Tractive_State->sem);
+		}*/
 
-		if (osSemaphoreAcquire(CC_Heartbeat_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		/*if (osSemaphoreAcquire(CC_Heartbeat_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 			osSemaphoreRelease(CC_Heartbeat_State->sem);
-		}
+		}*/
 
-		if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		//if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 			CC_CAN_State->CAN1Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
 			CC_CAN_State->CAN2Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
 			CC_CAN_State->CAN3Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
@@ -88,27 +88,27 @@ void state_start_enter(fsm_t *fsm) {
 				Error_Handler();
 			}
 
-			osSemaphoreRelease(CC_CAN_State->sem);
-		}
+			/*osSemaphoreRelease(CC_CAN_State->sem);
+		}*/
 
 	}
 
 	// set initial pin state
 	HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
 
-	if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
-		if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+	/*if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {*/
 			// initiate PDM startup
 			PDM_InitiateStartup_t initiateStartup = Compose_PDM_InitiateStartup();
 			CAN_TxHeaderTypeDef header = { .ExtId = initiateStartup.id, .IDE = CAN_ID_EXT, .RTR = CAN_RTR_DATA,
 					.DLC = 1, .TransmitGlobalTime = DISABLE, };
 			uint8_t data[1] = { 0xF };
 			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_CAN_State->CAN2_TxMailbox);
-
+/*
 			osSemaphoreRelease(CC_CAN_State->sem);
 		}
 		osSemaphoreRelease(CC_Global_State->sem);
-	}
+	}*/
 
 	// debug tracing
 	//CC_LogInfo("Enter Start\r\n", strlen("Enter Start\r\n"));
@@ -116,15 +116,20 @@ void state_start_enter(fsm_t *fsm) {
 }
 
 void state_start_iterate(fsm_t *fsm) {
+	int len = 0;
+	char x[80];
 	/* Skip boot if PDM Debugging Enabled */
 	bool boot = CC_Global_State->PDM_Debug;
 	uint32_t getPowerChannels = 0;
 
 	// check for PDM boot response
-	if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+	//if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 		while (osMessageQueueGetCount(CC_CAN_State->CAN2Queue) >= 1) {
 			CC_CAN_Generic_t msg;
+
 			if (osMessageQueueGet(CC_CAN_State->CAN2Queue, &msg, 0U, 0U) == osOK) {
+				sprintf(x, "%d\r\n", msg.header.ExtId);
+
 				if (msg.header.ExtId == Compose_CANId(CAN_PRIORITY_NORMAL, CAN_SRC_ID_PDM, 0x0,
 				CAN_TYPE_TRANSMIT, 0x00, 0x0)) {
 					// get initial power channels from PDM
@@ -136,35 +141,35 @@ void state_start_iterate(fsm_t *fsm) {
 				}
 			}
 		}
-
+/*
 		osSemaphoreRelease(CC_CAN_State->sem);
-	}
+	}*/
 
 	if (boot) {
 		// set PDM startup channels
-		if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
-			if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		/*if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+			if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {*/
 				CC_Global_State->pdm_channel_states &= (~HV_STARTUP);
 				PDM_SetChannelStates_t pdmStartup = Compose_PDM_SetChannelStates(CC_Global_State->pdm_channel_states);
 				CAN_TxHeaderTypeDef header = { .ExtId = pdmStartup.id, .IDE = CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC =
 						sizeof(pdmStartup.data), .TransmitGlobalTime = DISABLE, };
 				HAL_CAN_AddTxMessage(&hcan2, &header, pdmStartup.data, &CC_CAN_State->CAN2_TxMailbox);
 
-				osSemaphoreRelease(CC_CAN_State->sem);
+				/*osSemaphoreRelease(CC_CAN_State->sem);
 			}
 			osSemaphoreRelease(CC_Global_State->sem);
-		}
+		}*/
 
 		/* Set Heartbeat Timers */
-		if (osSemaphoreAcquire(CC_Heartbeat_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		//if (osSemaphoreAcquire(CC_Heartbeat_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 			CC_Heartbeat_State->amsTicks = HAL_GetTick();
 			CC_Heartbeat_State->shutdownOneTicks = HAL_GetTick();
 			CC_Heartbeat_State->shutdownTwoTicks = HAL_GetTick();
 			CC_Heartbeat_State->shutdownThreeTicks = HAL_GetTick();
 			CC_Heartbeat_State->shutdownImdTicks = HAL_GetTick();
 			CC_Heartbeat_State->inverterTicks = HAL_GetTick();
-			osSemaphoreRelease(CC_Heartbeat_State->sem);
-		}
+			/*osSemaphoreRelease(CC_Heartbeat_State->sem);
+		}*/
 
 		/* Engage Idle State (Waiting for RTD) */
 		fsm_changeState(fsm, &idleState, "PDM Boot Sequence Initiated");
@@ -187,7 +192,7 @@ void state_start_exit(fsm_t *fsm) {
 
 	thread_attributes.name = "main_read_pedals";
 	thread_attributes.priority = (osPriority_t) osPriorityHigh;
-	thread_attributes.stack_size = 256;
+	thread_attributes.stack_size = 1024;
 
 	CC_main_threads->main_read_pedals_handle = osThreadNew(thread_read_pedals, NULL, &thread_attributes);
 

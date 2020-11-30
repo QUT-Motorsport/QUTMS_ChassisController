@@ -33,17 +33,17 @@
 #define NUM_ACCEL_SENSORS 3
 
 
-#define BRAKE_PEDAL_ONE_MIN 2350
+#define BRAKE_PEDAL_ONE_MIN 2950
 #define BRAKE_PEDAL_ONE_MAX 3250
-#define BRAKE_PEDAL_TWO_MIN 2320
-#define BRAKE_PEDAL_TWO_MAX 3100
+#define BRAKE_PEDAL_TWO_MIN 2880
+#define BRAKE_PEDAL_TWO_MAX 3160
 
-#define ACCEL_PEDAL_ONE_MIN 2450
-#define ACCEL_PEDAL_ONE_MAX 3300
-#define ACCEL_PEDAL_TWO_MIN 2800
-#define ACCEL_PEDAL_TWO_MAX 3300
-#define ACCEL_PEDAL_THREE_MIN 2800
-#define ACCEL_PEDAL_THREE_MAX 3300
+#define ACCEL_PEDAL_ONE_MIN 2500
+#define ACCEL_PEDAL_ONE_MAX 3360
+#define ACCEL_PEDAL_TWO_MIN 2600
+#define ACCEL_PEDAL_TWO_MAX 3400
+#define ACCEL_PEDAL_THREE_MIN 2630
+#define ACCEL_PEDAL_THREE_MAX 3400
 
 typedef struct CC_CAN_State {
 	/* CAN Mailboxes */
@@ -65,8 +65,8 @@ typedef struct CC_CAN_State {
 } CC_CAN_State_t;
 
 typedef struct CC_Tractive_State {
-	uint16_t accel_pedals_raw[NUM_ACCEL_SENSORS];
-	uint16_t brake_pedals_raw[NUM_BRAKE_SENSORS];
+	int32_t accel_pedals_raw[NUM_ACCEL_SENSORS];
+	int32_t brake_pedals_raw[NUM_BRAKE_SENSORS];
 
 	uint16_t accel_pedals[NUM_ACCEL_SENSORS];
 	uint16_t brake_pedals[NUM_BRAKE_SENSORS];
