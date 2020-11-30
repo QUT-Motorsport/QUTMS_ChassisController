@@ -11,12 +11,12 @@
 #define BRAKE_PRESSURE_MIN 400
 #define BRAKE_PRESSURE_MAX 1400
 
-#define BRAKE_PEDAL_ONE_MIN 2350
-#define BRAKE_PEDAL_ONE_MAX 3250
+#define BRAKE_PEDAL_ONE_MIN 3020
+#define BRAKE_PEDAL_ONE_MAX 3190
 #define BRAKE_PEDAL_TWO_MIN 2320
 #define BRAKE_PEDAL_TWO_MAX 3100
 
-#define ACCEL_PEDAL_ONE_MIN 2450
+#define ACCEL_PEDAL_ONE_MIN 2550
 #define ACCEL_PEDAL_ONE_MAX 3300
 #define ACCEL_PEDAL_TWO_MIN 2800
 #define ACCEL_PEDAL_TWO_MAX 3300
@@ -24,7 +24,7 @@
 #define ACCEL_PEDAL_THREE_MAX 3300
 
 #define DEAD_ZONE_BRAKE 60
-#define DEAD_ZONE_ACCEL 150
+#define DEAD_ZONE_ACCEL 50
 
 #define NUM_BRAKE_SENSORS 2
 #define NUM_ACCEL_SENSORS 3
@@ -656,27 +656,23 @@ void state_driving_iterate(fsm_t *fsm) {
 		/* Calculatee Brake Positions with Filter */
 		for (int i = 0; i < NUM_BRAKE_SENSORS; i++) {
 			/* Fetch Value & Apply Filter */
-			CC_GlobalState->rollingBrakeValues[i] = adc_filter(CC_GlobalState->brakeAdcValues[i],
-					CC_GlobalState->rollingBrakeValues[i], CC_GlobalState->pedalScale);
+			uint32_t y = CC_GlobalState->pedalScale * CC_GlobalState->brakeAdcValues[i] + (1.0 - CC_GlobalState->pedalScale) * CC_GlobalState->rollingBrakeValues[i];
+			CC_GlobalState->rollingBrakeValues[i] = y;
 
 			/* Map to Max Duty Cycle */
 			brake_travel[i] = map(CC_GlobalState->rollingBrakeValues[i],
 					CC_GlobalState->brakeMin[i], CC_GlobalState->brakeMax[i], 0, MAX_DUTY_CYCLE);
-
-			brake_sum += brake_travel[i];
 		}
 
 		/* Calculate Accel Positions with Filter */
 		for (int i = 0; i < NUM_ACCEL_SENSORS; i++) {
 			/* Fetch Value & Apply Filter */
-			CC_GlobalState->rollingAccelValues[i] = adc_filter(CC_GlobalState->accelAdcValues[i],
-					CC_GlobalState->rollingAccelValues[i], CC_GlobalState->pedalScale);
+			uint32_t y = CC_GlobalState->pedalScale * CC_GlobalState->accelAdcValues[i] + (1.0 - CC_GlobalState->pedalScale) * CC_GlobalState->rollingAccelValues[i];
+			CC_GlobalState->rollingAccelValues[i] = y;
 
 			/* Map to Max Duty Cycle */
 			accel_travel[i] = map(CC_GlobalState->rollingAccelValues[i],
 					CC_GlobalState->accelMin[i], CC_GlobalState->accelMax[i], 0, MAX_DUTY_CYCLE);
-
-			accel_sum += accel_travel[i];
 		}
 
 		/* Calculate Faulty ADC Reading */
@@ -706,8 +702,8 @@ void state_driving_iterate(fsm_t *fsm) {
 			/* New Fault */
 			if(!CC_GlobalState->faultDetected)
 			{
-				CC_GlobalState->faultDetected = currentFault;
-				CC_GlobalState->implausibleTicks = HAL_GetTick();
+//				CC_GlobalState->faultDetected = currentFault;
+//				CC_GlobalState->implausibleTicks = HAL_GetTick();
 			}
 		}
 		else
@@ -718,12 +714,12 @@ void state_driving_iterate(fsm_t *fsm) {
 		}
 
 		/* Convert Pedal Positions to Torque Commands */
-		CC_GlobalState->brakeTravel = adc_filter(MAX_DUTY_CYCLE - (brake_sum/NUM_BRAKE_SENSORS), CC_GlobalState->brakeTravel, CC_GlobalState->pedalScale);
-		CC_GlobalState->accelTravel = adc_filter(MAX_DUTY_CYCLE - (accel_sum/NUM_ACCEL_SENSORS), CC_GlobalState->accelTravel, CC_GlobalState->pedalScale);
+		CC_GlobalState->brakeTravel = MAX_DUTY_CYCLE - brake_travel[0];
+		CC_GlobalState->accelTravel = MAX_DUTY_CYCLE - accel_travel[0];
 
-//		if (CC_GlobalState->accelTravel < DEAD_ZONE_ACCEL) {
-//			CC_GlobalState->accelTravel = 0;
-//		}
+		if (CC_GlobalState->accelTravel < DEAD_ZONE_ACCEL) {
+			CC_GlobalState->accelTravel = 0;
+		}
 		if (CC_GlobalState->brakeTravel < DEAD_ZONE_BRAKE) {
 			CC_GlobalState->brakeTravel = 0;
 		}
@@ -766,9 +762,9 @@ void state_driving_iterate(fsm_t *fsm) {
 
 		 */
 
-		len = sprintf(x, "left: %d right: %d\r\n", CC_GlobalState->duty_cycle_left_fan,
-				CC_GlobalState->duty_cycle_right_fan);
-		CC_LogInfo(x, len);
+		//len = sprintf(x, "left: %d right: %d\r\n", CC_GlobalState->duty_cycle_left_fan,
+				//CC_GlobalState->duty_cycle_right_fan);
+		//CC_LogInfo(x, len);
 
 		CC_GlobalState->fan_cmd_ticks = HAL_GetTick();
 	}

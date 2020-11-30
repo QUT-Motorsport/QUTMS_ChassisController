@@ -77,7 +77,7 @@ typedef struct
 	uint32_t brakePressureThreshold;
 	uint32_t brakeMin[2];
 	uint32_t brakeMax[2];
-	uint32_t rollingBrakeValues[3];
+	uint32_t rollingBrakeValues[2];
 	uint32_t accelMin[3];
 	uint32_t accelMax[3];
 	uint32_t rollingAccelValues[3];
