@@ -174,6 +174,18 @@ int main(void) {
 	//Create FSM instance
 	fsm = fsm_new(&startState);
 
+	CC_CAN_State = malloc(sizeof(CC_CAN_State_t));
+	memset(CC_CAN_State, 0, sizeof(CC_CAN_State_t));
+	CC_CAN_State->sem = osSemaphoreNew(3U, 3U, NULL);
+	CC_CAN_State->CAN1Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
+	CC_CAN_State->CAN2Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
+	CC_CAN_State->CAN3Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
+
+	// Ensure CANQueue exists
+	if (CC_CAN_State->CAN1Queue == NULL || CC_CAN_State->CAN2Queue == NULL || CC_CAN_State->CAN3Queue == NULL) {
+		Error_Handler();
+	}
+
 	// Create a new thread, where our FSM will run.
 	osThreadNew(fsm_thread_mainLoop, fsm, &fsmThreadAttr);
 	/* USER CODE END 2 */
@@ -268,40 +280,42 @@ void CC_LogInfo(char *msg, size_t length) {
 __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
 
 	CC_LogInfo("Entering FSM Thread\r\n", strlen("Entering FSM Thread\r\n"));
+	char x[80];
+	int len;
+
 	fsm_setLogFunction(fsm, &CC_LogInfo);
 	fsm_reset(fsm, &startState);
 	//fsm_changeState(fsm, &debugState, "Forcing debug state");
 	for (;;) {
 		//if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
-			while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0) {
-				CC_CAN_Generic_t msg;
-				HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &(msg.header), msg.data);
-				osMessageQueuePut(CC_CAN_State->CAN1Queue, &msg, 0U, 0U);
-				//char x[80];
-				//int len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.StdId);
-				//CC_LogInfo(x, len);
-			}
 
-			while (HAL_CAN_GetRxFifoFillLevel(&hcan2, CAN_RX_FIFO0) > 0) {
-				CC_CAN_Generic_t msg;
-				HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO0, &(msg.header), msg.data);
-				osMessageQueuePut(CC_CAN_State->CAN2Queue, &msg, 0U, 0U);
-				//char x[80];
-				//int len = sprintf(x, "[%li] Got CAN msg from CAN2: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
-				//CC_LogInfo(x, len);
-			}
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0) {
+			CC_CAN_Generic_t msg;
+			HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &(msg.header), msg.data);
+			osMessageQueuePut(CC_CAN_State->CAN1Queue, &msg, 0U, 0U);
 
-			while (HAL_CAN_GetRxFifoFillLevel(&hcan3, CAN_RX_FIFO0) > 0) {
-				CC_CAN_Generic_t msg;
-				HAL_CAN_GetRxMessage(&hcan3, CAN_RX_FIFO0, &(msg.header), msg.data);
-				osMessageQueuePut(CC_CAN_State->CAN3Queue, &msg, 0U, 0U);
-				//char x[80];
-				//int len = sprintf(x, "[%li] Got CAN msg from CAN3: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
-				//CC_LogInfo(x, len);
-			}
+			len = sprintf(x, " Got CAN msg from CAN1: %02lX\r\n", msg.header.StdId);
+			CC_LogInfo(x, len);
+		}
 
-			/*osSemaphoreRelease(CC_CAN_State->sem);
-		}*/
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan2, CAN_RX_FIFO0) > 0) {
+			CC_CAN_Generic_t msg;
+			HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO0, &(msg.header), msg.data);
+			osMessageQueuePut(CC_CAN_State->CAN2Queue, &msg, 0U, 0U);
+			len = sprintf(x, " Got CAN msg from CAN2: %02lX\r\n", msg.header.ExtId);
+			CC_LogInfo(x, len);
+		}
+
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan3, CAN_RX_FIFO0) > 0) {
+			CC_CAN_Generic_t msg;
+			HAL_CAN_GetRxMessage(&hcan3, CAN_RX_FIFO0, &(msg.header), msg.data);
+			osMessageQueuePut(CC_CAN_State->CAN3Queue, &msg, 0U, 0U);
+			len = sprintf(x, " Got CAN msg from CAN3: %02lX\r\n", msg.header.ExtId);
+			CC_LogInfo(x, len);
+		}
+
+		/*osSemaphoreRelease(CC_CAN_State->sem);
+		 }*/
 		fsm_iterate(fsm);
 	}
 

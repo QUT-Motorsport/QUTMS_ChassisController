@@ -11,24 +11,26 @@ CC_main_threads_t *CC_main_threads;
 state_t startState = { &state_start_enter, &state_start_iterate, &state_start_exit, "Start_s" };
 
 void state_start_enter(fsm_t *fsm) {
-	if (CC_Global_State == NULL) {
+	int len;
+	char x[80];
+
 
 		// assign memory and nullify all global states
 		CC_Global_State = malloc(sizeof(CC_Global_State_t));
 		CC_Tractive_State = malloc(sizeof(CC_Tractive_State_t));
 		CC_Heartbeat_State = malloc(sizeof(CC_Heartbeat_State_t));
-		CC_CAN_State = malloc(sizeof(CC_CAN_State_t));
+
 
 		memset(CC_Global_State, 0, sizeof(CC_Global_State_t));
 		memset(CC_Tractive_State, 0, sizeof(CC_Tractive_State_t));
 		memset(CC_Heartbeat_State, 0, sizeof(CC_Heartbeat_State_t));
-		memset(CC_CAN_State, 0, sizeof(CC_CAN_State_t));
+
 
 		// initialize semaphores for all global states
 		CC_Global_State->sem = osSemaphoreNew(3U, 3U, NULL);
 		CC_Tractive_State->sem = osSemaphoreNew(3U, 3U, NULL);
 		CC_Heartbeat_State->sem = osSemaphoreNew(3U, 3U, NULL);
-		CC_CAN_State->sem = osSemaphoreNew(3U, 3U, NULL);
+
 
 		// initialize all startup values
 
@@ -79,19 +81,12 @@ void state_start_enter(fsm_t *fsm) {
 		}*/
 
 		//if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
-			CC_CAN_State->CAN1Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
-			CC_CAN_State->CAN2Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
-			CC_CAN_State->CAN3Queue = osMessageQueueNew(CC_CAN_QUEUESIZE, sizeof(CC_CAN_Generic_t), NULL);
 
-			/* Ensure CANQueue exists */
-			if (CC_CAN_State->CAN1Queue == NULL || CC_CAN_State->CAN2Queue == NULL || CC_CAN_State->CAN3Queue == NULL) {
-				Error_Handler();
-			}
 
 			/*osSemaphoreRelease(CC_CAN_State->sem);
 		}*/
 
-	}
+
 
 	// set initial pin state
 	HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
@@ -103,7 +98,9 @@ void state_start_enter(fsm_t *fsm) {
 			CAN_TxHeaderTypeDef header = { .ExtId = initiateStartup.id, .IDE = CAN_ID_EXT, .RTR = CAN_RTR_DATA,
 					.DLC = 1, .TransmitGlobalTime = DISABLE, };
 			uint8_t data[1] = { 0xF };
-			HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_CAN_State->CAN2_TxMailbox);
+			HAL_StatusTypeDef res = HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_CAN_State->CAN2_TxMailbox);
+			len = sprintf(x, "res %d\r\n", res);
+			CC_LogInfo(x, len);
 /*
 			osSemaphoreRelease(CC_CAN_State->sem);
 		}
