@@ -229,7 +229,8 @@ void SystemClock_Config(void) {
 	}
 	/** Initializes the CPU, AHB and APB buses clocks
 	 */
-	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+			| RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
 	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
@@ -265,53 +266,41 @@ void CC_LogInfo(char *msg, size_t length) {
  * @retval None
  */
 __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
-	uint32_t a_pedals[3];
-	uint32_t b_pedals[2];
-	HAL_ADC_Start_DMA(&hadc1, a_pedals, 3);
-	HAL_ADC_Start_DMA(&hadc2, b_pedals, 2);
 
-	char x[80];
-	int len = 0;
+	CC_LogInfo("Entering FSM Thread\r\n", strlen("Entering FSM Thread\r\n"));
+	fsm_setLogFunction(fsm, &CC_LogInfo);
+	fsm_reset(fsm, &startState);
+	//fsm_changeState(fsm, &debugState, "Forcing debug state");
 	for (;;) {
-		len = sprintf(x, "%ld %ld %ld %ld %ld \r\n", a_pedals[0], a_pedals[1], a_pedals[2], b_pedals[0], b_pedals[1]);
-		CC_LogInfo(x, len);
-		HAL_Delay(500);
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0) {
+			CC_CAN_Generic_t msg;
+			HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &(msg.header), msg.data);
+			osMessageQueuePut(CC_GlobalState->CAN1Queue, &msg, 0U, 0U);
+			//char x[80];
+			//int len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.StdId);
+			//CC_LogInfo(x, len);
+		}
+
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan2, CAN_RX_FIFO0) > 0) {
+			CC_CAN_Generic_t msg;
+			HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO0, &(msg.header), msg.data);
+			osMessageQueuePut(CC_GlobalState->CAN2Queue, &msg, 0U, 0U);
+			//char x[80];
+			//int len = sprintf(x, "[%li] Got CAN msg from CAN2: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
+			//CC_LogInfo(x, len);
+		}
+
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan3, CAN_RX_FIFO0) > 0) {
+			CC_CAN_Generic_t msg;
+			HAL_CAN_GetRxMessage(&hcan3, CAN_RX_FIFO0, &(msg.header), msg.data);
+			osMessageQueuePut(CC_GlobalState->CAN3Queue, &msg, 0U, 0U);
+			//char x[80];
+			//int len = sprintf(x, "[%li] Got CAN msg from CAN3: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
+			//CC_LogInfo(x, len);
+		}
+		fsm_iterate(fsm);
 	}
-	/*
-	 CC_LogInfo("Entering FSM Thread\r\n", strlen("Entering FSM Thread\r\n"));
-	 fsm_setLogFunction(fsm, &CC_LogInfo);
-	 fsm_reset(fsm, &startState);
-	 //fsm_changeState(fsm, &debugState, "Forcing debug state");
-	 for (;;) {
-	 while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0) {
-	 CC_CAN_Generic_t msg;
-	 HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &(msg.header), msg.data);
-	 osMessageQueuePut(CC_GlobalState->CAN1Queue, &msg, 0U, 0U);
-	 //char x[80];
-	 //int len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.StdId);
-	 //CC_LogInfo(x, len);
-	 }
 
-	 while (HAL_CAN_GetRxFifoFillLevel(&hcan2, CAN_RX_FIFO0) > 0) {
-	 CC_CAN_Generic_t msg;
-	 HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO0, &(msg.header), msg.data);
-	 osMessageQueuePut(CC_GlobalState->CAN2Queue, &msg, 0U, 0U);
-	 //char x[80];
-	 //int len = sprintf(x, "[%li] Got CAN msg from CAN2: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
-	 //CC_LogInfo(x, len);
-	 }
-
-	 while (HAL_CAN_GetRxFifoFillLevel(&hcan3, CAN_RX_FIFO0) > 0) {
-	 CC_CAN_Generic_t msg;
-	 HAL_CAN_GetRxMessage(&hcan3, CAN_RX_FIFO0, &(msg.header), msg.data);
-	 osMessageQueuePut(CC_GlobalState->CAN3Queue, &msg, 0U, 0U);
-	 //char x[80];
-	 //int len = sprintf(x, "[%li] Got CAN msg from CAN3: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
-	 //CC_LogInfo(x, len);
-	 }
-	 fsm_iterate(fsm);
-	 }
-	 */
 }
 
 /* USER CODE END 4 */

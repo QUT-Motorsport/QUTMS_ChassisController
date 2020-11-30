@@ -24,12 +24,28 @@
 #include "SHDN_CAN_Messages.h"
 #include "Util.h"
 
-/**
- * @brief Chassis Global State
- * @note Chassis Global State is shared across threads, so use the semaphore to gain control
- */
-typedef struct
-{
+// states
+#include "CC_StartState.h"
+#include "CC_IdleState.h"
+#include "CC_DrivingState.h"
+
+#define NUM_BRAKE_SENSORS 2
+#define NUM_ACCEL_SENSORS 3
+
+
+#define BRAKE_PEDAL_ONE_MIN 2350
+#define BRAKE_PEDAL_ONE_MAX 3250
+#define BRAKE_PEDAL_TWO_MIN 2320
+#define BRAKE_PEDAL_TWO_MAX 3100
+
+#define ACCEL_PEDAL_ONE_MIN 2450
+#define ACCEL_PEDAL_ONE_MAX 3300
+#define ACCEL_PEDAL_TWO_MIN 2800
+#define ACCEL_PEDAL_TWO_MAX 3300
+#define ACCEL_PEDAL_THREE_MIN 2800
+#define ACCEL_PEDAL_THREE_MAX 3300
+
+typedef struct CC_CAN_State {
 	/* CAN Mailboxes */
 	uint32_t CAN1_TxMailbox;
 	uint32_t CAN1_RxMailbox;
@@ -38,10 +54,84 @@ typedef struct
 	uint32_t CAN3_TxMailbox;
 	uint32_t CAN3_RxMailbox;
 
-	/* Debugger for board connectivity
-	 * true = Board not connected
-	 * false = Board connected
-	 */
+	// message queues to store CAN messages
+	osMessageQueueId_t CAN1Queue;
+	osMessageQueueId_t CAN2Queue;
+	osMessageQueueId_t CAN3Queue;
+
+	// semaphore for thread protection
+	osSemaphoreId_t sem;
+
+} CC_CAN_State_t;
+
+typedef struct CC_Tractive_State {
+	uint16_t accel_pedals_raw[NUM_ACCEL_SENSORS];
+	uint16_t brake_pedals_raw[NUM_BRAKE_SENSORS];
+
+	uint16_t accel_pedals[NUM_ACCEL_SENSORS];
+	uint16_t brake_pedals[NUM_BRAKE_SENSORS];
+
+	uint16_t accel_value;
+	uint16_t brake_value;
+
+	const uint16_t accel_min[NUM_ACCEL_SENSORS] = {ACCEL_PEDAL_ONE_MIN, ACCEL_PEDAL_TWO_MIN, ACCEL_PEDAL_THREE_MIN};
+	const uint16_t accel_max[NUM_ACCEL_SENSORS] = {ACCEL_PEDAL_ONE_MAX, ACCEL_PEDAL_TWO_MAX, ACCEL_PEDAL_THREE_MAX};
+
+	const uint16_t brake_min[NUM_BRAKE_SENSORS] = {BRAKE_PEDAL_ONE_MIN, BRAKE_PEDAL_TWO_MIN};
+	const uint16_t brake_max[NUM_BRAKE_SENSORS] = {BRAKE_PEDAL_ONE_MAX, BRAKE_PEDAL_TWO_MAX};
+
+	uint32_t rtd_ticks;
+
+	uint32_t implausible_ticks;
+	bool fault_detected;
+
+	bool tractive_active;
+
+	// semaphore for thread protection
+	osSemaphoreId_t sem;
+} CC_Tractive_State_t;
+
+typedef struct CC_Heartbeat_State {
+	// enable / disable heartbeats
+	bool PDM_Debug;
+	bool AMS_Debug;
+	bool Inverter_Debug;
+	bool SHDN_IMD_Debug;
+	bool SHDN_1_Debug;
+	bool SHDN_2_Debug;
+	bool SHDN_3_Debug;
+
+	// tick count between heartbeats
+	uint32_t amsTicks;
+	uint32_t inverterTicks;
+	uint32_t shutdownOneTicks;
+	uint32_t shutdownTwoTicks;
+	uint32_t shutdownThreeTicks;
+	uint32_t shutdownImdTicks;
+
+	// semaphore for thread protection
+	osSemaphoreId_t sem;
+
+} CC_Heartbeat_State_t;
+
+typedef struct CC_Global_State {
+	uint32_t pdm_channel_states;
+
+	// semaphore for thread protection
+	osSemaphoreId_t sem;
+
+} CC_Global_State_t;
+
+/**
+ * @brief Chassis Global State
+ * @note Chassis Global State is shared across threads, so use the semaphore to gain control
+ */
+/*
+typedef struct {
+
+	//	Debugger for board connectivity
+	//	true = Board not connected
+	//	false = Board connected
 	bool RTD_Debug;
 	bool ADC_Debug;
 
@@ -53,7 +143,7 @@ typedef struct
 	bool SHDN_2_Debug;
 	bool SHDN_3_Debug;
 
-	/** Tick Refresh Counter for Individual Board Heartbeats */
+	//Tick Refresh Counter for Individual Board Heartbeats
 	uint32_t startupTicks;
 	uint32_t readyToDriveTicks;
 	uint32_t implausibleTicks;
@@ -64,14 +154,14 @@ typedef struct
 	uint32_t shutdownThreeTicks;
 	uint32_t shutdownImdTicks;
 
-	/* PDM Channel Management */
+	// PDM Channel Management
 	uint32_t pdmTrackState;
 
-	/* Initialisation Confirmation */
+	// Initialisation Confirmation
 	bool ccInit;
 	bool amsInit;
 
-	/* Analogue Values */
+	// Analogue Values
 	uint32_t brakeAdcValues[100];
 	uint32_t accelAdcValues[150];
 	uint32_t brakePressureThreshold;
@@ -85,7 +175,7 @@ typedef struct
 	uint32_t secondaryRollingAccelValues[10];
 	uint32_t tertiaryRollingAccelValues[10];
 
-	/* Formatted Pedal Travel Positions */
+	// Formatted Pedal Travel Positions
 	int16_t accelTravel;
 	int16_t brakeTravel;
 
@@ -95,9 +185,6 @@ typedef struct
 
 	bool shutdown_fault;
 
-	osMessageQueueId_t CAN1Queue;
-	osMessageQueueId_t CAN2Queue;
-	osMessageQueueId_t CAN3Queue;
 	osTimerId_t heartbeatTimer;
 	osTimerId_t IDC_AlarmTimer;
 	osSemaphoreId_t sem;
@@ -114,8 +201,13 @@ typedef struct
 
 	uint32_t fan_cmd_ticks;
 } CC_GlobalState_t;
+*/
 
-CC_GlobalState_t *CC_GlobalState;
+CC_GlobalState_t *CC_Global_State;
+
+CC_CAN_State_t *CC_CAN_State;
+CC_Tractive_State_t *CC_Tractive_State;
+CC_Heartbeat_State_t *CC_Heartbeat_State;
 
 /**
  * @brief Dead state enter function
@@ -144,81 +236,6 @@ void state_dead_exit(fsm_t *fsm);
  * @details Next: idleState (Instantly)
  */
 state_t deadState;
-
-/**
- * @brief Start state enter function. Initialises the CC_GlobalState
- * @param fsm A pointer to the FSM object
- */
-void state_start_enter(fsm_t *fsm);
-
-/**
- * @brief Start state iterate function. Execute boot sequence
- * @param fsm A pointer to the FSM object
- */
-void state_start_iterate(fsm_t *fsm);
-
-/**
- * @brief Start state exit function.
- * @param fsm A pointer to the FSM object
- */
-void state_start_exit(fsm_t *fsm);
-
-/**
- * @brief startState ie. start state before boot sequence is executed
- * @note LV System engaged
- * * @details Next: idleState (Boot executed)
- */
-state_t startState;
-
-/**
- * @brief Idle state enter function. Initialises the CC_GlobalState
- * @param fsm A pointer to the FSM object
- */
-void state_idle_enter(fsm_t *fsm);
-
-/**
- * @brief Idle state iterate function. Monitor System Status
- * @param fsm A pointer to the FSM object
- */
-void state_idle_iterate(fsm_t *fsm);
-
-/**
- * @brief Idle state exit function. Broadcast RTD Message and execute Startup Sequence
- * @param fsm A pointer to the FSM object
- */
-void state_idle_exit(fsm_t *fsm);
-
-/**
- * @brief idleState ie. idle state before RTD request is received
- * @note Idle FSM state, waiting for RTD or charging CAN messages.
- * * @details Next: drivingState (RTD Engaged)
- */
-state_t idleState;
-
-/**
- * Driving state enter function. Ensure heartbeat integrity before engaging tractive system
- * @param fsm A pointer to the FSM object
- */
-void state_driving_enter(fsm_t *fsm);
-
-/**
- * Driving state iterate function. Send torque commands, monitor heartbeats and monitor pedal plausibility
- * @param fsm A pointer to the FSM object
- */
-void state_driving_iterate(fsm_t *fsm);
-
-/**
- * Driving state exit function. Broadcast soft shutdown state globally
- * @param fsm A pointer to the FSM object
- */
-void state_driving_exit(fsm_t *fsm);
-
-/**
- * @brief drivingState for tractive system operational
- * @note Driving FSM state
- * @details Next: idleState (Soft Shutdown)
- */
-state_t drivingState;
 
 /**
  * Debug state enter function.
