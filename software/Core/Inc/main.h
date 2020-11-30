@@ -32,6 +32,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "FSM.h"
 
 /* USER CODE END Includes */
 
@@ -75,6 +76,8 @@ __NO_RETURN void fsm_thread_mainLoop(void* arg);
 #define RTD_INPUT_GPIO_Port GPIOE
 #define RTD_INPUT_EXTI_IRQn EXTI15_10_IRQn
 /* USER CODE BEGIN Private defines */
+
+extern fsm_t *fsm;
 
 /* USER CODE END Private defines */
 

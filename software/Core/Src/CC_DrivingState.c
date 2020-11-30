@@ -5,7 +5,11 @@
  *      Author: calvi
  */
 
+#include "CC_FSM_States.h"
 #include "CC_DrivingState.h"
+
+const uint16_t inverter_node_ids[NUM_INVERTERS] = { INVERTER_LEFT_NODE_ID,
+INVERTER_RIGHT_NODE_ID };
 
 typedef struct CC_driving_threads {
 	osThreadId_t driving_update_pdm_handle;
@@ -60,7 +64,7 @@ void thread_driving_update_pdm(void *argument) {
 						CC_Global_State->pdm_channel_states |= PDMFLAG_BRAKE_LIGHT;
 					}
 
-					if ((HAL_GetTicks() - CC_Tractive_State->rtd_ticks) < RTD_SIREN_TICKS) {
+					if ((HAL_GetTick() - CC_Tractive_State->rtd_ticks) < RTD_SIREN_TICKS) {
 						// siren is on for first 1.5 seconds of driving
 						CC_Global_State->pdm_channel_states |= PDMFLAG_RTD_SIREN;
 					}
@@ -87,6 +91,8 @@ void thread_driving_update_pdm(void *argument) {
 }
 
 void thread_driving_update_inverters(void *argument) {
+	int len = 0;
+	char x[80];
 	CAN_TxHeaderTypeDef inverter_header = { 0 };
 	inverter_header.IDE = CAN_ID_STD;
 	inverter_header.RTR = CAN_RTR_DATA;
@@ -99,44 +105,47 @@ void thread_driving_update_inverters(void *argument) {
 	for (;;) {
 
 		// send enable command - need to constantly resend since no feedback from inverters
+		if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 
-		for (int i = 0; i < NUM_INVERTERS; i++) {
-			inverter_enable = Compose_CC_SetBool(inverter_node_ids[i], 0x01, 0xFFFFFFFF);
-			inverter_header.StdId = inverter_enable.id;
-			inverter_header.DLC = 8;
-
-			result = HAL_CAN_AddTxMessage(&hcan1, &inverter_header, inverter_enable.data,
-					&CC_GlobalState->CAN1_TxMailbox);
-
-		}
-
-		// send accel and brake commands to each inverter
-		if (osSemaphoreAcquire(CC_Tractive_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 			for (int i = 0; i < NUM_INVERTERS; i++) {
-				len = sprintf(x, "Inverter: %d Command - A: %d B: %d\r\n", i, CC_Tractive_State->accel_value,
-						CC_Tractive_State->brake_value);
-				//CC_LogInfo(x, len);
-
-				// set to 0 just in case we're running and tractive has stopped
-				uint16_t accel_value = (CC_Tractive_State->tractive_active) ? CC_Tractive_State->accel_value : 0;
-
-				// accel
-				inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i], INVERTER_VAR_ACCEL, accel_value);
-				inverter_header.StdId = inverter_cmd.id;
+				inverter_enable = Compose_CC_SetBool(inverter_node_ids[i], 0x01, 0xFFFFFFFF);
+				inverter_header.StdId = inverter_enable.id;
 				inverter_header.DLC = 8;
-				result = HAL_CAN_AddTxMessage(&hcan1, &inverter_header, inverter_cmd.data,
+
+				result = HAL_CAN_AddTxMessage(&hcan1, &inverter_header, inverter_enable.data,
 						&CC_CAN_State->CAN1_TxMailbox);
 
-				// brake
-				inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i], INVERTER_VAR_BRAKE,
-						CC_Tractive_State->brake_value);
-				inverter_header.StdId = inverter_cmd.id;
-				inverter_header.DLC = 8;
-				result = HAL_CAN_AddTxMessage(&hcan1, &inverter_header, inverter_cmd.data,
-						&CC_CAN_State->CAN1_TxMailbox);
 			}
 
-			osSemaphoreRelease(CC_Tractive_State->sem);
+			// send accel and brake commands to each inverter
+			if (osSemaphoreAcquire(CC_Tractive_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+				for (int i = 0; i < NUM_INVERTERS; i++) {
+					len = sprintf(x, "Inverter: %d Command - A: %d B: %d\r\n", i, CC_Tractive_State->accel_value,
+							CC_Tractive_State->brake_value);
+					//CC_LogInfo(x, len);
+
+					// set to 0 just in case we're running and tractive has stopped
+					uint16_t accel_value = (CC_Tractive_State->tractive_active) ? CC_Tractive_State->accel_value : 0;
+
+					// accel
+					inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i], INVERTER_VAR_ACCEL, accel_value);
+					inverter_header.StdId = inverter_cmd.id;
+					inverter_header.DLC = 8;
+					result = HAL_CAN_AddTxMessage(&hcan1, &inverter_header, inverter_cmd.data,
+							&CC_CAN_State->CAN1_TxMailbox);
+
+					// brake
+					inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i], INVERTER_VAR_BRAKE,
+							CC_Tractive_State->brake_value);
+					inverter_header.StdId = inverter_cmd.id;
+					inverter_header.DLC = 8;
+					result = HAL_CAN_AddTxMessage(&hcan1, &inverter_header, inverter_cmd.data,
+							&CC_CAN_State->CAN1_TxMailbox);
+				}
+
+				osSemaphoreRelease(CC_Tractive_State->sem);
+			}
+			osSemaphoreRelease(CC_CAN_State->sem);
 		}
 
 		// update every 20ms
@@ -162,9 +171,15 @@ void thread_driving_read_CAN(void *argument) {
 					if (msg.header.IDE == CAN_ID_STD) {
 						/* Inverter Heartbeat */
 						if (msg.header.StdId == 0x700 + INVERTER_LEFT_NODE_ID) {
-							CC_GlobalState->inverterTicks = HAL_GetTick();
-							len = sprintf(x, "INVERTER HEARTBEAT\r\n");
-							CC_LogInfo(x, len);
+
+							if (osSemaphoreAcquire(CC_Heartbeat_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+								CC_Heartbeat_State->inverterTicks = HAL_GetTick();
+								len = sprintf(x, "INVERTER HEARTBEAT\r\n");
+								CC_LogInfo(x, len);
+
+								osSemaphoreRelease(CC_Heartbeat_State->sem);
+							}
+
 						}
 						/*
 						 // Inverter Response Packet
@@ -192,13 +207,14 @@ void thread_driving_read_CAN(void *argument) {
 				}
 			}
 
-			/* Check for Queued CAN Packets on CAN2 */
+			// Check for Queued CAN Packets on CAN2
 			while (osMessageQueueGetCount(CC_CAN_State->CAN2Queue) >= 1) {
 				CC_CAN_Generic_t msg;
 				if (osMessageQueueGet(CC_CAN_State->CAN2Queue, &msg, 0U, 0U) == osOK) {
 					/* Packet Handler */
 					/* AMS Heartbeat */
 					if (msg.header.ExtId == Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0)) {
+
 						if (osSemaphoreAcquire(CC_Heartbeat_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 							bool initialised;
 							bool HVAn;
@@ -210,8 +226,8 @@ void thread_driving_read_CAN(void *argument) {
 							uint16_t runtime;
 							Parse_AMS_HeartbeatResponse(msg.data, &initialised, &HVAn, &HVBn, &precharge, &HVAp, &HVBp,
 									&averageVoltage, &runtime);
-							CC_GlobalState->amsTicks = HAL_GetTick();
-							CC_GlobalState->amsInit = initialised;
+							CC_Heartbeat_State->amsTicks = HAL_GetTick();
+							CC_Global_State->AMS_initialized = initialised;
 							osSemaphoreRelease(CC_Heartbeat_State->sem);
 						}
 					}
@@ -235,10 +251,12 @@ void thread_driving_read_CAN(void *argument) {
 					}
 					/* Shutdown Triggered Fault */
 					else if (msg.header.ExtId == Compose_CANId(0x0, 0x06, 0x0, 0x0, 0x0, 0x0)) {
-						CC_GlobalState->ccInit = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n", true,
-								&CC_CAN_State->CAN1_TxMailbox, &CC_CAN_State->CAN2_TxMailbox,
-								&CC_CAN_State->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3, INVERTER_LEFT_NODE_ID,
+						CC_Global_State->CC_initialized = Send_CC_FatalShutdown("Fatal Shutdown Trigger Fault\r\n",
+						true, &CC_CAN_State->CAN1_TxMailbox, &CC_CAN_State->CAN2_TxMailbox,
+								&CC_CAN_State->CAN3_TxMailbox, &hcan1, &hcan2, &hcan3, &huart3, INVERTER_LEFT_NODE_ID,
 								INVERTER_RIGHT_NODE_ID);
+
+						osSemaphoreRelease(CC_CAN_State->sem);
 						fsm_changeState(fsm, &idleState, "Resetting to Idle to Clean");
 					}
 				}
@@ -258,6 +276,7 @@ void thread_driving_read_CAN(void *argument) {
 state_t drivingState = { &state_driving_enter, &state_driving_iterate, &state_driving_exit, "Driving_s" };
 
 void state_driving_enter(fsm_t *fsm) {
+	HAL_StatusTypeDef result;
 
 	// initialize driving specific variables
 
@@ -266,7 +285,7 @@ void state_driving_enter(fsm_t *fsm) {
 		CC_Tractive_State->tractive_active = true;
 
 		// start RTD siren timer
-		CC_Tractive_State->rtd_ticks = HAL_GetTicks();
+		CC_Tractive_State->rtd_ticks = HAL_GetTick();
 
 		osSemaphoreRelease(CC_Tractive_State->sem);
 	}
@@ -274,20 +293,25 @@ void state_driving_enter(fsm_t *fsm) {
 	// turn off RTD button led
 	HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
 
-	// enable inverters
-	CAN_TxHeaderTypeDef inverter_header = { 0 };
-	inverter_header.IDE = CAN_ID_STD;
-	inverter_header.RTR = CAN_RTR_DATA;
-	inverter_header.TransmitGlobalTime = DISABLE;
+	if (osSemaphoreAcquire(CC_CAN_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 
-	CC_SetBool_t inverter_enable = { 0 };
-	for (int i = 0; i < NUM_INVERTERS; i++) {
-		inverter_enable = Compose_CC_SetBool(inverter_node_ids[i], 0x01, 0xFFFFFFFF);
-		inverter_header.StdId = inverter_enable.id;
-		inverter_header.DLC = 8;
+		// enable inverters
+		CAN_TxHeaderTypeDef inverter_header = { 0 };
+		inverter_header.IDE = CAN_ID_STD;
+		inverter_header.RTR = CAN_RTR_DATA;
+		inverter_header.TransmitGlobalTime = DISABLE;
 
-		result = HAL_CAN_AddTxMessage(&hcan1, &inverter_header, inverter_enable.data, &CC_GlobalState->CAN1_TxMailbox);
+		CC_SetBool_t inverter_enable = { 0 };
+		for (int i = 0; i < NUM_INVERTERS; i++) {
+			inverter_enable = Compose_CC_SetBool(inverter_node_ids[i], 0x01, 0xFFFFFFFF);
+			inverter_header.StdId = inverter_enable.id;
+			inverter_header.DLC = 8;
 
+			result = HAL_CAN_AddTxMessage(&hcan1, &inverter_header, inverter_enable.data,
+					&CC_CAN_State->CAN1_TxMailbox);
+
+		}
+		osSemaphoreRelease(CC_CAN_State->sem);
 	}
 
 	// start rtos threads for driving state
@@ -302,7 +326,6 @@ void state_driving_enter(fsm_t *fsm) {
 	CC_driving_threads->driving_update_pdm_handle = osThreadNew(thread_driving_update_pdm, NULL, &thread_attributes);
 
 	// driving_update_inverters
-	osThreadAttr_t thread_attributes = { 0 };
 	thread_attributes.name = "driving_update_inverters";
 	thread_attributes.priority = (osPriority_t) osPriorityNormal;
 	thread_attributes.stack_size = 256;
@@ -311,7 +334,6 @@ void state_driving_enter(fsm_t *fsm) {
 			&thread_attributes);
 
 	// driving_read_CAN
-	osThreadAttr_t thread_attributes = { 0 };
 	thread_attributes.name = "driving_read_CAN";
 	thread_attributes.priority = (osPriority_t) osPriorityNormal;
 	thread_attributes.stack_size = 256;
@@ -322,20 +344,22 @@ void state_driving_enter(fsm_t *fsm) {
 }
 
 void state_driving_iterate(fsm_t *fsm) {
+	int len = 0;
+	char x[120];
 	// heartbeats is done in thread
 
 	// adc reading is done in thread
 
-	// print pedal positions
-	if (true) {
-		len = sprintf(x, "Accel: %d Brake: %d\r\n", CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
-		CC_LogInfo(x, len);
-	}
-
 	// check throttle and brake implausibilty timeout
 	if (osSemaphoreAcquire(CC_Tractive_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+		// print pedal positions
+		if (true) {
+			len = sprintf(x, "Accel: %d Brake: %d\r\n", CC_Tractive_State->accel_value, CC_Tractive_State->brake_value);
+			CC_LogInfo(x, len);
+		}
+
 		if (CC_Tractive_State->fault_detected
-				&& ((HAL_GetTicks() - CC_Tractive_State->implausible_ticks) > IMPLAUSIBILITY_TICK_COUNT)) {
+				&& ((HAL_GetTick() - CC_Tractive_State->implausible_ticks) > IMPLAUSIBILITY_TICK_COUNT)) {
 			// engage soft shutdown
 
 			CC_Tractive_State->tractive_active = false;
@@ -365,8 +389,8 @@ void state_driving_iterate(fsm_t *fsm) {
 
 			/* Broadcast Soft Shutdown on all CAN lines */
 			CC_SoftShutdown_t soft_shutdown_msg = Compose_CC_SoftShutdown();
-			CAN_TxHeaderTypeDef soft_shutdown_header = { .ExtId = softShutdown.id, .IDE = CAN_ID_EXT, .RTR =
-					CAN_RTR_DATA, .DLC = 0, .TransmitGlobalTime = DISABLE, };
+			CAN_TxHeaderTypeDef soft_shutdown_header = { .ExtId = soft_shutdown_msg.id, .IDE = CAN_ID_EXT, .RTR =
+			CAN_RTR_DATA, .DLC = 0, .TransmitGlobalTime = DISABLE, };
 
 			HAL_CAN_AddTxMessage(&hcan1, &soft_shutdown_header, NULL, &CC_CAN_State->CAN1_TxMailbox);
 			HAL_CAN_AddTxMessage(&hcan2, &soft_shutdown_header, NULL, &CC_CAN_State->CAN2_TxMailbox);

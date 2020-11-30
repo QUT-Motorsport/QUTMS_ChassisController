@@ -10,6 +10,9 @@
 
 #include "FSM.h"
 
+// 5 seconds
+#define RTD_ENTER_TICK_COUNT 5000
+
 void thread_idle_read_CAN(void *argument);
 
 

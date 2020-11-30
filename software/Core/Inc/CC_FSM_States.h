@@ -74,11 +74,11 @@ typedef struct CC_Tractive_State {
 	uint16_t accel_value;
 	uint16_t brake_value;
 
-	const uint16_t accel_min[NUM_ACCEL_SENSORS] = {ACCEL_PEDAL_ONE_MIN, ACCEL_PEDAL_TWO_MIN, ACCEL_PEDAL_THREE_MIN};
-	const uint16_t accel_max[NUM_ACCEL_SENSORS] = {ACCEL_PEDAL_ONE_MAX, ACCEL_PEDAL_TWO_MAX, ACCEL_PEDAL_THREE_MAX};
+	uint16_t accel_min[NUM_ACCEL_SENSORS];
+	uint16_t accel_max[NUM_ACCEL_SENSORS];
 
-	const uint16_t brake_min[NUM_BRAKE_SENSORS] = {BRAKE_PEDAL_ONE_MIN, BRAKE_PEDAL_TWO_MIN};
-	const uint16_t brake_max[NUM_BRAKE_SENSORS] = {BRAKE_PEDAL_ONE_MAX, BRAKE_PEDAL_TWO_MAX};
+	uint16_t brake_min[NUM_BRAKE_SENSORS];
+	uint16_t brake_max[NUM_BRAKE_SENSORS];
 
 	uint32_t rtd_ticks;
 
@@ -92,15 +92,6 @@ typedef struct CC_Tractive_State {
 } CC_Tractive_State_t;
 
 typedef struct CC_Heartbeat_State {
-	// enable / disable heartbeats
-	bool PDM_Debug;
-	bool AMS_Debug;
-	bool Inverter_Debug;
-	bool SHDN_IMD_Debug;
-	bool SHDN_1_Debug;
-	bool SHDN_2_Debug;
-	bool SHDN_3_Debug;
-
 	// tick count between heartbeats
 	uint32_t amsTicks;
 	uint32_t inverterTicks;
@@ -115,12 +106,38 @@ typedef struct CC_Heartbeat_State {
 } CC_Heartbeat_State_t;
 
 typedef struct CC_Global_State {
+	// debug values to disable checks for debugging
+	bool ADC_Debug;
+	bool PDM_Debug;
+	bool AMS_Debug;
+	bool Inverter_Debug;
+	bool SHDN_IMD_Debug;
+	bool SHDN_1_Debug;
+	bool SHDN_2_Debug;
+	bool SHDN_3_Debug;
+
 	uint32_t pdm_channel_states;
+
+	uint32_t rtd_ticks;
+
+	bool CC_initialized;
+	bool AMS_initialized;
+
+	bool shutdown_fault;
 
 	// semaphore for thread protection
 	osSemaphoreId_t sem;
 
 } CC_Global_State_t;
+
+void thread_read_pedals(void *argument);
+void thread_check_heartbeats(void *argument);
+
+typedef struct CC_main_threads {
+	osThreadId_t main_read_pedals_handle;
+	osThreadId_t main_check_heartbeats_handle;
+
+} CC_main_threads_t;
 
 /**
  * @brief Chassis Global State
@@ -203,11 +220,10 @@ typedef struct {
 } CC_GlobalState_t;
 */
 
-CC_GlobalState_t *CC_Global_State;
-
-CC_CAN_State_t *CC_CAN_State;
-CC_Tractive_State_t *CC_Tractive_State;
-CC_Heartbeat_State_t *CC_Heartbeat_State;
+extern CC_Global_State_t *CC_Global_State;
+extern CC_CAN_State_t *CC_CAN_State;
+extern CC_Tractive_State_t *CC_Tractive_State;
+extern CC_Heartbeat_State_t *CC_Heartbeat_State;
 
 /**
  * @brief Dead state enter function

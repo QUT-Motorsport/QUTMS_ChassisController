@@ -20,8 +20,13 @@
 #define INVERTER_VAR_ACCEL 0x01
 #define INVERTER_VAR_BRAKE 0x02
 
-const uint16_t inverter_node_ids[NUM_INVERTERS] = { INVERTER_LEFT_NODE_ID,
-INVERTER_RIGHT_NODE_ID };
+#define INVERTER_LEFT_NODE_ID 100
+#define INVERTER_RIGHT_NODE_ID 101
+
+#define MOTOR_1_SUBINDEX 0x01
+#define MOTOR_2_SUBINDEX 0x02
+
+extern const uint16_t inverter_node_ids[NUM_INVERTERS];
 
 void thread_driving_update_pdm(void *argument);
 void thread_driving_update_inverters(void *argument);
