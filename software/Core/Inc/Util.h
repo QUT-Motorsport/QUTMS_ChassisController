@@ -25,4 +25,13 @@
  */
 int map(int x, int in_min, int in_max, int out_min, int out_max);
 
+/**
+ * @brief Simple filter to filter ADC Noise
+ * @param x New ADC Value
+ * @param y Previous Filtered ADC Tracker Value
+ * @param k Float Modifier of Filter Sensitivity
+ * @return Filtered ADC Value
+ */
+int adc_filter(int x, int y, float k);
+
 #endif /* INC_UTIL_H_ */
