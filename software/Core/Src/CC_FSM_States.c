@@ -46,7 +46,7 @@
 #define CC_MASK PDM_POWER_CC_MASK
 #define RTD_SIREN_MASK PDMFLAG_RTD_SIREN
 
-#define INVERTER_CMD_TICK_COUNT 20
+#define INVERTER_CMD_TICK_COUNT 5
 #define INVERTER_ENABLE_TICK_COUNT 15
 
 #define NUM_INVERTERS 2
@@ -98,8 +98,8 @@ void state_start_enter(fsm_t *fsm) {
 			CC_GlobalState->PDM_Debug = true;
 			CC_GlobalState->AMS_Debug = false;
 			CC_GlobalState->SHDN_1_Debug = false;
-			CC_GlobalState->SHDN_2_Debug = false;
-			CC_GlobalState->SHDN_3_Debug = false;
+			CC_GlobalState->SHDN_2_Debug = true;
+			CC_GlobalState->SHDN_3_Debug = true;
 			CC_GlobalState->SHDN_IMD_Debug = false;
 
 			/* Inverters */
