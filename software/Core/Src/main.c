@@ -265,14 +265,17 @@ void CC_LogInfo(char *msg, size_t length) {
  * @retval None
  */
 __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
-	uint16_t a_pedals[3];
+	uint32_t a_pedals[3];
+	uint32_t b_pedals[2];
 	HAL_ADC_Start_DMA(&hadc1, a_pedals, 3);
+	HAL_ADC_Start_DMA(&hadc2, b_pedals, 2);
+
 	char x[80];
 	int len = 0;
 	for (;;) {
-		len = sprintf(x, "%d %d %d\r\n", a_pedals[0], a_pedals[1], a_pedals[2]);
+		len = sprintf(x, "%ld %ld %ld %ld %ld \r\n", a_pedals[0], a_pedals[1], a_pedals[2], b_pedals[0], b_pedals[1]);
 		CC_LogInfo(x, len);
-		HAL_Delay(1000);
+		HAL_Delay(500);
 	}
 	/*
 	 CC_LogInfo("Entering FSM Thread\r\n", strlen("Entering FSM Thread\r\n"));
