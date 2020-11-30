@@ -92,6 +92,9 @@ void state_start_enter(fsm_t *fsm) {
 	uint8_t data[1] = { 0xF };
  	HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_CAN_State->CAN2_TxMailbox);
 
+ 	// small delay to send message
+ 	HAL_Delay(10);
+
 
 	// debug tracing
 	//CC_LogInfo("Enter Start\r\n", strlen("Enter Start\r\n"));

@@ -209,7 +209,7 @@ void SystemClock_Config(void)
   /** Configure the main internal regulator output voltage
   */
   __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
@@ -219,16 +219,10 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 216;
+  RCC_OscInitStruct.PLL.PLLN = 128;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Activate the Over-Drive mode
-  */
-  if (HAL_PWREx_EnableOverDrive() != HAL_OK)
   {
     Error_Handler();
   }
@@ -238,10 +232,10 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV8;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_7) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -291,26 +285,26 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
 			HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &(msg.header), msg.data);
 			osMessageQueuePut(CC_CAN_State->CAN1Queue, &msg, 0U, 0U);
 
-			len = sprintf(x, " Got CAN msg from CAN1: %02lX\r\n", msg.header.StdId);
-			CC_LogInfo(x, len);
+//			len = sprintf(x, " Got CAN msg from CAN1: %02lX\r\n", msg.header.StdId);
+//			CC_LogInfo(x, len);
 		}
 
 		while (HAL_CAN_GetRxFifoFillLevel(&hcan2, CAN_RX_FIFO0) > 0) {
-			len = sprintf(x, "can2\r\n");
-			CC_LogInfo(x, len);
+//			len = sprintf(x, "can2\r\n");
+//			CC_LogInfo(x, len);
 			CC_CAN_Generic_t msg;
 			HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO0, &(msg.header), msg.data);
 			osMessageQueuePut(CC_CAN_State->CAN2Queue, &msg, 0U, 0U);
-			len = sprintf(x, " Got CAN msg from CAN2: %02lX\r\n", msg.header.ExtId);
-			CC_LogInfo(x, len);
+//			len = sprintf(x, " Got CAN msg from CAN2: %02lX\r\n", msg.header.ExtId);
+//			CC_LogInfo(x, len);
 		}
 
 		while (HAL_CAN_GetRxFifoFillLevel(&hcan3, CAN_RX_FIFO0) > 0) {
 			CC_CAN_Generic_t msg;
 			HAL_CAN_GetRxMessage(&hcan3, CAN_RX_FIFO0, &(msg.header), msg.data);
 			osMessageQueuePut(CC_CAN_State->CAN3Queue, &msg, 0U, 0U);
-			len = sprintf(x, " Got CAN msg from CAN3: %02lX\r\n", msg.header.ExtId);
-			CC_LogInfo(x, len);
+//			len = sprintf(x, " Got CAN msg from CAN3: %02lX\r\n", msg.header.ExtId);
+//			CC_LogInfo(x, len);
 		}
 
 		/*osSemaphoreRelease(CC_CAN_State->sem);
