@@ -225,6 +225,10 @@ extern CC_CAN_State_t *CC_CAN_State;
 extern CC_Tractive_State_t *CC_Tractive_State;
 extern CC_Heartbeat_State_t *CC_Heartbeat_State;
 
+extern state_t startState;
+extern state_t idleState;
+extern state_t drivingState;
+
 /**
  * @brief Dead state enter function
  * @note No implementation as the dead state serves no purpose other than being an initial FSM state

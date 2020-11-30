@@ -161,6 +161,8 @@ void state_idle_enter(fsm_t *fsm) {
 }
 
 void state_idle_iterate(fsm_t *fsm) {
+	int len = 0;
+	char x[80];
 	// check heartbeats - covered in thread
 
 	// read CAN - covered in thread
@@ -172,8 +174,8 @@ void state_idle_iterate(fsm_t *fsm) {
 	 }
 	 */
 
-	bool brake_rtd_activated = false;
-
+	bool brake_rtd_activated = true;
+/*
 	if (osSemaphoreAcquire(CC_Tractive_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 
 		// brake > 20%
@@ -181,7 +183,7 @@ void state_idle_iterate(fsm_t *fsm) {
 
 		osSemaphoreRelease(CC_Tractive_State->sem);
 	}
-
+*/
 	if (brake_rtd_activated && (CC_Global_State->AMS_initialized || CC_Global_State->AMS_Debug)
 			&& CC_Global_State->CC_initialized) {
 		// Illuminate RTD Button
@@ -199,8 +201,12 @@ void state_idle_iterate(fsm_t *fsm) {
 
 					osSemaphoreRelease(CC_Global_State->sem);
 
+					len = sprintf(x, "rtd\r\n");
+					CC_LogInfo(x, len);
+
+
 					// Enter Driving State
-					fsm_changeState(fsm, &drivingState, "RTD Engaged");
+					//fsm_changeState(fsm, &drivingState, "RTD Engaged");
 
 					return;
 				}
