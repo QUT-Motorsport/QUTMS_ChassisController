@@ -37,7 +37,7 @@ void thread_driving_update_pdm(void *argument) {
 
 				len = sprintf(x, "fan: %d\r\n", fan_duty_cycle);
 				CC_LogInfo(x, len);
-
+/*
 				// tell pdm left fan duty cycle
 				PDM_SetDutyCycle_t pdm_set_duty_msg = { 0 };
 				pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_LEFT_FAN, fan_duty_cycle);
@@ -56,7 +56,7 @@ void thread_driving_update_pdm(void *argument) {
 				CAN_header.ExtId = pdm_set_duty_msg.id;
 				CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
 				HAL_CAN_AddTxMessage(&hcan2, &CAN_header, pdm_set_duty_msg.data, &CC_CAN_State->CAN2_TxMailbox);
-
+*/
 				// update brake light
 				//if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 					// clear brake light channel
@@ -155,7 +155,7 @@ void thread_driving_update_inverters(void *argument) {
 		}*/
 
 		// update every 20ms
-		osDelay(20);
+		osDelay(10);
 	}
 
 	// if we exit loop for some reason
@@ -272,7 +272,7 @@ void thread_driving_read_CAN(void *argument) {
 		}*/
 
 		// update every 20ms
-		osDelay(20);
+		osDelay(40);
 	}
 
 	// if we exit loop for some reason
@@ -333,7 +333,7 @@ void state_driving_enter(fsm_t *fsm) {
 
 	// driving_update_inverters
 	thread_attributes.name = "driving_update_inverters";
-	thread_attributes.priority = (osPriority_t) osPriorityNormal;
+	thread_attributes.priority = (osPriority_t) osPriorityHigh;
 	thread_attributes.stack_size = 1024;
 
 	CC_driving_threads->driving_update_inverters_handle = osThreadNew(thread_driving_update_inverters, NULL,
@@ -341,7 +341,7 @@ void state_driving_enter(fsm_t *fsm) {
 
 	// driving_read_CAN
 	thread_attributes.name = "driving_read_CAN";
-	thread_attributes.priority = (osPriority_t) osPriorityNormal;
+	thread_attributes.priority = (osPriority_t) osPriorityAboveNormal;
 	thread_attributes.stack_size = 1024;
 
 	CC_driving_threads->driving_read_CAN_handle = osThreadNew(thread_driving_read_CAN, NULL, &thread_attributes);
