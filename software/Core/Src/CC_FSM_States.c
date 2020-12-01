@@ -539,7 +539,7 @@ void state_driving_enter(fsm_t *fsm) {
 				&CC_GlobalState->CAN2_TxMailbox);
 
 		// tell pdm amu fan duty cycle
-		pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_AMU_FAN,
+		pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_ACU_FAN,
 				fan_duty_cycle);
 		CAN_header.ExtId = pdm_set_duty_msg.id;
 		CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
@@ -994,7 +994,10 @@ void state_driving_iterate(fsm_t *fsm) {
 }
 
 void state_driving_exit(fsm_t *fsm) {
-
+	CAN_TxHeaderTypeDef CAN_header;
+	CAN_header.IDE = CAN_ID_EXT;
+	CAN_header.RTR = CAN_RTR_DATA;
+	CAN_header.TransmitGlobalTime = DISABLE;
 	// set duty cycle of left and right, and amu fans
 	uint16_t fan_duty_cycle = 0;
 
@@ -1017,7 +1020,7 @@ void state_driving_exit(fsm_t *fsm) {
 			&CC_GlobalState->CAN2_TxMailbox);
 
 	// tell pdm amu fan duty cycle
-	pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_AMU_FAN,
+	pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_ACU_FAN,
 			fan_duty_cycle);
 	CAN_header.ExtId = pdm_set_duty_msg.id;
 	CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
