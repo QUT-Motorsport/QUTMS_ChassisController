@@ -20,8 +20,6 @@ typedef struct CC_driving_threads {
 CC_driving_threads_t *CC_driving_threads;
 
 void thread_driving_update_pdm(void *argument) {
-	int len = 0;
-	char x[80];
 
 	for (;;) {
 		// acquire pedal values
@@ -33,30 +31,8 @@ void thread_driving_update_pdm(void *argument) {
 				CAN_header.RTR = CAN_RTR_DATA;
 				CAN_header.TransmitGlobalTime = DISABLE;
 
-				uint16_t fan_duty_cycle = (CC_Tractive_State->accel_value / 10);
 
-				len = sprintf(x, "fan: %d\r\n", fan_duty_cycle);
-				CC_LogInfo(x, len);
-/*
-				// tell pdm left fan duty cycle
-				PDM_SetDutyCycle_t pdm_set_duty_msg = { 0 };
-				pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_LEFT_FAN, fan_duty_cycle);
-				CAN_header.ExtId = pdm_set_duty_msg.id;
-				CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
-				HAL_CAN_AddTxMessage(&hcan2, &CAN_header, pdm_set_duty_msg.data, &CC_CAN_State->CAN2_TxMailbox);
 
-				// tell pdm right fan duty cycle
-				pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_RIGHT_FAN, fan_duty_cycle);
-				CAN_header.ExtId = pdm_set_duty_msg.id;
-				CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
-				HAL_CAN_AddTxMessage(&hcan2, &CAN_header, pdm_set_duty_msg.data, &CC_CAN_State->CAN2_TxMailbox);
-
-				// tell pdm back fan duty cycle
-				pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_ACU_FAN, fan_duty_cycle);
-				CAN_header.ExtId = pdm_set_duty_msg.id;
-				CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
-				HAL_CAN_AddTxMessage(&hcan2, &CAN_header, pdm_set_duty_msg.data, &CC_CAN_State->CAN2_TxMailbox);
-*/
 				// update brake light
 				//if (osSemaphoreAcquire(CC_Global_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 					// clear brake light channel
@@ -90,7 +66,7 @@ void thread_driving_update_pdm(void *argument) {
 		//	osSemaphoreRelease(CC_Tractive_State->sem);
 		//}
 
-		osDelay(100);
+		osDelay(200);
 	}
 	// if we exit loop for some reason
 	osThreadTerminate(NULL);
@@ -126,9 +102,9 @@ void thread_driving_update_inverters(void *argument) {
 			// send accel and brake commands to each inverter
 			//if (osSemaphoreAcquire(CC_Tractive_State->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 				for (int i = 0; i < NUM_INVERTERS; i++) {
-					len = sprintf(x, "Inverter: %d Command - A: %d B: %d\r\n", i, CC_Tractive_State->accel_value,
+					len = sprintf(x, "Inverter: %d Command - A: %d B: %d ", i, CC_Tractive_State->accel_value,
 							CC_Tractive_State->brake_value);
-					//CC_LogInfo(x, len);
+					 CC_LogInfo(x, len);
 
 					// set to 0 just in case we're running and tractive has stopped
 					uint16_t accel_value = (CC_Tractive_State->tractive_active) ? CC_Tractive_State->accel_value : 0;
@@ -139,7 +115,8 @@ void thread_driving_update_inverters(void *argument) {
 					inverter_header.DLC = 8;
 					result = HAL_CAN_AddTxMessage(&hcan1, &inverter_header, inverter_cmd.data,
 							&CC_CAN_State->CAN1_TxMailbox);
-
+					len = sprintf(x, "res: %d ", result);
+										 CC_LogInfo(x, len);
 					// brake
 					inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i], INVERTER_VAR_BRAKE,
 							CC_Tractive_State->brake_value);
@@ -147,6 +124,8 @@ void thread_driving_update_inverters(void *argument) {
 					inverter_header.DLC = 8;
 					result = HAL_CAN_AddTxMessage(&hcan1, &inverter_header, inverter_cmd.data,
 							&CC_CAN_State->CAN1_TxMailbox);
+					len = sprintf(x, "res: %d \r\n", result);
+					 CC_LogInfo(x, len);
 				}
 /*
 				osSemaphoreRelease(CC_Tractive_State->sem);
@@ -282,6 +261,9 @@ void thread_driving_read_CAN(void *argument) {
 state_t drivingState = { &state_driving_enter, &state_driving_iterate, &state_driving_exit, "Driving_s" };
 
 void state_driving_enter(fsm_t *fsm) {
+	int len;
+	char x[80];
+
 	HAL_StatusTypeDef result;
 
 	// initialize driving specific variables
@@ -320,28 +302,59 @@ void state_driving_enter(fsm_t *fsm) {
 		/*osSemaphoreRelease(CC_CAN_State->sem);
 	}*/
 
+
+		CAN_TxHeaderTypeDef CAN_header;
+		CAN_header.IDE = CAN_ID_EXT;
+		CAN_header.RTR = CAN_RTR_DATA;
+		CAN_header.TransmitGlobalTime = DISABLE;
+
+		// fans on full while driving
+		uint16_t fan_duty_cycle = 100;
+
+		len = sprintf(x, "fan: %d\r\n", fan_duty_cycle);
+		CC_LogInfo(x, len);
+
+		// tell pdm left fan duty cycle
+		PDM_SetDutyCycle_t pdm_set_duty_msg = { 0 };
+		pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_LEFT_FAN, fan_duty_cycle);
+		CAN_header.ExtId = pdm_set_duty_msg.id;
+		CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
+		HAL_CAN_AddTxMessage(&hcan2, &CAN_header, pdm_set_duty_msg.data, &CC_CAN_State->CAN2_TxMailbox);
+
+		// tell pdm right fan duty cycle
+		pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_RIGHT_FAN, fan_duty_cycle);
+		CAN_header.ExtId = pdm_set_duty_msg.id;
+		CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
+		HAL_CAN_AddTxMessage(&hcan2, &CAN_header, pdm_set_duty_msg.data, &CC_CAN_State->CAN2_TxMailbox);
+
+		// tell pdm back fan duty cycle
+		pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_ACU_FAN, fan_duty_cycle);
+		CAN_header.ExtId = pdm_set_duty_msg.id;
+		CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
+		HAL_CAN_AddTxMessage(&hcan2, &CAN_header, pdm_set_duty_msg.data, &CC_CAN_State->CAN2_TxMailbox);
+
 	// start rtos threads for driving state
 	CC_driving_threads = malloc(sizeof(CC_driving_threads_t));
 
 	// driving_update_pdm
 	osThreadAttr_t thread_attributes = { 0 };
 	thread_attributes.name = "driving_update_pdm";
-	thread_attributes.priority = (osPriority_t) osPriorityNormal;
+	thread_attributes.priority = (osPriority_t) osPriorityLow;
 	thread_attributes.stack_size = 1024;
 
-	CC_driving_threads->driving_update_pdm_handle = osThreadNew(thread_driving_update_pdm, NULL, &thread_attributes);
+	 CC_driving_threads->driving_update_pdm_handle = osThreadNew(thread_driving_update_pdm, NULL, &thread_attributes);
 
 	// driving_update_inverters
 	thread_attributes.name = "driving_update_inverters";
 	thread_attributes.priority = (osPriority_t) osPriorityHigh;
-	thread_attributes.stack_size = 1024;
+	thread_attributes.stack_size = 1500;
 
 	CC_driving_threads->driving_update_inverters_handle = osThreadNew(thread_driving_update_inverters, NULL,
 			&thread_attributes);
 
 	// driving_read_CAN
 	thread_attributes.name = "driving_read_CAN";
-	thread_attributes.priority = (osPriority_t) osPriorityAboveNormal;
+	thread_attributes.priority = (osPriority_t) osPriorityNormal;
 	thread_attributes.stack_size = 1024;
 
 	CC_driving_threads->driving_read_CAN_handle = osThreadNew(thread_driving_read_CAN, NULL, &thread_attributes);
@@ -428,6 +441,39 @@ void state_driving_iterate(fsm_t *fsm) {
 }
 
 void state_driving_exit(fsm_t *fsm) {
+	int len;
+	char x[80];
+	CAN_TxHeaderTypeDef CAN_header;
+			CAN_header.IDE = CAN_ID_EXT;
+			CAN_header.RTR = CAN_RTR_DATA;
+			CAN_header.TransmitGlobalTime = DISABLE;
+
+			// fans on full while driving
+			uint16_t fan_duty_cycle = 0;
+
+			len = sprintf(x, "fan: %d\r\n", fan_duty_cycle);
+			CC_LogInfo(x, len);
+
+			// tell pdm left fan duty cycle
+			PDM_SetDutyCycle_t pdm_set_duty_msg = { 0 };
+			pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_LEFT_FAN, fan_duty_cycle);
+			CAN_header.ExtId = pdm_set_duty_msg.id;
+			CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
+			HAL_CAN_AddTxMessage(&hcan2, &CAN_header, pdm_set_duty_msg.data, &CC_CAN_State->CAN2_TxMailbox);
+
+			// tell pdm right fan duty cycle
+			pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_RIGHT_FAN, fan_duty_cycle);
+			CAN_header.ExtId = pdm_set_duty_msg.id;
+			CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
+			HAL_CAN_AddTxMessage(&hcan2, &CAN_header, pdm_set_duty_msg.data, &CC_CAN_State->CAN2_TxMailbox);
+
+			// tell pdm back fan duty cycle
+			pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_ACU_FAN, fan_duty_cycle);
+			CAN_header.ExtId = pdm_set_duty_msg.id;
+			CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
+			HAL_CAN_AddTxMessage(&hcan2, &CAN_header, pdm_set_duty_msg.data, &CC_CAN_State->CAN2_TxMailbox);
+
+
 	if (CC_driving_threads != NULL) {
 		// terminate threads
 		osThreadTerminate(CC_driving_threads->driving_read_CAN_handle);

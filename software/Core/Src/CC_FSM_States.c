@@ -11,7 +11,7 @@
 #define HEARTBEAT_TIMEOUT 100
 
 // 15%
-#define PEDAL_IMPLAUSIBILITY 150
+#define PEDAL_IMPLAUSIBILITY 200
 
 #define BRAKE_PRESSURE_MIN 400
 #define BRAKE_PRESSURE_MAX 1400
@@ -147,7 +147,7 @@ void thread_read_pedals(void *argument) {
 		 }*/
 
 		// run every 10ms
-		osDelay(10);
+		osDelay(20);
 	}
 
 	// if we exit loop for some reason

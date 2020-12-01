@@ -68,7 +68,7 @@ void MX_FREERTOS_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 osThreadId_t fsmThread;
-const osThreadAttr_t fsmThreadAttr = { .stack_size = 4096 };
+const osThreadAttr_t fsmThreadAttr = { .stack_size = 6000 };
 fsm_t *fsm;
 /* USER CODE END 0 */
 
