@@ -99,7 +99,7 @@ void state_start_enter(fsm_t *fsm) {
 			CC_GlobalState->ADC_Debug = true;
 
 			/* Boards w/ Heartbeats */
-			CC_GlobalState->PDM_Debug = true;
+			CC_GlobalState->PDM_Debug = false;
 			CC_GlobalState->AMS_Debug = false;
 			CC_GlobalState->SHDN_1_Debug = false;
 			CC_GlobalState->SHDN_2_Debug = true;
