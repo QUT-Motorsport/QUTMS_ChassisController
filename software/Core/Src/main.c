@@ -26,7 +26,7 @@
 #include "fatfs.h"
 #include "sdmmc.h"
 #include "usart.h"
-#include "usb_otg.h"
+#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -71,9 +71,7 @@ void MX_FREERTOS_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 osThreadId_t fsmThread;
-const osThreadAttr_t fsmThreadAttr = {
-		.stack_size = 2048
-};
+const osThreadAttr_t fsmThreadAttr = { .stack_size = 2048 };
 /* USER CODE END 0 */
 
 /**
@@ -112,20 +110,20 @@ int main(void)
   MX_ADC2_Init();
   MX_ADC3_Init();
   MX_ADC1_Init();
-  MX_USB_OTG_HS_PCD_Init();
   MX_SDMMC1_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-	if(HAL_CAN_Start(&hcan1) != HAL_OK)
-	{
+	if (HAL_SD_Init(&hsd1) != HAL_OK) {
 		Error_Handler();
 	}
-	if(HAL_CAN_Start(&hcan2) != HAL_OK)
-	{
+
+	if (HAL_CAN_Start(&hcan1) != HAL_OK) {
 		Error_Handler();
 	}
-	if(HAL_CAN_Start(&hcan3) != HAL_OK)
-	{
+	if (HAL_CAN_Start(&hcan2) != HAL_OK) {
+		Error_Handler();
+	}
+	if (HAL_CAN_Start(&hcan3) != HAL_OK) {
 		Error_Handler();
 	}
 
@@ -169,18 +167,15 @@ int main(void)
 	sFilterConfig3.FilterActivation = ENABLE;
 	sFilterConfig3.SlaveStartFilterBank = 14;
 
-	if (HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig1) != HAL_OK)
-	{
+	if (HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig1) != HAL_OK) {
 		/* Filter configuration Error */
 		Error_Handler();
 	}
-	if (HAL_CAN_ConfigFilter(&hcan2, &sFilterConfig2) != HAL_OK)
-	{
+	if (HAL_CAN_ConfigFilter(&hcan2, &sFilterConfig2) != HAL_OK) {
 		/* Filter configuration Error */
 		Error_Handler();
 	}
-	if (HAL_CAN_ConfigFilter(&hcan3, &sFilterConfig3) != HAL_OK)
-	{
+	if (HAL_CAN_ConfigFilter(&hcan3, &sFilterConfig3) != HAL_OK) {
 		/* Filter configuration Error */
 		Error_Handler();
 	}
@@ -201,8 +196,7 @@ int main(void)
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	while (1)
-	{
+	while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -273,9 +267,8 @@ void SystemClock_Config(void)
  * @param error Full error string
  * @retval None
  */
-void CC_LogInfo(char* msg, size_t length)
-{
-	HAL_UART_Transmit(&huart3, (uint8_t *)msg, length, HAL_MAX_DELAY);
+void CC_LogInfo(char *msg, size_t length) {
+	HAL_UART_Transmit(&huart3, (uint8_t*) msg, length, HAL_MAX_DELAY);
 }
 
 /**
@@ -283,16 +276,13 @@ void CC_LogInfo(char* msg, size_t length)
  * @param fsm the FSM object passed to the loop
  * @retval None
  */
-__NO_RETURN void fsm_thread_mainLoop(void *fsm)
-{
+__NO_RETURN void fsm_thread_mainLoop(void *fsm) {
 	CC_LogInfo("Entering FSM Thread\r\n", strlen("Entering FSM Thread\r\n"));
 	fsm_setLogFunction(fsm, &CC_LogInfo);
 	fsm_reset(fsm, &startState);
 	//fsm_changeState(fsm, &debugState, "Forcing debug state");
-	for(;;)
-	{
-		while(HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0)
-		{
+	for (;;) {
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0) {
 			CC_CAN_Generic_t msg;
 			HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &(msg.header), msg.data);
 			osMessageQueuePut(CC_GlobalState->CAN1Queue, &msg, 0U, 0U);
@@ -301,8 +291,7 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 			//CC_LogInfo(x, len);
 		}
 
-		while(HAL_CAN_GetRxFifoFillLevel(&hcan2, CAN_RX_FIFO0) > 0)
-		{
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan2, CAN_RX_FIFO0) > 0) {
 			CC_CAN_Generic_t msg;
 			HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO0, &(msg.header), msg.data);
 			osMessageQueuePut(CC_GlobalState->CAN2Queue, &msg, 0U, 0U);
@@ -311,8 +300,7 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm)
 			//CC_LogInfo(x, len);
 		}
 
-		while(HAL_CAN_GetRxFifoFillLevel(&hcan3, CAN_RX_FIFO0) > 0)
-		{
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan3, CAN_RX_FIFO0) > 0) {
 			CC_CAN_Generic_t msg;
 			HAL_CAN_GetRxMessage(&hcan3, CAN_RX_FIFO0, &(msg.header), msg.data);
 			osMessageQueuePut(CC_GlobalState->CAN3Queue, &msg, 0U, 0U);
