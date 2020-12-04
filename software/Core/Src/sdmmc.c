@@ -25,6 +25,7 @@
 /* USER CODE END 0 */
 
 SD_HandleTypeDef hsd1;
+DMA_HandleTypeDef hdma_sdmmc1;
 
 /* SDMMC1 init function */
 
@@ -78,6 +79,36 @@ void HAL_SD_MspInit(SD_HandleTypeDef* sdHandle)
     GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+    /* SDMMC1 DMA Init */
+    /* SDMMC1 Init */
+    hdma_sdmmc1.Instance = DMA2_Stream3;
+    hdma_sdmmc1.Init.Channel = DMA_CHANNEL_4;
+    hdma_sdmmc1.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_sdmmc1.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_sdmmc1.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_sdmmc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    hdma_sdmmc1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    hdma_sdmmc1.Init.Mode = DMA_PFCTRL;
+    hdma_sdmmc1.Init.Priority = DMA_PRIORITY_LOW;
+    hdma_sdmmc1.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+    hdma_sdmmc1.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    hdma_sdmmc1.Init.MemBurst = DMA_MBURST_INC4;
+    hdma_sdmmc1.Init.PeriphBurst = DMA_PBURST_INC4;
+    if (HAL_DMA_Init(&hdma_sdmmc1) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* Several peripheral DMA handle pointers point to the same DMA handle.
+     Be aware that there is only one stream to perform all the requested DMAs. */
+    /* Be sure to change transfer direction before calling
+     HAL_SD_ReadBlocks_DMA or HAL_SD_WriteBlocks_DMA. */
+    __HAL_LINKDMA(sdHandle,hdmarx,hdma_sdmmc1);
+    __HAL_LINKDMA(sdHandle,hdmatx,hdma_sdmmc1);
+
+    /* SDMMC1 interrupt Init */
+    HAL_NVIC_SetPriority(SDMMC1_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(SDMMC1_IRQn);
   /* USER CODE BEGIN SDMMC1_MspInit 1 */
 
   /* USER CODE END SDMMC1_MspInit 1 */
@@ -108,6 +139,12 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef* sdHandle)
 
     HAL_GPIO_DeInit(GPIOD, GPIO_PIN_2);
 
+    /* SDMMC1 DMA DeInit */
+    HAL_DMA_DeInit(sdHandle->hdmarx);
+    HAL_DMA_DeInit(sdHandle->hdmatx);
+
+    /* SDMMC1 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(SDMMC1_IRQn);
   /* USER CODE BEGIN SDMMC1_MspDeInit 1 */
 
   /* USER CODE END SDMMC1_MspDeInit 1 */
