@@ -113,9 +113,7 @@ int main(void)
   MX_SDMMC1_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-	if (HAL_SD_Init(&hsd1) != HAL_OK) {
-		Error_Handler();
-	}
+
 
 	if (HAL_CAN_Start(&hcan1) != HAL_OK) {
 		Error_Handler();
