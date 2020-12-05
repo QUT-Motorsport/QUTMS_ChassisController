@@ -123,11 +123,11 @@ void state_start_enter(fsm_t *fsm) {
 
 			/* Allocate CAN Queues */
 			CC_GlobalState->CAN1Queue = osMessageQueueNew(CC_CAN_QUEUESIZE,
-					sizeof(CC_CAN_Generic_t), NULL);
+					sizeof(CAN_MSG_Generic_t), NULL);
 			CC_GlobalState->CAN2Queue = osMessageQueueNew(CC_CAN_QUEUESIZE,
-					sizeof(CC_CAN_Generic_t), NULL);
+					sizeof(CAN_MSG_Generic_t), NULL);
 			CC_GlobalState->CAN3Queue = osMessageQueueNew(CC_CAN_QUEUESIZE,
-					sizeof(CC_CAN_Generic_t), NULL);
+					sizeof(CAN_MSG_Generic_t), NULL);
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
 
@@ -164,7 +164,7 @@ void state_start_iterate(fsm_t *fsm) {
 
 	/* Monitor CAN Queue */
 	while (osMessageQueueGetCount(CC_GlobalState->CAN2Queue) >= 1) {
-		CC_CAN_Generic_t msg;
+		CAN_MSG_Generic_t msg;
 		if (osMessageQueueGet(CC_GlobalState->CAN2Queue, &msg, 0U, 0U)
 				== osOK) {
 			/* If Startup Ok */
@@ -321,7 +321,7 @@ void state_idle_iterate(fsm_t *fsm) {
 
 	/* Check for Queued CAN Packets on CAN1 */
 	while (osMessageQueueGetCount(CC_GlobalState->CAN1Queue) >= 1) {
-		CC_CAN_Generic_t msg;
+		CAN_MSG_Generic_t msg;
 		if (osMessageQueueGet(CC_GlobalState->CAN1Queue, &msg, 0U, 0U)
 				== osOK) {
 			if (msg.header.IDE == CAN_ID_STD) {
@@ -335,7 +335,7 @@ void state_idle_iterate(fsm_t *fsm) {
 
 	/* Check for Queued CAN Packets on CAN2 */
 	while (osMessageQueueGetCount(CC_GlobalState->CAN2Queue) >= 1) {
-		CC_CAN_Generic_t msg;
+		CAN_MSG_Generic_t msg;
 		if (osMessageQueueGet(CC_GlobalState->CAN2Queue, &msg, 0U, 0U)
 				== osOK) {
 			/* Packet Handler */
@@ -651,7 +651,7 @@ void state_driving_iterate(fsm_t *fsm) {
 	while (osMessageQueueGetCount(CC_GlobalState->CAN1Queue) >= 1) {
 		char x[80];
 		int len;
-		CC_CAN_Generic_t msg;
+		CAN_MSG_Generic_t msg;
 		if (osMessageQueueGet(CC_GlobalState->CAN1Queue, &msg, 0U, 0U)
 				== osOK) {
 			if (msg.header.IDE == CAN_ID_STD) {
@@ -689,7 +689,7 @@ void state_driving_iterate(fsm_t *fsm) {
 
 	/* Check for Queued CAN Packets on CAN2 */
 	while (osMessageQueueGetCount(CC_GlobalState->CAN2Queue) >= 1) {
-		CC_CAN_Generic_t msg;
+		CAN_MSG_Generic_t msg;
 		if (osMessageQueueGet(CC_GlobalState->CAN2Queue, &msg, 0U, 0U)
 				== osOK) {
 			/* Packet Handler */
