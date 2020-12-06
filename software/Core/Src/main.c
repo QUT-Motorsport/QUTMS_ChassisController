@@ -38,6 +38,7 @@
 #include "SHDN_IMD_CAN_Messages.h"
 #include "SHDN_BSPD_CAN_Messages.h"
 #include "SHDN_CAN_Messages.h"
+#include "data_logger.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -137,6 +138,7 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
+	// setup sd card
 	if (HAL_SD_Init(&hsd1) != HAL_OK) {
 		Error_Handler();
 	}
@@ -204,11 +206,27 @@ int main(void)
 		Error_Handler();
 	}
 
+	// setup log queue
+	if (!setup_log_queues()) {
+		// log that failed???
+		Error_Handler();
+	}
+
 	//Create FSM instance
 	fsm_t *fsm = fsm_new(&startState);
 
 	// Create a new thread, where our FSM will run.
 	osThreadNew(fsm_thread_mainLoop, fsm, &fsmThreadAttr);
+
+	// setup logging thread
+	osThreadAttr_t logging_thread = { 0 };
+	logging_thread.name = "sd_logger";
+	logging_thread.priority = (osPriority_t) osPriorityNormal;
+	logging_thread.stack_size = 2048;
+
+	// create new thread for logging
+	osThreadNew(thread_data_logger, NULL, &logging_thread);
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -298,7 +316,12 @@ void SystemClock_Config(void)
  * @retval None
  */
 void CC_LogInfo(char *msg, size_t length) {
-	LogToSD(msg, length);
+	serial_log_t log_msg = {0};
+	strcpy(log_msg.data,msg);
+	log_msg.len = length;
+	log_msg.current_ticks = HAL_GetTick();
+
+	add_serial_log(&log_msg);
 	HAL_UART_Transmit(&huart3, (uint8_t*) msg, length, HAL_MAX_DELAY);
 }
 
@@ -314,27 +337,46 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
 	//fsm_changeState(fsm, &debugState, "Forcing debug state");
 	for (;;) {
 		while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0) {
-			CC_CAN_Generic_t msg;
+			CAN_MSG_Generic_t msg;
 			HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &(msg.header), msg.data);
 			osMessageQueuePut(CC_GlobalState->CAN1Queue, &msg, 0U, 0U);
+
+			CAN_log_t log_msg = {0};
+			log_msg.can_msg = msg;
+			log_msg.current_ticks = HAL_GetTick();
+
+			add_CAN_log(&log_msg);
+
 			//char x[80];
 			//int len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.StdId);
 			//CC_LogInfo(x, len);
 		}
 
 		while (HAL_CAN_GetRxFifoFillLevel(&hcan2, CAN_RX_FIFO0) > 0) {
-			CC_CAN_Generic_t msg;
+			CAN_MSG_Generic_t msg;
 			HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO0, &(msg.header), msg.data);
 			osMessageQueuePut(CC_GlobalState->CAN2Queue, &msg, 0U, 0U);
+
+			CAN_log_t log_msg = {0};
+			log_msg.can_msg = msg;
+			log_msg.current_ticks = HAL_GetTick();
+
+			add_CAN_log(&log_msg);
 			//char x[80];
 			//int len = sprintf(x, "[%li] Got CAN msg from CAN2: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
 			//CC_LogInfo(x, len);
 		}
 
 		while (HAL_CAN_GetRxFifoFillLevel(&hcan3, CAN_RX_FIFO0) > 0) {
-			CC_CAN_Generic_t msg;
+			CAN_MSG_Generic_t msg;
 			HAL_CAN_GetRxMessage(&hcan3, CAN_RX_FIFO0, &(msg.header), msg.data);
 			osMessageQueuePut(CC_GlobalState->CAN3Queue, &msg, 0U, 0U);
+
+			CAN_log_t log_msg = {0};
+			log_msg.can_msg = msg;
+			log_msg.current_ticks = HAL_GetTick();
+
+			add_CAN_log(&log_msg);
 			//char x[80];
 			//int len = sprintf(x, "[%li] Got CAN msg from CAN3: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
 			//CC_LogInfo(x, len);

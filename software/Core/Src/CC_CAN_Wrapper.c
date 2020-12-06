@@ -25,7 +25,7 @@ bool Send_CC_FatalShutdown(char* errorCause, bool echo,
 			.DLC = 8,
 			.TransmitGlobalTime = DISABLE,
 	};
-	HAL_CAN_AddTxMessage(CanHandle, &shutdownheader, shutdownInverter.data, CAN1_Mailbox);
+	CC_send_can_msg(CanHandle, &shutdownheader, shutdownInverter.data, CAN1_Mailbox);
 
 	CC_ShutdownInverter_t shutdownSecondInverter = Compose_CC_ShutdownInverter(INVERTER_2_NODE_ID);
 	CAN_TxHeaderTypeDef shutdownSecondheader =
@@ -36,7 +36,7 @@ bool Send_CC_FatalShutdown(char* errorCause, bool echo,
 			.DLC = 8,
 			.TransmitGlobalTime = DISABLE,
 	};
-	HAL_CAN_AddTxMessage(CanHandle, &shutdownSecondheader, shutdownSecondInverter.data, CAN1_Mailbox);
+	CC_send_can_msg(CanHandle, &shutdownSecondheader, shutdownSecondInverter.data, CAN1_Mailbox);
 
 	CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
 	CAN_TxHeaderTypeDef header =
@@ -48,9 +48,9 @@ bool Send_CC_FatalShutdown(char* errorCause, bool echo,
 			.TransmitGlobalTime = DISABLE,
 	};
 	uint8_t data[1] = {0xF};
-	HAL_CAN_AddTxMessage(CanHandle, &header, data, CAN1_Mailbox);
-	HAL_CAN_AddTxMessage(CanHandle2, &header, data, CAN2_Mailbox);
-	HAL_CAN_AddTxMessage(CanHandle3, &header, data, CAN3_Mailbox);
+	CC_send_can_msg(CanHandle, &header, data, CAN1_Mailbox);
+	CC_send_can_msg(CanHandle2, &header, data, CAN2_Mailbox);
+	CC_send_can_msg(CanHandle3, &header, data, CAN3_Mailbox);
 
 	return true;
 }
