@@ -138,7 +138,10 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
-
+	// setup sd card
+	if (HAL_SD_Init(&hsd1) != HAL_OK) {
+		Error_Handler();
+	}
 
 	if (HAL_CAN_Start(&hcan1) != HAL_OK) {
 		Error_Handler();
@@ -314,7 +317,7 @@ void SystemClock_Config(void)
  */
 void CC_LogInfo(char *msg, size_t length) {
 	serial_log_t log_msg = {0};
-	log_msg.data = msg;
+	strcpy(log_msg.data,msg);
 	log_msg.len = length;
 	log_msg.current_ticks = HAL_GetTick();
 

@@ -148,7 +148,7 @@ void state_start_enter(fsm_t *fsm) {
 	CAN_TxHeaderTypeDef header = { .ExtId = initiateStartup.id, .IDE =
 			CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = 1, .TransmitGlobalTime = DISABLE, };
 	uint8_t data[1] = { 0xF };
-	HAL_CAN_AddTxMessage(&CAN_2, &header, data,
+	CC_send_can_msg(&CAN_2, &header, data,
 			&CC_GlobalState->CAN2_TxMailbox);
 	return;
 
@@ -189,7 +189,7 @@ void state_start_iterate(fsm_t *fsm) {
 		{ .ExtId = pdmStartup.id, .IDE = CAN_ID_EXT,
 				.RTR = CAN_RTR_DATA, .DLC = sizeof(pdmStartup.data),
 				.TransmitGlobalTime = DISABLE, };
-		HAL_CAN_AddTxMessage(&hcan2, &header, pdmStartup.data,
+		CC_send_can_msg(&hcan2, &header, pdmStartup.data,
 				&CC_GlobalState->CAN2_TxMailbox);
 
 		/* Set Heartbeat Timers */
@@ -229,7 +229,7 @@ void state_start_exit(fsm_t *fsm) {
 	CAN_header.ExtId = pdm_set_duty_msg.id;
 	CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
 
-	HAL_CAN_AddTxMessage(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
+	CC_send_can_msg(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
 			&CC_GlobalState->CAN2_TxMailbox);
 
 	return;
@@ -473,11 +473,11 @@ void state_idle_exit(fsm_t *fsm) {
 	CAN_TxHeaderTypeDef header = { .ExtId = readyToDrive.id, .IDE = CAN_ID_EXT,
 			.RTR = CAN_RTR_DATA, .DLC = 1, .TransmitGlobalTime = DISABLE, };
 	uint8_t data[1] = { 0xF };
-	HAL_CAN_AddTxMessage(&hcan1, &header, data,
+	CC_send_can_msg(&hcan1, &header, data,
 			&CC_GlobalState->CAN1_TxMailbox);
-	HAL_CAN_AddTxMessage(&hcan2, &header, data,
+	CC_send_can_msg(&hcan2, &header, data,
 			&CC_GlobalState->CAN2_TxMailbox);
-	HAL_CAN_AddTxMessage(&hcan3, &header, data,
+	CC_send_can_msg(&hcan3, &header, data,
 			&CC_GlobalState->CAN3_TxMailbox);
 
 	if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
@@ -493,7 +493,7 @@ void state_idle_exit(fsm_t *fsm) {
 	CAN_TxHeaderTypeDef sirenHeader = { .ExtId = rtdSiren.id, .IDE = CAN_ID_EXT,
 			.RTR = CAN_RTR_DATA, .DLC = sizeof(rtdSiren.data),
 			.TransmitGlobalTime = DISABLE, };
-	HAL_CAN_AddTxMessage(&hcan2, &sirenHeader, rtdSiren.data,
+	CC_send_can_msg(&hcan2, &sirenHeader, rtdSiren.data,
 			&CC_GlobalState->CAN2_TxMailbox);
 
 	return;
@@ -542,7 +542,7 @@ void state_driving_enter(fsm_t *fsm) {
 		CAN_header.ExtId = pdm_set_duty_msg.id;
 		CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
 
-		HAL_CAN_AddTxMessage(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
+		CC_send_can_msg(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
 				&CC_GlobalState->CAN2_TxMailbox);
 
 		// tell pdm right fan duty cycle
@@ -551,7 +551,7 @@ void state_driving_enter(fsm_t *fsm) {
 		CAN_header.ExtId = pdm_set_duty_msg.id;
 		CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
 
-		HAL_CAN_AddTxMessage(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
+		CC_send_can_msg(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
 				&CC_GlobalState->CAN2_TxMailbox);
 
 		// tell pdm amu fan duty cycle
@@ -560,7 +560,7 @@ void state_driving_enter(fsm_t *fsm) {
 		CAN_header.ExtId = pdm_set_duty_msg.id;
 		CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
 
-		HAL_CAN_AddTxMessage(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
+		CC_send_can_msg(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
 				&CC_GlobalState->CAN2_TxMailbox);
 
 		osSemaphoreRelease(CC_GlobalState->sem);
@@ -575,7 +575,7 @@ void state_driving_enter(fsm_t *fsm) {
 	CAN_TxHeaderTypeDef runLeftHeader = { .StdId = runLeftScript.id, .IDE =
 			CAN_ID_STD, .RTR = CAN_RTR_DATA, .DLC = sizeof(runLeftScript.data),
 			.TransmitGlobalTime = DISABLE, };
-	HAL_CAN_AddTxMessage(&CAN_1, &runLeftHeader, runLeftScript.data,
+	CC_send_can_msg(&CAN_1, &runLeftHeader, runLeftScript.data,
 			&CC_GlobalState->CAN1_TxMailbox);
 
 	CC_SetBool_t runRightScript = Compose_CC_SetBool(INVERTER_RIGHT_NODE_ID,
@@ -583,7 +583,7 @@ void state_driving_enter(fsm_t *fsm) {
 	CAN_TxHeaderTypeDef runRightHeader = { .StdId = runRightScript.id, .IDE =
 			CAN_ID_STD, .RTR = CAN_RTR_DATA, .DLC = sizeof(runRightScript.data),
 			.TransmitGlobalTime = DISABLE, };
-	HAL_CAN_AddTxMessage(&CAN_1, &runRightHeader, runRightScript.data,
+	CC_send_can_msg(&CAN_1, &runRightHeader, runRightScript.data,
 			&CC_GlobalState->CAN1_TxMailbox);
 	return;
 }
@@ -605,7 +605,7 @@ void state_driving_iterate(fsm_t *fsm) {
 			CAN_TxHeaderTypeDef sirenHeader = { .ExtId = rtdSiren.id, .IDE =
 					CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(rtdSiren.data),
 					.TransmitGlobalTime = DISABLE, };
-			HAL_CAN_AddTxMessage(&hcan2, &sirenHeader, rtdSiren.data,
+			CC_send_can_msg(&hcan2, &sirenHeader, rtdSiren.data,
 					&CC_GlobalState->CAN2_TxMailbox);
 		}
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
@@ -892,7 +892,7 @@ void state_driving_iterate(fsm_t *fsm) {
 			inverter_header.StdId = inverter_enable.id;
 			inverter_header.DLC = 8;
 
-			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header,
+			result = CC_send_can_msg(&CAN_1, &inverter_header,
 					inverter_enable.data, &CC_GlobalState->CAN1_TxMailbox);
 
 		}
@@ -915,7 +915,7 @@ void state_driving_iterate(fsm_t *fsm) {
 					INVERTER_VAR_ACCEL, CC_GlobalState->accelTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header,
+			result = CC_send_can_msg(&CAN_1, &inverter_header,
 					inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 
 			// brake
@@ -923,7 +923,7 @@ void state_driving_iterate(fsm_t *fsm) {
 					INVERTER_VAR_BRAKE, CC_GlobalState->brakeTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header,
+			result = CC_send_can_msg(&CAN_1, &inverter_header,
 					inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 		}
 
@@ -948,7 +948,7 @@ void state_driving_iterate(fsm_t *fsm) {
 	//				.DLC = 8,
 	//				.TransmitGlobalTime = DISABLE,
 	//		};
-	//		HAL_CAN_AddTxMessage(&CAN_1, &accelZeroLeftHeader, accelZeroLeftCommand.data, &CC_GlobalState->CAN1_TxMailbox);
+	//		CC_send_can_msg(&CAN_1, &accelZeroLeftHeader, accelZeroLeftCommand.data, &CC_GlobalState->CAN1_TxMailbox);
 	//
 	//		CC_SetVariable_t accelZeroRightCommand = Compose_CC_SetVariable(INVERTER_RIGHT_NODE_ID,
 	//				0x01,
@@ -961,7 +961,7 @@ void state_driving_iterate(fsm_t *fsm) {
 	//				.DLC = 8,
 	//				.TransmitGlobalTime = DISABLE,
 	//		};
-	//		HAL_CAN_AddTxMessage(&CAN_1, &accelZeroRightHeader, accelZeroRightCommand.data, &CC_GlobalState->CAN1_TxMailbox);
+	//		CC_send_can_msg(&CAN_1, &accelZeroRightHeader, accelZeroRightCommand.data, &CC_GlobalState->CAN1_TxMailbox);
 	//
 	//		/* Broadcast Soft Shutdown on all CAN lines */
 	//		CC_SoftShutdown_t softShutdown = Compose_CC_SoftShutdown();
@@ -974,9 +974,9 @@ void state_driving_iterate(fsm_t *fsm) {
 	//				.TransmitGlobalTime = DISABLE,
 	//		};
 	//		uint8_t data[1] = {0xF};
-	//		HAL_CAN_AddTxMessage(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-	//		HAL_CAN_AddTxMessage(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-	//		HAL_CAN_AddTxMessage(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+	//		CC_send_can_msg(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+	//		CC_send_can_msg(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+	//		CC_send_can_msg(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
 	//		fsm_changeState(fsm, &idleState, "Soft Shutdown Requested (CAN)");
 	//	}
 	/*
@@ -1004,7 +1004,7 @@ void state_driving_iterate(fsm_t *fsm) {
 		CAN_TxHeaderTypeDef brakeHeader = { .ExtId = brakeLightState.id, .IDE =
 				CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(brakeLightState.data),
 				.TransmitGlobalTime = DISABLE, };
-		HAL_CAN_AddTxMessage(&hcan2, &brakeHeader, brakeLightState.data,
+		CC_send_can_msg(&hcan2, &brakeHeader, brakeLightState.data,
 				&CC_GlobalState->CAN2_TxMailbox);
 	}
 }
@@ -1023,7 +1023,7 @@ void state_driving_exit(fsm_t *fsm) {
 	CAN_header.ExtId = pdm_set_duty_msg.id;
 	CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
 
-	HAL_CAN_AddTxMessage(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
+	CC_send_can_msg(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
 			&CC_GlobalState->CAN2_TxMailbox);
 
 	// tell pdm right fan duty cycle
@@ -1032,7 +1032,7 @@ void state_driving_exit(fsm_t *fsm) {
 	CAN_header.ExtId = pdm_set_duty_msg.id;
 	CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
 
-	HAL_CAN_AddTxMessage(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
+	CC_send_can_msg(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
 			&CC_GlobalState->CAN2_TxMailbox);
 
 	// tell pdm amu fan duty cycle
@@ -1041,7 +1041,7 @@ void state_driving_exit(fsm_t *fsm) {
 	CAN_header.ExtId = pdm_set_duty_msg.id;
 	CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
 
-	HAL_CAN_AddTxMessage(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
+	CC_send_can_msg(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
 			&CC_GlobalState->CAN2_TxMailbox);
 
 	/* Broadcast Soft Shutdown */
@@ -1056,7 +1056,7 @@ void state_debug_enter(fsm_t *fsm) {
 	uint8_t test[1] = { 0 };
 	CAN_TxHeaderTypeDef header = { .ExtId = init.id, .IDE = CAN_ID_EXT, .RTR =
 			CAN_RTR_DATA, .DLC = sizeof(test), .TransmitGlobalTime = DISABLE, };
-	HAL_CAN_AddTxMessage(&hcan2, &header, test,
+	CC_send_can_msg(&hcan2, &header, test,
 			&CC_GlobalState->CAN2_TxMailbox);
 	osDelay(100);
 	return;
@@ -1070,7 +1070,7 @@ void state_debug_iterate(fsm_t *fsm) {
 		{ .ExtId = pdmStartup.id, .IDE = CAN_ID_EXT,
 				.RTR = CAN_RTR_DATA, .DLC = sizeof(pdmStartup.data),
 				.TransmitGlobalTime = DISABLE, };
-		HAL_CAN_AddTxMessage(&hcan2, &header, pdmStartup.data,
+		CC_send_can_msg(&hcan2, &header, pdmStartup.data,
 				&CC_GlobalState->CAN2_TxMailbox);
 		osDelay(100);
 	}
