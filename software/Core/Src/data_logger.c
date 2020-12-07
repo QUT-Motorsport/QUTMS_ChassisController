@@ -11,7 +11,10 @@
 #include "sdmmc.h"
 #include <string.h>
 #include <stdio.h>
-#include "stdbool.h"
+#include <stdbool.h>
+#include <stdlib.h>
+
+
 
 #define LOG_SERIAL_QUEUE_SIZE 10
 #define LOG_CAN_QUEUE_SIZE 20

@@ -39,6 +39,8 @@
 #include "SHDN_BSPD_CAN_Messages.h"
 #include "SHDN_CAN_Messages.h"
 #include "data_logger.h"
+
+#include <unistd.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -98,7 +100,7 @@ int _write(int file, char *data, int len)
     {
         return -1;
     }
-    HAL_StatusTypeDef s = HAL_UART_Transmit(&huart1, (uint8_t*)data, len, HAL_MAX_DELAY);
+    HAL_StatusTypeDef s = HAL_UART_Transmit(&huart3, (uint8_t*)data, len, HAL_MAX_DELAY);
 
     return (s == HAL_OK ? len : 0);
 }

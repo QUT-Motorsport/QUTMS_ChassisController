@@ -439,16 +439,16 @@ void state_idle_iterate(fsm_t *fsm) {
 		if (!CC_GlobalState->precharge_enabled) {
 			if (HAL_GetTick() - CC_GlobalState->flashlight_ticks > 500) {
 				HAL_GPIO_TogglePin(HSOUT_RTD_LED_GPIO_Port,
-											HSOUT_RTD_LED_Pin);
+				HSOUT_RTD_LED_Pin);
 				CC_GlobalState->flashlight_ticks = HAL_GetTick();
 			}
 
-
 			if (HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin)) {
-				if (CC_GlobalState->prechargeTicks == 0) {
+				if (CC_GlobalState->precharge_ticks == 0) {
 					// button just got pressed so init counter
-					CC_GlobalState->prechargeTicks = HAL_GetTick();
-					if (HAL_GetTick() - CC_GlobalState->prechargeTicks > 2000) {
+					CC_GlobalState->precharge_ticks = HAL_GetTick();
+					if (HAL_GetTick() - CC_GlobalState->precharge_ticks
+							> 2000) {
 						// button held for 2 seconds
 						CC_GlobalState->precharge_enabled = true;
 						CC_GlobalState->precharge_done = false;
@@ -458,20 +458,19 @@ void state_idle_iterate(fsm_t *fsm) {
 						CAN_TxHeaderTypeDef header = { .ExtId = readyToDrive.id,
 								.IDE = CAN_ID_EXT, .RTR = CAN_RTR_DATA,
 								.DLC = 0, .TransmitGlobalTime = DISABLE, };
-						uint8_t data[1] = { 0xF };
 						CC_send_can_msg(&hcan2, &header, NULL,
 								&CC_GlobalState->CAN2_TxMailbox);
 					}
 				}
 			} else {
 				// button is not pressed so reset counter
-				CC_GlobalState->prechargeTicks = 0;
+				CC_GlobalState->precharge_ticks = 0;
 			}
 		} else {
 			if (!CC_GlobalState->precharge_done) {
 				// waiting for AMS to finish precharge
 				HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
-											HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
+				HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
 			} else {
 				// AMS has said precharge is done
 
@@ -491,11 +490,11 @@ void state_idle_iterate(fsm_t *fsm) {
 				if (raw > brake_threshold) {
 					// Illuminate RTD Button
 					HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
-							HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
+					HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
 
 					// If RTD Button Engaged
 					if (osSemaphoreAcquire(CC_GlobalState->sem,
-							SEM_ACQUIRE_TIMEOUT) == osOK) {
+					SEM_ACQUIRE_TIMEOUT) == osOK) {
 						if (HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin)
 								&& (HAL_GetTick()
 										- CC_GlobalState->finalRtdTicks)
@@ -508,7 +507,7 @@ void state_idle_iterate(fsm_t *fsm) {
 
 				} else {
 					HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
-							HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
+					HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
 				}
 			}
 		}
