@@ -111,6 +111,13 @@ typedef struct
 	uint8_t duty_cycle_right_fan;
 
 	uint32_t fan_cmd_ticks;
+
+	bool precharge_enabled;
+	bool precharge_done;
+
+	uint32_t flashlight_ticks;
+
+	uint32_t precharge_ticks;
 } CC_GlobalState_t;
 
 CC_GlobalState_t *CC_GlobalState;

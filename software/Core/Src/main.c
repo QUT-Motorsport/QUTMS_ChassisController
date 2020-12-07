@@ -90,6 +90,20 @@ void LogToSD(char *data, int len) {
 
 }
 
+#ifdef PRINTF_TO_UART
+/** Override _write to log to UART */
+int _write(int file, char *data, int len)
+{
+    if((file != STDOUT_FILENO) && (file != STDERR_FILENO))
+    {
+        return -1;
+    }
+    HAL_StatusTypeDef s = HAL_UART_Transmit(&huart1, (uint8_t*)data, len, HAL_MAX_DELAY);
+
+    return (s == HAL_OK ? len : 0);
+}
+#endif
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -332,7 +346,7 @@ void CC_LogInfo(char *msg, size_t length) {
  */
 __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
 	CC_LogInfo("Entering FSM Thread\r\n", strlen("Entering FSM Thread\r\n"));
-	fsm_setLogFunction(fsm, &CC_LogInfo);
+	fsm_setLogFunction(fsm, &printf);
 	fsm_reset(fsm, &startState);
 	//fsm_changeState(fsm, &debugState, "Forcing debug state");
 	for (;;) {

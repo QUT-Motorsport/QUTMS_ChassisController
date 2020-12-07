@@ -59,6 +59,8 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+#define PRINTF_TO_UART
+int _write(int file, char *data, int len);
 void CC_LogInfo(char* msg, size_t length);
 __NO_RETURN void fsm_thread_mainLoop(void* arg);
 /* USER CODE END EFP */

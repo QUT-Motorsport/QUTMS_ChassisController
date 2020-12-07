@@ -56,10 +56,12 @@
 #define FAN_CMD_TICK_COUNT 400
 
 uint16_t inverter_node_ids[NUM_INVERTERS] = { INVERTER_LEFT_NODE_ID,
-		INVERTER_RIGHT_NODE_ID };
+INVERTER_RIGHT_NODE_ID };
 
 state_t deadState = { &state_dead_enter, &state_dead_iterate, &state_dead_exit,
 		"Dead_s" };
+
+bool precharge_done;
 
 void state_dead_enter(fsm_t *fsm) {
 	return;
@@ -146,10 +148,9 @@ void state_start_enter(fsm_t *fsm) {
 	/* Initiate Startup on PDM */
 	PDM_InitiateStartup_t initiateStartup = Compose_PDM_InitiateStartup();
 	CAN_TxHeaderTypeDef header = { .ExtId = initiateStartup.id, .IDE =
-			CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = 1, .TransmitGlobalTime = DISABLE, };
+	CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = 1, .TransmitGlobalTime = DISABLE, };
 	uint8_t data[1] = { 0xF };
-	CC_send_can_msg(&CAN_2, &header, data,
-			&CC_GlobalState->CAN2_TxMailbox);
+	CC_send_can_msg(&CAN_2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
 	return;
 
 	/* Debug Tracing */
@@ -186,9 +187,9 @@ void state_start_iterate(fsm_t *fsm) {
 		PDM_SetChannelStates_t pdmStartup = Compose_PDM_SetChannelStates(
 				CC_GlobalState->pdmTrackState & (~HV_STARTUP));
 		CAN_TxHeaderTypeDef header =
-		{ .ExtId = pdmStartup.id, .IDE = CAN_ID_EXT,
-				.RTR = CAN_RTR_DATA, .DLC = sizeof(pdmStartup.data),
-				.TransmitGlobalTime = DISABLE, };
+				{ .ExtId = pdmStartup.id, .IDE = CAN_ID_EXT,
+						.RTR = CAN_RTR_DATA, .DLC = sizeof(pdmStartup.data),
+						.TransmitGlobalTime = DISABLE, };
 		CC_send_can_msg(&hcan2, &header, pdmStartup.data,
 				&CC_GlobalState->CAN2_TxMailbox);
 
@@ -220,12 +221,11 @@ void state_start_exit(fsm_t *fsm) {
 	 * Confirmation to Idle
 	 * Messages go here over CAN */
 	//CC_LogInfo("Exit Start\r\n", strlen("Exit Start\r\n"));
-
 	// tell pdm amu fan duty cycle
 	int fan_duty_cycle = 100;
 	// tell pdm left fan duty cycle
 	PDM_SetDutyCycle_t pdm_set_duty_msg = Compose_PDM_SetDutyCycle(
-			PDM_PWM_ACU_FAN, fan_duty_cycle);
+	PDM_PWM_ACU_FAN, fan_duty_cycle);
 	CAN_header.ExtId = pdm_set_duty_msg.id;
 	CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
 
@@ -252,6 +252,11 @@ void state_idle_enter(fsm_t *fsm) {
 		/* Torque Commands Default to 0 */
 		CC_GlobalState->accelTravel = 0;
 		CC_GlobalState->brakeTravel = 0;
+
+		CC_GlobalState->precharge_enabled = false;
+		CC_GlobalState->precharge_done = false;
+
+		CC_GlobalState->flashlight_ticks = 0;
 
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
@@ -344,7 +349,7 @@ void state_idle_iterate(fsm_t *fsm) {
 				if (msg.header.ExtId
 						== Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0)) {
 					if (osSemaphoreAcquire(CC_GlobalState->sem,
-							SEM_ACQUIRE_TIMEOUT) == osOK) {
+					SEM_ACQUIRE_TIMEOUT) == osOK) {
 						bool initialised = false;
 						bool HVAn;
 						bool HVBn;
@@ -366,7 +371,7 @@ void state_idle_iterate(fsm_t *fsm) {
 						== Compose_CANId(0x1, 0x06, 0x0, 0x01, 0x01, 0x0)) {
 					//CC_LogInfo("SHDN1\r\n", strlen("SHDN1\r\n"));
 					if (osSemaphoreAcquire(CC_GlobalState->sem,
-							SEM_ACQUIRE_TIMEOUT) == osOK) {
+					SEM_ACQUIRE_TIMEOUT) == osOK) {
 						uint8_t segmentState;
 						Parse_SHDN_HeartbeatResponse(
 								*((SHDN_HeartbeatResponse_t*) &(msg.data)),
@@ -380,7 +385,7 @@ void state_idle_iterate(fsm_t *fsm) {
 						== Compose_CANId(0x1, 0x06, 0x0, 0x01, 0x02, 0x0)) {
 					//CC_LogInfo("SHDN2\r\n", strlen("SHDN2\r\n"));
 					if (osSemaphoreAcquire(CC_GlobalState->sem,
-							SEM_ACQUIRE_TIMEOUT) == osOK) {
+					SEM_ACQUIRE_TIMEOUT) == osOK) {
 						uint8_t segmentState;
 						Parse_SHDN_HeartbeatResponse(
 								*((SHDN_HeartbeatResponse_t*) &(msg.data)),
@@ -394,7 +399,7 @@ void state_idle_iterate(fsm_t *fsm) {
 						== Compose_CANId(0x1, 0x06, 0x0, 0x01, 0x03, 0x0)) {
 					//CC_LogInfo("SHDN3\r\n", strlen("SHDN3\r\n"));
 					if (osSemaphoreAcquire(CC_GlobalState->sem,
-							SEM_ACQUIRE_TIMEOUT) == osOK) {
+					SEM_ACQUIRE_TIMEOUT) == osOK) {
 						uint8_t segmentState;
 						Parse_SHDN_HeartbeatResponse(
 								*((SHDN_HeartbeatResponse_t*) &(msg.data)),
@@ -421,48 +426,92 @@ void state_idle_iterate(fsm_t *fsm) {
 					//							&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3,
 					//							INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
 					//					CC_GlobalState->shutdown_fault = true;
+				} else if (msg.header.ExtId == AMS_Ready_ID) {
+					CC_GlobalState->precharge_done = true;
 				}
 			}
 
 		}
 	}
 
-	//	fsm_changeState(fsm, &drivingState, "RTD Engaged");
-
-	// don't let continue
-	if (CC_GlobalState->shutdown_fault) {
-		return;
-	}
-
-	/* If Brake Pressure > 20% */
-	uint16_t raw;
-	if (CC_GlobalState->RTD_Debug) {
-		int brake_threshold_range = BRAKE_PRESSURE_MAX - BRAKE_PRESSURE_MIN;
-		raw = BRAKE_PRESSURE_MIN + (0.3 * brake_threshold_range);
-	} else {
-		HAL_ADC_Start(&hadc3);
-		raw = HAL_ADC_GetValue(&hadc3);
-	}
-
-	if (/*raw > CC_GlobalState->brakePressureThreshold &&*/(CC_GlobalState->amsInit
-			|| CC_GlobalState->AMS_Debug) && CC_GlobalState->ccInit) {
-		// Illuminate RTD Button
-		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin,
-				GPIO_PIN_SET);
-		// If RTD Button Engaged
-		if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT)
-				== osOK) {
-			if (HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin)
-					&& (HAL_GetTick() - CC_GlobalState->finalRtdTicks)
-					>= 5000) {
-				// Enter Driving State
-				fsm_changeState(fsm, &drivingState, "RTD Engaged");
+	if (CC_GlobalState->ccInit
+			&& (CC_GlobalState->amsInit || CC_GlobalState->AMS_Debug)) {
+		if (!CC_GlobalState->precharge_enabled) {
+			if (HAL_GetTick() - CC_GlobalState->flashlight_ticks > 500) {
+				HAL_GPIO_TogglePin(HSOUT_RTD_LED_GPIO_Port,
+											HSOUT_RTD_LED_Pin);
+				CC_GlobalState->flashlight_ticks = HAL_GetTick();
 			}
-			osSemaphoreRelease(CC_GlobalState->sem);
+
+
+			if (HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin)) {
+				if (CC_GlobalState->prechargeTicks == 0) {
+					// button just got pressed so init counter
+					CC_GlobalState->prechargeTicks = HAL_GetTick();
+					if (HAL_GetTick() - CC_GlobalState->prechargeTicks > 2000) {
+						// button held for 2 seconds
+						CC_GlobalState->precharge_enabled = true;
+						CC_GlobalState->precharge_done = false;
+
+						// send CAN msg to AMS to start precharge
+						AMS_StartUp_t readyToDrive = Compose_AMS_StartUp();
+						CAN_TxHeaderTypeDef header = { .ExtId = readyToDrive.id,
+								.IDE = CAN_ID_EXT, .RTR = CAN_RTR_DATA,
+								.DLC = 0, .TransmitGlobalTime = DISABLE, };
+						uint8_t data[1] = { 0xF };
+						CC_send_can_msg(&hcan2, &header, NULL,
+								&CC_GlobalState->CAN2_TxMailbox);
+					}
+				}
+			} else {
+				// button is not pressed so reset counter
+				CC_GlobalState->prechargeTicks = 0;
+			}
+		} else {
+			if (!CC_GlobalState->precharge_done) {
+				// waiting for AMS to finish precharge
+				HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
+											HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
+			} else {
+				// AMS has said precharge is done
+
+				uint16_t brake_threshold = BRAKE_PRESSURE_MIN
+						+ (0.3 * (BRAKE_PRESSURE_MAX - BRAKE_PRESSURE_MIN));
+
+				// If Brake Pressure > 30%
+				uint16_t raw;
+				if (CC_GlobalState->RTD_Debug) {
+					raw = brake_threshold;
+				} else {
+					HAL_ADC_Start(&hadc3);
+					raw = HAL_ADC_GetValue(&hadc3);
+				}
+
+				// wait for pressure to be >30 and button to be pressed for 5 seconds
+				if (raw > brake_threshold) {
+					// Illuminate RTD Button
+					HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
+							HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
+
+					// If RTD Button Engaged
+					if (osSemaphoreAcquire(CC_GlobalState->sem,
+							SEM_ACQUIRE_TIMEOUT) == osOK) {
+						if (HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin)
+								&& (HAL_GetTick()
+										- CC_GlobalState->finalRtdTicks)
+										>= 5000) {
+							// Enter Driving State
+							fsm_changeState(fsm, &drivingState, "RTD Engaged");
+						}
+						osSemaphoreRelease(CC_GlobalState->sem);
+					}
+
+				} else {
+					HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
+							HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
+				}
+			}
 		}
-	} else {
-		HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin,
-				GPIO_PIN_RESET);
 	}
 
 }
@@ -473,12 +522,9 @@ void state_idle_exit(fsm_t *fsm) {
 	CAN_TxHeaderTypeDef header = { .ExtId = readyToDrive.id, .IDE = CAN_ID_EXT,
 			.RTR = CAN_RTR_DATA, .DLC = 1, .TransmitGlobalTime = DISABLE, };
 	uint8_t data[1] = { 0xF };
-	CC_send_can_msg(&hcan1, &header, data,
-			&CC_GlobalState->CAN1_TxMailbox);
-	CC_send_can_msg(&hcan2, &header, data,
-			&CC_GlobalState->CAN2_TxMailbox);
-	CC_send_can_msg(&hcan3, &header, data,
-			&CC_GlobalState->CAN3_TxMailbox);
+	CC_send_can_msg(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+	CC_send_can_msg(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+	CC_send_can_msg(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
 
 	if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 		CC_GlobalState->readyToDriveTicks = HAL_GetTick();
@@ -512,7 +558,7 @@ void state_driving_enter(fsm_t *fsm) {
 	/* If AMS Contactors Closed & BMS' Healthy */
 
 	/* Enable all channels on PDM */
-	// TODO Fix Bitwise Flip on enter IDLE State under current PDM Startup Sequence
+// TODO Fix Bitwise Flip on enter IDLE State under current PDM Startup Sequence
 	if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 		CC_GlobalState->tractiveActive = true;
 		CC_GlobalState->faultDetected = false;
@@ -538,7 +584,7 @@ void state_driving_enter(fsm_t *fsm) {
 
 		// tell pdm left fan duty cycle
 		PDM_SetDutyCycle_t pdm_set_duty_msg = Compose_PDM_SetDutyCycle(
-				PDM_PWM_LEFT_FAN, fan_duty_cycle);
+		PDM_PWM_LEFT_FAN, fan_duty_cycle);
 		CAN_header.ExtId = pdm_set_duty_msg.id;
 		CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
 
@@ -573,7 +619,7 @@ void state_driving_enter(fsm_t *fsm) {
 	CC_SetBool_t runLeftScript = Compose_CC_SetBool(INVERTER_LEFT_NODE_ID, 0x01,
 			0xFFFFFFFF);
 	CAN_TxHeaderTypeDef runLeftHeader = { .StdId = runLeftScript.id, .IDE =
-			CAN_ID_STD, .RTR = CAN_RTR_DATA, .DLC = sizeof(runLeftScript.data),
+	CAN_ID_STD, .RTR = CAN_RTR_DATA, .DLC = sizeof(runLeftScript.data),
 			.TransmitGlobalTime = DISABLE, };
 	CC_send_can_msg(&CAN_1, &runLeftHeader, runLeftScript.data,
 			&CC_GlobalState->CAN1_TxMailbox);
@@ -581,7 +627,7 @@ void state_driving_enter(fsm_t *fsm) {
 	CC_SetBool_t runRightScript = Compose_CC_SetBool(INVERTER_RIGHT_NODE_ID,
 			0x01, 0xFFFFFFFF);
 	CAN_TxHeaderTypeDef runRightHeader = { .StdId = runRightScript.id, .IDE =
-			CAN_ID_STD, .RTR = CAN_RTR_DATA, .DLC = sizeof(runRightScript.data),
+	CAN_ID_STD, .RTR = CAN_RTR_DATA, .DLC = sizeof(runRightScript.data),
 			.TransmitGlobalTime = DISABLE, };
 	CC_send_can_msg(&CAN_1, &runRightHeader, runRightScript.data,
 			&CC_GlobalState->CAN1_TxMailbox);
@@ -603,7 +649,7 @@ void state_driving_iterate(fsm_t *fsm) {
 			PDM_SetChannelStates_t rtdSiren = Compose_PDM_SetChannelStates(
 					CC_GlobalState->pdmTrackState);
 			CAN_TxHeaderTypeDef sirenHeader = { .ExtId = rtdSiren.id, .IDE =
-					CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(rtdSiren.data),
+			CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(rtdSiren.data),
 					.TransmitGlobalTime = DISABLE, };
 			CC_send_can_msg(&hcan2, &sirenHeader, rtdSiren.data,
 					&CC_GlobalState->CAN2_TxMailbox);
@@ -672,14 +718,14 @@ void state_driving_iterate(fsm_t *fsm) {
 						/* Echo Motor RPM */
 						len = sprintf(x, "[%li] Got RPM from CAN1: %i\r\n",
 								(HAL_GetTick() - CC_GlobalState->startupTicks)
-								/ 1000, motorRPM);
+										/ 1000, motorRPM);
 						//CC_LogInfo(x, len);
 					} else {
 						/* Echo CAN Packet if index not recognised */
 						len = sprintf(x,
 								"[%li] Got CAN msg from CAN1: %02lX\r\n",
 								(HAL_GetTick() - CC_GlobalState->startupTicks)
-								/ 1000, msg.header.StdId);
+										/ 1000, msg.header.StdId);
 						//CC_LogInfo(x, len);
 					}
 				}
@@ -777,8 +823,8 @@ void state_driving_iterate(fsm_t *fsm) {
 			/* Fetch Value & Apply Filter */
 			uint32_t y = CC_GlobalState->pedalScale
 					* CC_GlobalState->brakeAdcValues[i]
-													 + (1.0 - CC_GlobalState->pedalScale)
-													 * CC_GlobalState->rollingBrakeValues[i];
+					+ (1.0 - CC_GlobalState->pedalScale)
+							* CC_GlobalState->rollingBrakeValues[i];
 			CC_GlobalState->rollingBrakeValues[i] = y;
 
 			/* Map to Max Duty Cycle */
@@ -792,8 +838,8 @@ void state_driving_iterate(fsm_t *fsm) {
 			/* Fetch Value & Apply Filter */
 			uint32_t y = CC_GlobalState->pedalScale
 					* CC_GlobalState->accelAdcValues[i]
-													 + (1.0 - CC_GlobalState->pedalScale)
-													 * CC_GlobalState->rollingAccelValues[i];
+					+ (1.0 - CC_GlobalState->pedalScale)
+							* CC_GlobalState->rollingAccelValues[i];
 			CC_GlobalState->rollingAccelValues[i] = y;
 
 			/* Map to Max Duty Cycle */
@@ -808,7 +854,7 @@ void state_driving_iterate(fsm_t *fsm) {
 			for (int y = 0; y < NUM_BRAKE_SENSORS; y++) {
 				if (brake_travel[i] < (int32_t) brake_travel[y] - pedal_bounds
 						|| brake_travel[i]
-										> (int32_t) brake_travel[y] + pedal_bounds) {
+								> (int32_t) brake_travel[y] + pedal_bounds) {
 					currentFault = true;
 				}
 			}
@@ -817,7 +863,7 @@ void state_driving_iterate(fsm_t *fsm) {
 			for (int y = 0; y < NUM_ACCEL_SENSORS; y++) {
 				if (accel_travel[i] < (int32_t) accel_travel[y] - pedal_bounds
 						|| accel_travel[i]
-										> (int32_t) accel_travel[y] + pedal_bounds) {
+								> (int32_t) accel_travel[y] + pedal_bounds) {
 					currentFault = true;
 				}
 			}
@@ -850,13 +896,12 @@ void state_driving_iterate(fsm_t *fsm) {
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 
-	// print pedal positions
+// print pedal positions
 	if (false) {
 		len = sprintf(x, "Accel: %d Brake: %d\r\n", CC_GlobalState->accelTravel,
 				CC_GlobalState->brakeTravel);
 		CC_LogInfo(x, len);
 	}
-
 
 	/*
 	 * If Throttle and Brake Implausibility State Clock < 100ms
@@ -881,7 +926,7 @@ void state_driving_iterate(fsm_t *fsm) {
 
 	uint8_t result = 0;
 
-	// send enable command
+// send enable command
 	if (((HAL_GetTick() - CC_GlobalState->inverter_enable_ticks)
 			>= INVERTER_ENABLE_TICK_COUNT)) {
 		CC_SetBool_t inverter_enable = { 0 };
@@ -900,7 +945,7 @@ void state_driving_iterate(fsm_t *fsm) {
 		CC_GlobalState->inverter_enable_ticks = HAL_GetTick();
 	}
 
-	// send accel and brake
+// send accel and brake
 	if (((HAL_GetTick() - CC_GlobalState->inverter_cmd_ticks)
 			>= INVERTER_CMD_TICK_COUNT) && !CC_GlobalState->faultDetected) {
 		CC_SetVariable_t inverter_cmd = { 0 };
@@ -912,7 +957,7 @@ void state_driving_iterate(fsm_t *fsm) {
 
 			// accel
 			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i],
-					INVERTER_VAR_ACCEL, CC_GlobalState->accelTravel);
+			INVERTER_VAR_ACCEL, CC_GlobalState->accelTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
 			result = CC_send_can_msg(&CAN_1, &inverter_header,
@@ -920,7 +965,7 @@ void state_driving_iterate(fsm_t *fsm) {
 
 			// brake
 			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i],
-					INVERTER_VAR_BRAKE, CC_GlobalState->brakeTravel);
+			INVERTER_VAR_BRAKE, CC_GlobalState->brakeTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
 			result = CC_send_can_msg(&CAN_1, &inverter_header,
@@ -934,51 +979,51 @@ void state_driving_iterate(fsm_t *fsm) {
 	 * If Throttle or Brake Implausibility State Clock > 1000ms
 	 * Engage Soft Shutdown (Reset to Idle)
 	 */
-	//	if(CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug && !CC_GlobalState->tractiveActive && (HAL_GetTick() - CC_GlobalState->implausibleTicks) >= 1000)
-	//	{
-	//		/* Send Zero Command */
-	//		CC_SetVariable_t accelZeroLeftCommand = Compose_CC_SetVariable(INVERTER_LEFT_NODE_ID,
-	//				0x01,
-	//				0x0000);
-	//		CAN_TxHeaderTypeDef accelZeroLeftHeader =
-	//		{
-	//				.StdId = accelZeroLeftCommand.id,
-	//				.IDE = CAN_ID_STD,
-	//				.RTR = CAN_RTR_DATA,
-	//				.DLC = 8,
-	//				.TransmitGlobalTime = DISABLE,
-	//		};
-	//		CC_send_can_msg(&CAN_1, &accelZeroLeftHeader, accelZeroLeftCommand.data, &CC_GlobalState->CAN1_TxMailbox);
-	//
-	//		CC_SetVariable_t accelZeroRightCommand = Compose_CC_SetVariable(INVERTER_RIGHT_NODE_ID,
-	//				0x01,
-	//				0x0000);
-	//		CAN_TxHeaderTypeDef accelZeroRightHeader =
-	//		{
-	//				.StdId = accelZeroRightCommand.id,
-	//				.IDE = CAN_ID_STD,
-	//				.RTR = CAN_RTR_DATA,
-	//				.DLC = 8,
-	//				.TransmitGlobalTime = DISABLE,
-	//		};
-	//		CC_send_can_msg(&CAN_1, &accelZeroRightHeader, accelZeroRightCommand.data, &CC_GlobalState->CAN1_TxMailbox);
-	//
-	//		/* Broadcast Soft Shutdown on all CAN lines */
-	//		CC_SoftShutdown_t softShutdown = Compose_CC_SoftShutdown();
-	//		CAN_TxHeaderTypeDef header =
-	//		{
-	//				.ExtId = softShutdown.id,
-	//				.IDE = CAN_ID_EXT,
-	//				.RTR = CAN_RTR_DATA,
-	//				.DLC = 1,
-	//				.TransmitGlobalTime = DISABLE,
-	//		};
-	//		uint8_t data[1] = {0xF};
-	//		CC_send_can_msg(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
-	//		CC_send_can_msg(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
-	//		CC_send_can_msg(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
-	//		fsm_changeState(fsm, &idleState, "Soft Shutdown Requested (CAN)");
-	//	}
+//	if(CC_GlobalState->faultDetected && !CC_GlobalState->ADC_Debug && !CC_GlobalState->tractiveActive && (HAL_GetTick() - CC_GlobalState->implausibleTicks) >= 1000)
+//	{
+//		/* Send Zero Command */
+//		CC_SetVariable_t accelZeroLeftCommand = Compose_CC_SetVariable(INVERTER_LEFT_NODE_ID,
+//				0x01,
+//				0x0000);
+//		CAN_TxHeaderTypeDef accelZeroLeftHeader =
+//		{
+//				.StdId = accelZeroLeftCommand.id,
+//				.IDE = CAN_ID_STD,
+//				.RTR = CAN_RTR_DATA,
+//				.DLC = 8,
+//				.TransmitGlobalTime = DISABLE,
+//		};
+//		CC_send_can_msg(&CAN_1, &accelZeroLeftHeader, accelZeroLeftCommand.data, &CC_GlobalState->CAN1_TxMailbox);
+//
+//		CC_SetVariable_t accelZeroRightCommand = Compose_CC_SetVariable(INVERTER_RIGHT_NODE_ID,
+//				0x01,
+//				0x0000);
+//		CAN_TxHeaderTypeDef accelZeroRightHeader =
+//		{
+//				.StdId = accelZeroRightCommand.id,
+//				.IDE = CAN_ID_STD,
+//				.RTR = CAN_RTR_DATA,
+//				.DLC = 8,
+//				.TransmitGlobalTime = DISABLE,
+//		};
+//		CC_send_can_msg(&CAN_1, &accelZeroRightHeader, accelZeroRightCommand.data, &CC_GlobalState->CAN1_TxMailbox);
+//
+//		/* Broadcast Soft Shutdown on all CAN lines */
+//		CC_SoftShutdown_t softShutdown = Compose_CC_SoftShutdown();
+//		CAN_TxHeaderTypeDef header =
+//		{
+//				.ExtId = softShutdown.id,
+//				.IDE = CAN_ID_EXT,
+//				.RTR = CAN_RTR_DATA,
+//				.DLC = 1,
+//				.TransmitGlobalTime = DISABLE,
+//		};
+//		uint8_t data[1] = {0xF};
+//		CC_send_can_msg(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
+//		CC_send_can_msg(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
+//		CC_send_can_msg(&hcan3, &header, data, &CC_GlobalState->CAN3_TxMailbox);
+//		fsm_changeState(fsm, &idleState, "Soft Shutdown Requested (CAN)");
+//	}
 	/*
 	 * If 500ms has exceeded since SoC Request
 	 * Request State of Charge
@@ -1002,7 +1047,7 @@ void state_driving_iterate(fsm_t *fsm) {
 		PDM_SetChannelStates_t brakeLightState = Compose_PDM_SetChannelStates(
 				CC_GlobalState->pdmTrackState);
 		CAN_TxHeaderTypeDef brakeHeader = { .ExtId = brakeLightState.id, .IDE =
-				CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(brakeLightState.data),
+		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(brakeLightState.data),
 				.TransmitGlobalTime = DISABLE, };
 		CC_send_can_msg(&hcan2, &brakeHeader, brakeLightState.data,
 				&CC_GlobalState->CAN2_TxMailbox);
@@ -1014,19 +1059,19 @@ void state_driving_exit(fsm_t *fsm) {
 	CAN_header.IDE = CAN_ID_EXT;
 	CAN_header.RTR = CAN_RTR_DATA;
 	CAN_header.TransmitGlobalTime = DISABLE;
-	// set duty cycle of left and right, and amu fans
+// set duty cycle of left and right, and amu fans
 	uint16_t fan_duty_cycle = 0;
 
-	// tell pdm left fan duty cycle
+// tell pdm left fan duty cycle
 	PDM_SetDutyCycle_t pdm_set_duty_msg = Compose_PDM_SetDutyCycle(
-			PDM_PWM_LEFT_FAN, fan_duty_cycle);
+	PDM_PWM_LEFT_FAN, fan_duty_cycle);
 	CAN_header.ExtId = pdm_set_duty_msg.id;
 	CAN_header.DLC = sizeof(pdm_set_duty_msg.data);
 
 	CC_send_can_msg(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
 			&CC_GlobalState->CAN2_TxMailbox);
 
-	// tell pdm right fan duty cycle
+// tell pdm right fan duty cycle
 	pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_RIGHT_FAN,
 			fan_duty_cycle);
 	CAN_header.ExtId = pdm_set_duty_msg.id;
@@ -1035,7 +1080,7 @@ void state_driving_exit(fsm_t *fsm) {
 	CC_send_can_msg(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
 			&CC_GlobalState->CAN2_TxMailbox);
 
-	// tell pdm amu fan duty cycle
+// tell pdm amu fan duty cycle
 	pdm_set_duty_msg = Compose_PDM_SetDutyCycle(PDM_PWM_ACU_FAN,
 			fan_duty_cycle);
 	CAN_header.ExtId = pdm_set_duty_msg.id;
@@ -1055,9 +1100,8 @@ void state_debug_enter(fsm_t *fsm) {
 	PDM_InitiateStartup_t init = Compose_PDM_InitiateStartup();
 	uint8_t test[1] = { 0 };
 	CAN_TxHeaderTypeDef header = { .ExtId = init.id, .IDE = CAN_ID_EXT, .RTR =
-			CAN_RTR_DATA, .DLC = sizeof(test), .TransmitGlobalTime = DISABLE, };
-	CC_send_can_msg(&hcan2, &header, test,
-			&CC_GlobalState->CAN2_TxMailbox);
+	CAN_RTR_DATA, .DLC = sizeof(test), .TransmitGlobalTime = DISABLE, };
+	CC_send_can_msg(&hcan2, &header, test, &CC_GlobalState->CAN2_TxMailbox);
 	osDelay(100);
 	return;
 }
@@ -1067,9 +1111,9 @@ void state_debug_iterate(fsm_t *fsm) {
 		PDM_SetChannelStates_t pdmStartup = Compose_PDM_SetChannelStates(
 				1 << i);
 		CAN_TxHeaderTypeDef header =
-		{ .ExtId = pdmStartup.id, .IDE = CAN_ID_EXT,
-				.RTR = CAN_RTR_DATA, .DLC = sizeof(pdmStartup.data),
-				.TransmitGlobalTime = DISABLE, };
+				{ .ExtId = pdmStartup.id, .IDE = CAN_ID_EXT,
+						.RTR = CAN_RTR_DATA, .DLC = sizeof(pdmStartup.data),
+						.TransmitGlobalTime = DISABLE, };
 		CC_send_can_msg(&hcan2, &header, pdmStartup.data,
 				&CC_GlobalState->CAN2_TxMailbox);
 		osDelay(100);
@@ -1079,6 +1123,6 @@ void state_debug_iterate(fsm_t *fsm) {
 }
 
 void state_debug_exit(fsm_t *fsm) {
-	//CC_LogInfo("Exit Debugging\r\n", strlen("Exit Debugging\r\n"));
+//CC_LogInfo("Exit Debugging\r\n", strlen("Exit Debugging\r\n"));
 	return;
 }
