@@ -227,7 +227,7 @@ int main(void)
 	}
 
 	//Create FSM instance
-	fsm_t *fsm = fsm_new(&startState);
+	fsm_t *fsm = fsm_new(&deadState);
 
 	// Create a new thread, where our FSM will run.
 	osThreadNew(fsm_thread_mainLoop, fsm, &fsmThreadAttr);
