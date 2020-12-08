@@ -130,6 +130,9 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
+  // turn on dash power
+  HAL_GPIO_WritePin(DASH_POWER_GPIO_Port, DASH_POWER_Pin, GPIO_PIN_SET);
+
 	// setup sd card
 	if (HAL_SD_Init(&hsd1) != HAL_OK) {
 		Error_Handler();

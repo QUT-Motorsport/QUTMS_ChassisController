@@ -46,7 +46,7 @@
 #define CC_MASK PDM_POWER_CC_MASK
 #define RTD_SIREN_MASK PDMFLAG_RTD_SIREN
 
-#define INVERTER_CMD_TICK_COUNT 5
+#define INVERTER_CMD_TICK_COUNT 10
 #define INVERTER_ENABLE_TICK_COUNT 15
 
 #define NUM_INVERTERS 2
@@ -117,7 +117,7 @@ void state_start_enter(fsm_t *fsm) {
 			/* Bound state for system operations */
 			CC_GlobalState->tractiveActive = false;
 			CC_GlobalState->pdmTrackState = LV_STARTUP | CC_MASK
-					| PDMFLAG_RIGHT_FAN;
+					| PDMFLAG_RTD_SIREN;
 
 			CC_GlobalState->finalRtdTicks = 0;
 			CC_GlobalState->shutdown_fault = false;
@@ -206,6 +206,7 @@ void state_start_iterate(fsm_t *fsm) {
 		}
 
 		/* Engage Idle State (Waiting for RTD) */
+		//fsm_changeState(fsm, &drivingState, "skip to rtd lol");
 		fsm_changeState(fsm, &idleState, "PDM Boot Sequence Initiated");
 	}
 	return;
@@ -432,7 +433,9 @@ void state_idle_iterate(fsm_t *fsm) {
 					//							&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 					//							&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3,
 					//							INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-					//					CC_GlobalState->shutdown_fault = true;
+										CC_GlobalState->shutdown_fault = true;
+										len = sprintf(buf, "shutdown triggered \r\n");
+																CC_LogInfo(buf, len);
 				} else if (msg.header.ExtId == AMS_Ready_ID) {
 					if (!CC_GlobalState->precharge_done) {
 						len = sprintf(buf, "ams ready recieved \r\n");
@@ -450,8 +453,9 @@ void state_idle_iterate(fsm_t *fsm) {
 	 CC_GlobalState->ccInit, CC_GlobalState->amsInit);
 	 CC_LogInfo(buf, len);*/
 
+	// no trigger if shutdown
 	if (CC_GlobalState->ccInit
-			&& (CC_GlobalState->amsInit || CC_GlobalState->AMS_Debug)) {
+			&& (CC_GlobalState->amsInit || CC_GlobalState->AMS_Debug) && !CC_GlobalState->shutdown_fault) {
 		if (!CC_GlobalState->precharge_enabled) {
 			if (HAL_GetTick() - CC_GlobalState->flashlight_ticks > 500) {
 				HAL_GPIO_TogglePin(HSOUT_RTD_LED_GPIO_Port,
@@ -852,6 +856,7 @@ void state_driving_iterate(fsm_t *fsm) {
 						&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3,
 						&huart3,
 						INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
+				CC_GlobalState->shutdown_fault = true;
 				fsm_changeState(fsm, &idleState, "Resetting to Idle to Clean");
 			}
 		}
@@ -1009,7 +1014,7 @@ void state_driving_iterate(fsm_t *fsm) {
 		for (int i = 0; i < NUM_INVERTERS; i++) {
 			len = sprintf(x, "Inverter: %d Command - A: %d B: %d\r\n", i,
 					CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
-			//CC_LogInfo(x, len);
+			CC_LogInfo(x, len);
 
 			// accel
 			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i],

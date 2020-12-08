@@ -76,6 +76,8 @@ __NO_RETURN void fsm_thread_mainLoop(void* arg);
 #define BRAKE_PEDAL_TWO_GPIO_Port GPIOA
 #define HSOUT_RTD_LED_Pin GPIO_PIN_8
 #define HSOUT_RTD_LED_GPIO_Port GPIOE
+#define DASH_POWER_Pin GPIO_PIN_11
+#define DASH_POWER_GPIO_Port GPIOE
 #define RTD_INPUT_Pin GPIO_PIN_15
 #define RTD_INPUT_GPIO_Port GPIOE
 #define RTD_INPUT_EXTI_IRQn EXTI15_10_IRQn
