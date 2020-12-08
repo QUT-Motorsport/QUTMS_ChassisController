@@ -72,8 +72,12 @@ typedef struct
 	bool amsInit;
 
 	/* Analogue Values */
-	uint32_t brakeAdcValues[100];
-	uint32_t accelAdcValues[150];
+	uint32_t brakeAdcValues[2];
+	uint32_t accelAdcValues[3];
+
+
+
+
 	uint32_t brakePressureThreshold;
 	uint32_t brakeMin[2];
 	uint32_t brakeMax[2];

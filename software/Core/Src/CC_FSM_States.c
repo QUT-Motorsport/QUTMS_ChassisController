@@ -8,32 +8,14 @@
 #include "CC_FSM_States.h"
 #include "main.h"
 
-#define BRAKE_PRESSURE_MIN 400
-#define BRAKE_PRESSURE_MAX 1400
 
-#define BRAKE_PEDAL_ONE_MIN 3020
-#define BRAKE_PEDAL_ONE_MAX 3190
-#define BRAKE_PEDAL_TWO_MIN 2320
-#define BRAKE_PEDAL_TWO_MAX 3100
 
-#define ACCEL_PEDAL_ONE_MIN 2550
-#define ACCEL_PEDAL_ONE_MAX 3300
-#define ACCEL_PEDAL_TWO_MIN 2800
-#define ACCEL_PEDAL_TWO_MAX 3300
-#define ACCEL_PEDAL_THREE_MIN 2800
-#define ACCEL_PEDAL_THREE_MAX 3300
-
-#define DEAD_ZONE_BRAKE 60
-#define DEAD_ZONE_ACCEL 50
-
-#define BRAKELIGHT_THRESHOLD 100
 
 #define NUM_BRAKE_SENSORS 2
 #define NUM_ACCEL_SENSORS 3
 
 #define POT_DESYNC 250
 
-#define MAX_DUTY_CYCLE 1000
 
 #define CAN_1 hcan1
 #define CAN_2 hcan2
@@ -104,8 +86,8 @@ void state_start_enter(fsm_t *fsm) {
 
 			/* Boards w/ Heartbeats */
 			CC_GlobalState->PDM_Debug = false;
-			CC_GlobalState->AMS_Debug = false;
-			CC_GlobalState->SHDN_1_Debug = false;
+			CC_GlobalState->AMS_Debug = true;
+			CC_GlobalState->SHDN_1_Debug = true;
 			CC_GlobalState->SHDN_2_Debug = true;
 			CC_GlobalState->SHDN_3_Debug = true;
 			CC_GlobalState->SHDN_IMD_Debug = true;
@@ -120,8 +102,7 @@ void state_start_enter(fsm_t *fsm) {
 
 			/* Bound state for system operations */
 			CC_GlobalState->tractiveActive = false;
-			CC_GlobalState->pdmTrackState = LV_STARTUP | CC_MASK
-					| PDMFLAG_RTD_SIREN;
+			CC_GlobalState->pdmTrackState = LV_STARTUP | CC_MASK;
 
 			CC_GlobalState->finalRtdTicks = 0;
 			CC_GlobalState->shutdown_fault = false;
@@ -210,8 +191,8 @@ void state_start_iterate(fsm_t *fsm) {
 		}
 
 		/* Engage Idle State (Waiting for RTD) */
-		//fsm_changeState(fsm, &drivingState, "skip to rtd lol");
-		fsm_changeState(fsm, &idleState, "PDM Boot Sequence Initiated");
+		fsm_changeState(fsm, &drivingState, "skip to rtd lol");
+		//fsm_changeState(fsm, &idleState, "PDM Boot Sequence Initiated");
 	}
 	return;
 }
@@ -673,8 +654,8 @@ void state_driving_enter(fsm_t *fsm) {
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 	/* Start Polling ADC */
-	HAL_ADC_Start_DMA(&hadc2, CC_GlobalState->brakeAdcValues, 100);
-	HAL_ADC_Start_DMA(&hadc1, CC_GlobalState->accelAdcValues, 150);
+	HAL_ADC_Start_DMA(&hadc2, CC_GlobalState->brakeAdcValues, 2);
+	HAL_ADC_Start_DMA(&hadc1, CC_GlobalState->accelAdcValues, 3);
 
 	/* Run MicroBasic Script on Inverter */
 	CC_SetBool_t runLeftScript = Compose_CC_SetBool(INVERTER_LEFT_NODE_ID, 0x01,
