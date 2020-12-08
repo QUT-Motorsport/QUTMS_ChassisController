@@ -67,30 +67,6 @@
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
-void LogToSD(char *data, int len);
-
-void LogToSD(char *data, int len) {
-	FIL logfile;
-	FRESULT res;
-	FATFS fatfs_obj;
-	res = f_mount(&fatfs_obj, "", 1);
-	UINT num_used;
-
-	if (res != FR_OK) {
-		// aaaa SD not connected
-		return;
-	}
-
-	// open log file to append to
-	res = f_open(&logfile, "/CClog.txt", FA_WRITE | FA_OPEN_APPEND);
-
-	// write
-	res = f_write(&logfile, data, len, &num_used);
-
-	// close and save data
-	res = f_close(&logfile);
-
-}
 
 #ifdef PRINTF_TO_UART
 /** Override _write to log to UART */

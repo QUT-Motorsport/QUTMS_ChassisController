@@ -61,8 +61,6 @@ INVERTER_RIGHT_NODE_ID };
 state_t deadState = { &state_dead_enter, &state_dead_iterate, &state_dead_exit,
 		"Dead_s" };
 
-bool precharge_done;
-
 void state_dead_enter(fsm_t *fsm) {
 	return;
 }
@@ -95,7 +93,7 @@ void state_start_enter(fsm_t *fsm) {
 			/* Bind and configure initial global states */
 
 			/* Skip RTD Sequencing Requiring Brake Pressure */
-			CC_GlobalState->RTD_Debug = false;
+			CC_GlobalState->RTD_Debug = true;
 
 			/* Ignore ADC Errors */
 			CC_GlobalState->ADC_Debug = true;
@@ -121,6 +119,7 @@ void state_start_enter(fsm_t *fsm) {
 			CC_GlobalState->pdmTrackState = LV_STARTUP | CC_MASK
 					| PDMFLAG_RIGHT_FAN;
 
+			CC_GlobalState->finalRtdTicks = 0;
 			CC_GlobalState->shutdown_fault = false;
 
 			/* Allocate CAN Queues */
@@ -265,6 +264,8 @@ void state_idle_enter(fsm_t *fsm) {
 }
 
 void state_idle_iterate(fsm_t *fsm) {
+	char buf[80];
+	int len;
 	/* Check for Heartbeat Expiry */
 	if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
@@ -343,6 +344,7 @@ void state_idle_iterate(fsm_t *fsm) {
 		CAN_MSG_Generic_t msg;
 		if (osMessageQueueGet(CC_GlobalState->CAN2Queue, &msg, 0U, 0U)
 				== osOK) {
+
 			/* Packet Handler */
 			/* AMS Heartbeat */
 			if (msg.header.IDE == CAN_ID_EXT) {
@@ -361,9 +363,14 @@ void state_idle_iterate(fsm_t *fsm) {
 						Parse_AMS_HeartbeatResponse(msg.data, &initialised,
 								&HVAn, &HVBn, &precharge, &HVAp, &HVBp,
 								&averageVoltage, &runtime);
+						if (!CC_GlobalState->amsInit && initialised) {
+							len = sprintf(buf, "ams ready\r\n");
+							CC_LogInfo(buf, len);
+						}
 						CC_GlobalState->amsTicks = HAL_GetTick();
 						CC_GlobalState->amsInit = initialised;
 						osSemaphoreRelease(CC_GlobalState->sem);
+
 					}
 				}
 				/* Shutdown 1 Heartbeat */
@@ -427,12 +434,21 @@ void state_idle_iterate(fsm_t *fsm) {
 					//							INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
 					//					CC_GlobalState->shutdown_fault = true;
 				} else if (msg.header.ExtId == AMS_Ready_ID) {
-					CC_GlobalState->precharge_done = true;
+					if (!CC_GlobalState->precharge_done) {
+						len = sprintf(buf, "ams ready recieved \r\n");
+						CC_LogInfo(buf, len);
+						CC_GlobalState->precharge_done = true;
+					}
 				}
 			}
 
 		}
 	}
+	/*
+	 len = sprintf(buf, "start %d done %d cc init %d ams init %d\r\n",
+	 CC_GlobalState->precharge_enabled, CC_GlobalState->precharge_done,
+	 CC_GlobalState->ccInit, CC_GlobalState->amsInit);
+	 CC_LogInfo(buf, len);*/
 
 	if (CC_GlobalState->ccInit
 			&& (CC_GlobalState->amsInit || CC_GlobalState->AMS_Debug)) {
@@ -444,23 +460,40 @@ void state_idle_iterate(fsm_t *fsm) {
 			}
 
 			if (HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin)) {
+
 				if (CC_GlobalState->precharge_ticks == 0) {
+					len = sprintf(buf, "precharge btn press\r\n");
+					CC_LogInfo(buf, len);
 					// button just got pressed so init counter
 					CC_GlobalState->precharge_ticks = HAL_GetTick();
-					if (HAL_GetTick() - CC_GlobalState->precharge_ticks
-							> 2000) {
-						// button held for 2 seconds
-						CC_GlobalState->precharge_enabled = true;
-						CC_GlobalState->precharge_done = false;
+				}
+				if ((HAL_GetTick() - CC_GlobalState->precharge_ticks) > 200) {
+					len = sprintf(buf, "precharge started\r\n");
+					CC_LogInfo(buf, len);
+					// button held for 2 seconds
+					CC_GlobalState->precharge_enabled = true;
+					CC_GlobalState->precharge_done = false;
 
-						// send CAN msg to AMS to start precharge
-						AMS_StartUp_t readyToDrive = Compose_AMS_StartUp();
-						CAN_TxHeaderTypeDef header = { .ExtId = readyToDrive.id,
-								.IDE = CAN_ID_EXT, .RTR = CAN_RTR_DATA,
-								.DLC = 0, .TransmitGlobalTime = DISABLE, };
-						CC_send_can_msg(&hcan2, &header, NULL,
-								&CC_GlobalState->CAN2_TxMailbox);
-					}
+					CC_GlobalState->pdmTrackState =
+							CC_GlobalState->pdmTrackState | HV_STARTUP;
+					PDM_SetChannelStates_t rtdSiren =
+							Compose_PDM_SetChannelStates(
+									CC_GlobalState->pdmTrackState);
+					CAN_TxHeaderTypeDef sirenHeader = { .ExtId = rtdSiren.id,
+							.IDE = CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC =
+									sizeof(rtdSiren.data), .TransmitGlobalTime =
+									DISABLE, };
+					CC_send_can_msg(&hcan2, &sirenHeader, rtdSiren.data,
+							&CC_GlobalState->CAN2_TxMailbox);
+
+					// send CAN msg to AMS to start precharge
+					AMS_StartUp_t ams_startup = Compose_AMS_StartUp();
+					CAN_TxHeaderTypeDef header = { .ExtId = ams_startup.id,
+							.IDE = CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = 0,
+							.TransmitGlobalTime = DISABLE, };
+					CC_send_can_msg(&hcan2, &header, NULL,
+							&CC_GlobalState->CAN2_TxMailbox);
+
 				}
 			} else {
 				// button is not pressed so reset counter
@@ -471,8 +504,13 @@ void state_idle_iterate(fsm_t *fsm) {
 				// waiting for AMS to finish precharge
 				HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
 				HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
-			} else {
+				len = sprintf(buf, "waiting for precharge\r\n");
+				CC_LogInfo(buf, len);
+			}
+			if (CC_GlobalState->precharge_done) {
 				// AMS has said precharge is done
+				len = sprintf(buf, "precharge done\r\n");
+				CC_LogInfo(buf, len);
 
 				uint16_t brake_threshold = BRAKE_PRESSURE_MIN
 						+ (0.3 * (BRAKE_PRESSURE_MAX - BRAKE_PRESSURE_MIN));
@@ -487,7 +525,7 @@ void state_idle_iterate(fsm_t *fsm) {
 				}
 
 				// wait for pressure to be >30 and button to be pressed for 5 seconds
-				if (raw > brake_threshold) {
+				if (raw >= brake_threshold) {
 					// Illuminate RTD Button
 					HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
 					HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
@@ -495,15 +533,22 @@ void state_idle_iterate(fsm_t *fsm) {
 					// If RTD Button Engaged
 					if (osSemaphoreAcquire(CC_GlobalState->sem,
 					SEM_ACQUIRE_TIMEOUT) == osOK) {
-						if (HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin)
-								&& (HAL_GetTick()
-										- CC_GlobalState->finalRtdTicks)
-										>= 5000) {
-							// Enter Driving State
-							fsm_changeState(fsm, &drivingState, "RTD Engaged");
+						if (HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port,
+						RTD_INPUT_Pin)) {
+							if (CC_GlobalState->finalRtdTicks == 0) {
+								CC_GlobalState->finalRtdTicks = HAL_GetTick();
+							}
+
+							if ((HAL_GetTick() - CC_GlobalState->finalRtdTicks)
+									>= 5000) {
+								// Enter Driving State
+								fsm_changeState(fsm, &drivingState,
+										"RTD Engaged");
+							}
 						}
 						osSemaphoreRelease(CC_GlobalState->sem);
 					}
+
 
 				} else {
 					HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
@@ -512,14 +557,15 @@ void state_idle_iterate(fsm_t *fsm) {
 			}
 		}
 	}
-
 }
 
 void state_idle_exit(fsm_t *fsm) {
+	char buf[80];
+	int len;
 	/* Broadcast RTD on all CAN lines */
 	CC_ReadyToDrive_t readyToDrive = Compose_CC_ReadyToDrive();
-	CAN_TxHeaderTypeDef header = { .ExtId = readyToDrive.id, .IDE = CAN_ID_EXT,
-			.RTR = CAN_RTR_DATA, .DLC = 1, .TransmitGlobalTime = DISABLE, };
+	CAN_TxHeaderTypeDef header = { .ExtId = readyToDrive.id, .IDE =
+	CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = 1, .TransmitGlobalTime = DISABLE, };
 	uint8_t data[1] = { 0xF };
 	CC_send_can_msg(&hcan1, &header, data, &CC_GlobalState->CAN1_TxMailbox);
 	CC_send_can_msg(&hcan2, &header, data, &CC_GlobalState->CAN2_TxMailbox);
@@ -535,11 +581,14 @@ void state_idle_exit(fsm_t *fsm) {
 			| RTD_SIREN_MASK | HV_STARTUP;
 	PDM_SetChannelStates_t rtdSiren = Compose_PDM_SetChannelStates(
 			CC_GlobalState->pdmTrackState);
-	CAN_TxHeaderTypeDef sirenHeader = { .ExtId = rtdSiren.id, .IDE = CAN_ID_EXT,
-			.RTR = CAN_RTR_DATA, .DLC = sizeof(rtdSiren.data),
+	CAN_TxHeaderTypeDef sirenHeader = { .ExtId = rtdSiren.id, .IDE =
+	CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(rtdSiren.data),
 			.TransmitGlobalTime = DISABLE, };
 	CC_send_can_msg(&hcan2, &sirenHeader, rtdSiren.data,
 			&CC_GlobalState->CAN2_TxMailbox);
+
+	len = sprintf(buf, "exit idle\r\n");
+					CC_LogInfo(buf, len);
 
 	return;
 }
@@ -548,6 +597,11 @@ state_t drivingState = { &state_driving_enter, &state_driving_iterate,
 		&state_driving_exit, "Driving_s" };
 
 void state_driving_enter(fsm_t *fsm) {
+	char buf[80];
+		int len;
+
+	len = sprintf(buf, "enter rtd\r\n");
+					CC_LogInfo(buf, len);
 
 	CAN_TxHeaderTypeDef CAN_header;
 	CAN_header.IDE = CAN_ID_EXT;
@@ -630,6 +684,9 @@ void state_driving_enter(fsm_t *fsm) {
 			.TransmitGlobalTime = DISABLE, };
 	CC_send_can_msg(&CAN_1, &runRightHeader, runRightScript.data,
 			&CC_GlobalState->CAN1_TxMailbox);
+
+	len = sprintf(buf, "exit rtd\r\n");
+					CC_LogInfo(buf, len);
 	return;
 }
 
@@ -741,8 +798,8 @@ void state_driving_iterate(fsm_t *fsm) {
 			/* AMS Heartbeat */
 			if (msg.header.ExtId
 					== Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0)) {
-				if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT)
-						== osOK) {
+				if (osSemaphoreAcquire(CC_GlobalState->sem,
+				SEM_ACQUIRE_TIMEOUT) == osOK) {
 					bool initialised;
 					bool HVAn;
 					bool HVBn;
@@ -762,8 +819,8 @@ void state_driving_iterate(fsm_t *fsm) {
 			/* Shutdown 1 Heartbeat */
 			else if (msg.header.ExtId
 					== Compose_CANId(0x1, 0x06, 0x0, 0x01, 0x01, 0x0)) {
-				if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT)
-						== osOK) {
+				if (osSemaphoreAcquire(CC_GlobalState->sem,
+				SEM_ACQUIRE_TIMEOUT) == osOK) {
 					uint8_t segmentState;
 					Parse_SHDN_HeartbeatResponse(
 							*((SHDN_HeartbeatResponse_t*) &(msg.data)),
@@ -775,8 +832,8 @@ void state_driving_iterate(fsm_t *fsm) {
 			/* Shutdown IMD Heartbeat */
 			else if (msg.header.ExtId
 					== Compose_CANId(0x1, 0x10, 0x0, 0x1, 0x01, 0x0)) {
-				if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT)
-						== osOK) {
+				if (osSemaphoreAcquire(CC_GlobalState->sem,
+				SEM_ACQUIRE_TIMEOUT) == osOK) {
 					uint8_t pwmState;
 					Parse_SHDN_IMD_HeartbeatResponse(
 							*((SHDN_IMD_HeartbeatResponse_t*) &(msg.data)),
@@ -1109,10 +1166,9 @@ void state_debug_iterate(fsm_t *fsm) {
 	for (int i = 1; i <= 32; i++) {
 		PDM_SetChannelStates_t pdmStartup = Compose_PDM_SetChannelStates(
 				1 << i);
-		CAN_TxHeaderTypeDef header =
-				{ .ExtId = pdmStartup.id, .IDE = CAN_ID_EXT,
-						.RTR = CAN_RTR_DATA, .DLC = sizeof(pdmStartup.data),
-						.TransmitGlobalTime = DISABLE, };
+		CAN_TxHeaderTypeDef header = { .ExtId = pdmStartup.id, .IDE =
+		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(pdmStartup.data),
+				.TransmitGlobalTime = DISABLE, };
 		CC_send_can_msg(&hcan2, &header, pdmStartup.data,
 				&CC_GlobalState->CAN2_TxMailbox);
 		osDelay(100);
