@@ -86,8 +86,8 @@ void state_start_enter(fsm_t *fsm) {
 
 			/* Boards w/ Heartbeats */
 			CC_GlobalState->PDM_Debug = false;
-			CC_GlobalState->AMS_Debug = true;
-			CC_GlobalState->SHDN_1_Debug = true;
+			CC_GlobalState->AMS_Debug = false;
+			CC_GlobalState->SHDN_1_Debug = false;
 			CC_GlobalState->SHDN_2_Debug = true;
 			CC_GlobalState->SHDN_3_Debug = true;
 			CC_GlobalState->SHDN_IMD_Debug = true;
@@ -191,8 +191,8 @@ void state_start_iterate(fsm_t *fsm) {
 		}
 
 		/* Engage Idle State (Waiting for RTD) */
-		fsm_changeState(fsm, &drivingState, "skip to rtd lol");
-		//fsm_changeState(fsm, &idleState, "PDM Boot Sequence Initiated");
+		//fsm_changeState(fsm, &drivingState, "skip to rtd lol");
+		fsm_changeState(fsm, &idleState, "PDM Boot Sequence Initiated");
 	}
 	return;
 }

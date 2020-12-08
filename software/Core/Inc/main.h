@@ -82,8 +82,7 @@ __NO_RETURN void fsm_thread_mainLoop(void* arg);
 #define RTD_INPUT_GPIO_Port GPIOE
 #define RTD_INPUT_EXTI_IRQn EXTI15_10_IRQn
 /* USER CODE BEGIN Private defines */
-#define MAX_DUTY_CYCLE 1000
-#define BRAKELIGHT_THRESHOLD 390
+
 
 
 #define BRAKE_PRESSURE_MIN 420
@@ -102,8 +101,11 @@ __NO_RETURN void fsm_thread_mainLoop(void* arg);
 #define ACCEL_PEDAL_THREE_MIN 2800
 #define ACCEL_PEDAL_THREE_MAX 3300
 
-#define DEAD_ZONE_BRAKE 315
+#define DEAD_ZONE_BRAKE 220
 #define DEAD_ZONE_ACCEL 50
+
+#define MAX_DUTY_CYCLE 1000
+#define BRAKELIGHT_THRESHOLD 310
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
