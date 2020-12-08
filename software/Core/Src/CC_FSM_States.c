@@ -26,6 +26,8 @@
 #define DEAD_ZONE_BRAKE 60
 #define DEAD_ZONE_ACCEL 50
 
+#define BRAKELIGHT_THRESHOLD 100
+
 #define NUM_BRAKE_SENSORS 2
 #define NUM_ACCEL_SENSORS 3
 
@@ -54,6 +56,8 @@
 #define INVERTER_VAR_BRAKE 0x02
 
 #define FAN_CMD_TICK_COUNT 400
+
+#define BRAKE_UPDATE_TICK_COUNT 20
 
 uint16_t inverter_node_ids[NUM_INVERTERS] = { INVERTER_LEFT_NODE_ID,
 INVERTER_RIGHT_NODE_ID };
@@ -104,7 +108,7 @@ void state_start_enter(fsm_t *fsm) {
 			CC_GlobalState->SHDN_1_Debug = false;
 			CC_GlobalState->SHDN_2_Debug = true;
 			CC_GlobalState->SHDN_3_Debug = true;
-			CC_GlobalState->SHDN_IMD_Debug = false;
+			CC_GlobalState->SHDN_IMD_Debug = true;
 
 			/* Inverters */
 			CC_GlobalState->Inverter_Debug = true;
@@ -1012,25 +1016,23 @@ void state_driving_iterate(fsm_t *fsm) {
 		CC_SetVariable_t inverter_cmd = { 0 };
 
 		for (int i = 0; i < NUM_INVERTERS; i++) {
-			len = sprintf(x, "Inverter: %d Command - A: %d B: %d\r\n", i,
-					CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
+			len = sprintf(x, "Inverter: %d Command - A: %d B: %d\r\n", i, CC_GlobalState->accelTravel,
+					CC_GlobalState->brakeTravel);
 			CC_LogInfo(x, len);
 
 			// accel
-			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i],
-			INVERTER_VAR_ACCEL, CC_GlobalState->accelTravel);
+			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i], INVERTER_VAR_ACCEL,
+					CC_GlobalState->accelTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			result = CC_send_can_msg(&CAN_1, &inverter_header,
-					inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
+			result = CC_send_can_msg(&CAN_1, &inverter_header, inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 
 			// brake
-			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i],
-			INVERTER_VAR_BRAKE, CC_GlobalState->brakeTravel);
+			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i], INVERTER_VAR_BRAKE,
+					CC_GlobalState->brakeTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			result = CC_send_can_msg(&CAN_1, &inverter_header,
-					inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
+			result = CC_send_can_msg(&CAN_1, &inverter_header, inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 		}
 
 		CC_GlobalState->inverter_cmd_ticks = HAL_GetTick();
@@ -1090,12 +1092,10 @@ void state_driving_iterate(fsm_t *fsm) {
 	 * Request State of Charge
 	 */
 
-	if ((HAL_GetTick() - CC_GlobalState->readyToDriveTicks) % 27 == 0
-			&& CC_GlobalState->rollingAccelValues[0] > 0
-			&& CC_GlobalState->rollingBrakeValues[0]) {
+	if ((HAL_GetTick() - CC_GlobalState->brakelight_ticks) > BRAKE_UPDATE_TICK_COUNT) {
 		if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT)
 				== osOK) {
-			if (CC_GlobalState->brakeTravel > 100) {
+			if (CC_GlobalState->brakeTravel > BRAKELIGHT_THRESHOLD) {
 				CC_GlobalState->pdmTrackState = CC_GlobalState->pdmTrackState
 						| BRAKE_LIGHT_MASK;
 
@@ -1112,6 +1112,8 @@ void state_driving_iterate(fsm_t *fsm) {
 				.TransmitGlobalTime = DISABLE, };
 		CC_send_can_msg(&hcan2, &brakeHeader, brakeLightState.data,
 				&CC_GlobalState->CAN2_TxMailbox);
+
+		CC_GlobalState->brakelight_ticks = HAL_GetTick();
 	}
 }
 

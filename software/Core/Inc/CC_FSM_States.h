@@ -118,6 +118,9 @@ typedef struct
 	uint32_t flashlight_ticks;
 
 	uint32_t precharge_ticks;
+
+	uint32_t brakelight_ticks;
+
 } CC_GlobalState_t;
 
 CC_GlobalState_t *CC_GlobalState;
