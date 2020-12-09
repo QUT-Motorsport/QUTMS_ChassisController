@@ -8,14 +8,10 @@
 #include "CC_FSM_States.h"
 #include "main.h"
 
-
-
-
 #define NUM_BRAKE_SENSORS 2
 #define NUM_ACCEL_SENSORS 3
 
 #define POT_DESYNC 250
-
 
 #define CAN_1 hcan1
 #define CAN_2 hcan2
@@ -79,7 +75,7 @@ void state_start_enter(fsm_t *fsm) {
 			/* Bind and configure initial global states */
 
 			/* Skip RTD Sequencing Requiring Brake Pressure */
-			CC_GlobalState->RTD_Debug = true;
+			CC_GlobalState->RTD_Debug = false;
 
 			/* Ignore ADC Errors */
 			CC_GlobalState->ADC_Debug = true;
@@ -418,9 +414,9 @@ void state_idle_iterate(fsm_t *fsm) {
 					//							&CC_GlobalState->CAN1_TxMailbox, &CC_GlobalState->CAN2_TxMailbox,
 					//							&CC_GlobalState->CAN3_TxMailbox, &CAN_1, &CAN_2, &CAN_3, &huart3,
 					//							INVERTER_LEFT_NODE_ID, INVERTER_RIGHT_NODE_ID);
-										CC_GlobalState->shutdown_fault = true;
-										len = sprintf(buf, "shutdown triggered \r\n");
-																CC_LogInfo(buf, len);
+					CC_GlobalState->shutdown_fault = true;
+					len = sprintf(buf, "shutdown triggered \r\n");
+					CC_LogInfo(buf, len);
 				} else if (msg.header.ExtId == AMS_Ready_ID) {
 					if (!CC_GlobalState->precharge_done) {
 						len = sprintf(buf, "ams ready recieved \r\n");
@@ -440,7 +436,8 @@ void state_idle_iterate(fsm_t *fsm) {
 
 	// no trigger if shutdown
 	if (CC_GlobalState->ccInit
-			&& (CC_GlobalState->amsInit || CC_GlobalState->AMS_Debug) && !CC_GlobalState->shutdown_fault) {
+			&& (CC_GlobalState->amsInit || CC_GlobalState->AMS_Debug)
+			/*&& !CC_GlobalState->shutdown_fault*/) {
 		if (!CC_GlobalState->precharge_enabled) {
 			if (HAL_GetTick() - CC_GlobalState->flashlight_ticks > 500) {
 				HAL_GPIO_TogglePin(HSOUT_RTD_LED_GPIO_Port,
@@ -538,7 +535,6 @@ void state_idle_iterate(fsm_t *fsm) {
 						osSemaphoreRelease(CC_GlobalState->sem);
 					}
 
-
 				} else {
 					HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
 					HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
@@ -577,7 +573,7 @@ void state_idle_exit(fsm_t *fsm) {
 			&CC_GlobalState->CAN2_TxMailbox);
 
 	len = sprintf(buf, "exit idle\r\n");
-					CC_LogInfo(buf, len);
+	CC_LogInfo(buf, len);
 
 	return;
 }
@@ -587,10 +583,10 @@ state_t drivingState = { &state_driving_enter, &state_driving_iterate,
 
 void state_driving_enter(fsm_t *fsm) {
 	char buf[80];
-		int len;
+	int len;
 
 	len = sprintf(buf, "enter rtd\r\n");
-					CC_LogInfo(buf, len);
+	CC_LogInfo(buf, len);
 
 	CAN_TxHeaderTypeDef CAN_header;
 	CAN_header.IDE = CAN_ID_EXT;
@@ -675,7 +671,7 @@ void state_driving_enter(fsm_t *fsm) {
 			&CC_GlobalState->CAN1_TxMailbox);
 
 	len = sprintf(buf, "exit rtd\r\n");
-					CC_LogInfo(buf, len);
+	CC_LogInfo(buf, len);
 	return;
 }
 
@@ -932,6 +928,19 @@ void state_driving_iterate(fsm_t *fsm) {
 		CC_GlobalState->brakeTravel = MAX_DUTY_CYCLE - brake_travel[0];
 		CC_GlobalState->accelTravel = MAX_DUTY_CYCLE - accel_travel[0];
 
+		// apply plausibility check to accelerator for pedal disconnect
+		for (int i = 0; i < NUM_PEDAL_COUNT; i++) {
+			// apply plausibilty check for pedal disconnect
+			if ((CC_GlobalState->accelAdcValues[i]
+					> 1.2 * CC_GlobalState->accelMax[i])
+					|| (CC_GlobalState->accelAdcValues[i]
+							< 1.2 * CC_GlobalState->accelMin[i])) {
+				// basically if any pedal value is outside the acceptable range set pedal value to 0
+				CC_GlobalState->accelTravel = 0;
+			}
+		}
+
+		// apply dead zones
 		if (CC_GlobalState->accelTravel < DEAD_ZONE_ACCEL) {
 			CC_GlobalState->accelTravel = 0;
 		}
@@ -997,23 +1006,25 @@ void state_driving_iterate(fsm_t *fsm) {
 		CC_SetVariable_t inverter_cmd = { 0 };
 
 		for (int i = 0; i < NUM_INVERTERS; i++) {
-			len = sprintf(x, "Inverter: %d Command - A: %d B: %d\r\n", i, CC_GlobalState->accelTravel,
-					CC_GlobalState->brakeTravel);
+			len = sprintf(x, "Inverter: %d Command - A: %d B: %d\r\n", i,
+					CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
 			CC_LogInfo(x, len);
 
 			// accel
-			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i], INVERTER_VAR_ACCEL,
-					CC_GlobalState->accelTravel);
+			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i],
+					INVERTER_VAR_ACCEL, CC_GlobalState->accelTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			result = CC_send_can_msg(&CAN_1, &inverter_header, inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
+			result = CC_send_can_msg(&CAN_1, &inverter_header,
+					inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 
 			// brake
-			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i], INVERTER_VAR_BRAKE,
-					CC_GlobalState->brakeTravel);
+			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i],
+					INVERTER_VAR_BRAKE, CC_GlobalState->brakeTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			result = CC_send_can_msg(&CAN_1, &inverter_header, inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
+			result = CC_send_can_msg(&CAN_1, &inverter_header,
+					inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 		}
 
 		CC_GlobalState->inverter_cmd_ticks = HAL_GetTick();
@@ -1073,7 +1084,8 @@ void state_driving_iterate(fsm_t *fsm) {
 	 * Request State of Charge
 	 */
 
-	if ((HAL_GetTick() - CC_GlobalState->brakelight_ticks) > BRAKE_UPDATE_TICK_COUNT) {
+	if ((HAL_GetTick() - CC_GlobalState->brakelight_ticks)
+			> BRAKE_UPDATE_TICK_COUNT) {
 		if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT)
 				== osOK) {
 			if (CC_GlobalState->brakeTravel > BRAKELIGHT_THRESHOLD) {
