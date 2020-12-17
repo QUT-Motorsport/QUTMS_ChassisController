@@ -929,7 +929,7 @@ void state_driving_iterate(fsm_t *fsm) {
 		CC_GlobalState->accelTravel = MAX_DUTY_CYCLE - accel_travel[0];
 
 		// apply plausibility check to accelerator for pedal disconnect
-		for (int i = 0; i < NUM_PEDAL_COUNT; i++) {
+		for (int i = 0; i < NUM_ACCEL_SENSORS; i++) {
 			// apply plausibilty check for pedal disconnect
 			if ((CC_GlobalState->accelAdcValues[i]
 					> 1.2 * CC_GlobalState->accelMax[i])

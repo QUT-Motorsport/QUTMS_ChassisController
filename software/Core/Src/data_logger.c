@@ -16,8 +16,8 @@
 
 
 
-#define LOG_SERIAL_QUEUE_SIZE 10
-#define LOG_CAN_QUEUE_SIZE 20
+#define LOG_SERIAL_QUEUE_SIZE 20
+#define LOG_CAN_QUEUE_SIZE 100
 
 osMessageQueueId_t log_serial_queue;
 osMessageQueueId_t log_CAN_queue;
