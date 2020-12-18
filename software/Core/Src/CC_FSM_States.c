@@ -26,7 +26,7 @@
 #define CC_MASK PDM_POWER_CC_MASK
 #define RTD_SIREN_MASK PDMFLAG_RTD_SIREN
 
-#define INVERTER_CMD_TICK_COUNT 10
+#define INVERTER_CMD_TICK_COUNT 5
 #define INVERTER_ENABLE_TICK_COUNT 15
 
 #define NUM_INVERTERS 2
@@ -75,7 +75,7 @@ void state_start_enter(fsm_t *fsm) {
 			/* Bind and configure initial global states */
 
 			/* Skip RTD Sequencing Requiring Brake Pressure */
-			CC_GlobalState->RTD_Debug = false;
+			CC_GlobalState->RTD_Debug = true;
 
 			/* Ignore ADC Errors */
 			CC_GlobalState->ADC_Debug = true;
@@ -890,8 +890,10 @@ void state_driving_iterate(fsm_t *fsm) {
 					MAX_DUTY_CYCLE);
 		}
 
+
 		/* Calculate Faulty ADC Reading */
 		bool currentFault = false;
+		/*
 		for (int i = 0; i < NUM_BRAKE_SENSORS; i++) {
 			for (int y = 0; y < NUM_BRAKE_SENSORS; y++) {
 				if (brake_travel[i] < (int32_t) brake_travel[y] - pedal_bounds
@@ -911,22 +913,30 @@ void state_driving_iterate(fsm_t *fsm) {
 			}
 		}
 
-		/* Fault Handling - Comment Out to Stop Faulting */
+		// Fault Handling - Comment Out to Stop Faulting
 		if (currentFault) {
-			/* New Fault */
+			// New Fault
 			if (!CC_GlobalState->faultDetected) {
 				//				CC_GlobalState->faultDetected = currentFault;
 				//				CC_GlobalState->implausibleTicks = HAL_GetTick();
 			}
 		} else {
-			/* Reset Tripped Fault */
+			// Reset Tripped Fault
 			CC_GlobalState->faultDetected = currentFault;
 			CC_GlobalState->implausibleTicks = 0;
 		}
+		*/
 
 		/* Convert Pedal Positions to Torque Commands */
 		CC_GlobalState->brakeTravel = MAX_DUTY_CYCLE - brake_travel[0];
 		CC_GlobalState->accelTravel = MAX_DUTY_CYCLE - accel_travel[0];
+
+		if (true) {
+				len = sprintf(x, "Accel: %d Brake: %d\r\n", CC_GlobalState->accelTravel,
+						CC_GlobalState->brakeTravel);
+				CC_LogInfo(x, len);
+			}
+
 
 		// apply plausibility check to accelerator for pedal disconnect
 		for (int i = 0; i < NUM_ACCEL_SENSORS; i++) {
@@ -934,7 +944,7 @@ void state_driving_iterate(fsm_t *fsm) {
 			if ((CC_GlobalState->accelAdcValues[i]
 					> 1.2 * CC_GlobalState->accelMax[i])
 					|| (CC_GlobalState->accelAdcValues[i]
-							< 1.2 * CC_GlobalState->accelMin[i])) {
+							< 0.8 * CC_GlobalState->accelMin[i])) {
 				// basically if any pedal value is outside the acceptable range set pedal value to 0
 				CC_GlobalState->accelTravel = 0;
 			}

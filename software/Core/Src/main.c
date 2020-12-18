@@ -199,6 +199,42 @@ int main(void) {
 		Error_Handler();
 	}
 
+	if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING)
+			!= HAL_OK) {
+		char msg[] = "Failed to activate CAN1 notification on RX0";
+		CC_LogInfo(msg, strlen(msg));
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO1_MSG_PENDING)
+			!= HAL_OK) {
+		char msg[] = "Failed to activate CAN1 notification on RX1";
+		CC_LogInfo(msg, strlen(msg));
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING)
+			!= HAL_OK) {
+		char msg[] = "Failed to activate CAN2 notification on RX0";
+		CC_LogInfo(msg, strlen(msg));
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO1_MSG_PENDING)
+			!= HAL_OK) {
+		char msg[] = "Failed to activate CAN2 notification on RX1";
+		CC_LogInfo(msg, strlen(msg));
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan3, CAN_IT_RX_FIFO0_MSG_PENDING)
+			!= HAL_OK) {
+		char msg[] = "Failed to activate CAN3 notification on RX0";
+		CC_LogInfo(msg, strlen(msg));
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan3, CAN_IT_RX_FIFO1_MSG_PENDING)
+			!= HAL_OK) {
+		char msg[] = "Failed to activate CAN3 notification on RX1";
+		CC_LogInfo(msg, strlen(msg));
+	}
+
 	// setup log queue
 	if (!setup_log_queues()) {
 		// log that failed???
@@ -323,72 +359,21 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
 	fsm_setLogFunction(fsm, &printf);
 	fsm_reset(fsm, &startState);
 	//fsm_changeState(fsm, &debugState, "Forcing debug state");
-/*
-	uint32_t accel[3];
-	uint32_t brake[2];
 
-	HAL_ADC_Start_DMA(&hadc2, brake, 2);
-	HAL_ADC_Start_DMA(&hadc1, accel, 3);
+	for (;;) {
 
-	int32_t a_max[3] = {0,0,0};
-	int32_t a_min[3] = {4000,4000,4000};
-	int32_t b_max[2] = {0,0};
-	int32_t b_min[2] = {4000,4000};
+		fsm_iterate(fsm);
+		osDelay(5);
+	}
+}
 
-	int32_t a_values[3];
-	int32_t b_values[2];
+void handleCAN(CAN_HandleTypeDef *hcan, int fifo) {
+	// Iterate over the CAN FIFO buffer, adding all CAN messages to the CAN Queue.
 
-	uint32_t a_mins[3] = { ACCEL_PEDAL_ONE_MIN, ACCEL_PEDAL_TWO_MIN,
-	ACCEL_PEDAL_THREE_MIN };
-	uint32_t a_maxs[3] = { ACCEL_PEDAL_ONE_MAX, ACCEL_PEDAL_TWO_MAX,
-	ACCEL_PEDAL_THREE_MAX };
-
-	uint32_t b_mins[2] = { BRAKE_PEDAL_ONE_MIN, BRAKE_PEDAL_TWO_MIN };
-	uint32_t b_maxs[2] = { BRAKE_PEDAL_ONE_MAX, BRAKE_PEDAL_TWO_MAX };
-*/
-	for(;;) {
-		/*
-		for (int i = 0; i < 3; i++) {
-			if (accel[i] > a_max[i]) {
-				a_max[i] = accel[i];
-			}
-
-			if (accel[i] < a_min[i]) {
-				a_min[i] = accel[i];
-			}
-
-			a_values[i] = map(accel[i], a_mins[i], a_maxs[i], 0, MAX_DUTY_CYCLE);
-			a_values[i] = MAX_DUTY_CYCLE - a_values[i];
-		}
-
-		for (int i = 0; i < 2; i++) {
-			if (brake[i] > b_max[i]) {
-				b_max[i] = brake[i];
-			}
-
-			if (brake[i] < b_min[i]) {
-				b_min[i] = brake[i];
-			}
-
-			b_values[i] = MAX_DUTY_CYCLE - map(brake[i], b_mins[i], b_maxs[i], 0, MAX_DUTY_CYCLE);
-		}
-
-		printf("a %d %d %d \t\t b %d %d \t %d %d %d \t %d %d %d \t %d %d %d \t %d %d %d \t %d %d %d\r\n",
-				a_values[0], a_values[1], a_values[2],
-				b_values[0], b_values[1],
-				accel[0], a_min[0], a_max[0],
-				accel[1], a_min[1], a_max[1],
-				accel[2], a_min[2], a_max[2],
-				brake[0], b_min[0], b_max[0],
-				brake[1], b_min[1], b_max[1]);
-
-
-*/
-
-
-		while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) > 0) {
+	if (hcan == &hcan1) {
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan1, fifo) > 0) {
 			CAN_MSG_Generic_t msg;
-			HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &(msg.header), msg.data);
+			HAL_CAN_GetRxMessage(&hcan1, fifo, &(msg.header), msg.data);
 			osMessageQueuePut(CC_GlobalState->CAN1Queue, &msg, 0U, 0U);
 
 			CAN_log_t log_msg = { 0 };
@@ -401,10 +386,10 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
 			//int len = sprintf(x, "[%li] Got CAN msg from CAN1: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.StdId);
 			//CC_LogInfo(x, len);
 		}
-
-		while (HAL_CAN_GetRxFifoFillLevel(&hcan2, CAN_RX_FIFO0) > 0) {
+	} else if (hcan == &hcan2) {
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan2, fifo) > 0) {
 			CAN_MSG_Generic_t msg;
-			HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO0, &(msg.header), msg.data);
+			HAL_CAN_GetRxMessage(&hcan2, fifo, &(msg.header), msg.data);
 			osMessageQueuePut(CC_GlobalState->CAN2Queue, &msg, 0U, 0U);
 
 			CAN_log_t log_msg = { 0 };
@@ -416,10 +401,10 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
 			//int len = sprintf(x, "[%li] Got CAN msg from CAN2: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
 			//CC_LogInfo(x, len);
 		}
-
-		while (HAL_CAN_GetRxFifoFillLevel(&hcan3, CAN_RX_FIFO0) > 0) {
+	} else if (hcan == &hcan3) {
+		while (HAL_CAN_GetRxFifoFillLevel(&hcan3, fifo) > 0) {
 			CAN_MSG_Generic_t msg;
-			HAL_CAN_GetRxMessage(&hcan3, CAN_RX_FIFO0, &(msg.header), msg.data);
+			HAL_CAN_GetRxMessage(&hcan3, fifo, &(msg.header), msg.data);
 			osMessageQueuePut(CC_GlobalState->CAN3Queue, &msg, 0U, 0U);
 
 			CAN_log_t log_msg = { 0 };
@@ -431,7 +416,6 @@ __NO_RETURN void fsm_thread_mainLoop(void *fsm) {
 			//int len = sprintf(x, "[%li] Got CAN msg from CAN3: %02lX\r\n", (HAL_GetTick() - CC_GlobalState->startupTicks)/1000, msg.header.ExtId);
 			//CC_LogInfo(x, len);
 		}
-		fsm_iterate(fsm);
 	}
 }
 

@@ -62,6 +62,7 @@ void Error_Handler(void);
 #define PRINTF_TO_UART
 int _write(int file, char *data, int len);
 void CC_LogInfo(char* msg, size_t length);
+void handleCAN(CAN_HandleTypeDef *hcan, int fifo);
 __NO_RETURN void fsm_thread_mainLoop(void* arg);
 /* USER CODE END EFP */
 

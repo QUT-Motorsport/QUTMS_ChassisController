@@ -22,7 +22,7 @@
 osMessageQueueId_t log_serial_queue;
 osMessageQueueId_t log_CAN_queue;
 
-const char *serial_filename = "slog.txt";
+const char *serial_filename = "sl.txt";
 const char *CAN_filename = "log.CC";
 char f_name[80];
 char working_folder[80];
