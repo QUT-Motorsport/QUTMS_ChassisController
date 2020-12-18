@@ -250,7 +250,7 @@ int main(void) {
 	// setup logging thread
 	osThreadAttr_t logging_thread = { 0 };
 	logging_thread.name = "sd_logger";
-	logging_thread.priority = (osPriority_t) osPriorityNormal;
+	logging_thread.priority = (osPriority_t) osPriorityAboveNormal;
 	logging_thread.stack_size = 2048;
 
 	// create new thread for logging

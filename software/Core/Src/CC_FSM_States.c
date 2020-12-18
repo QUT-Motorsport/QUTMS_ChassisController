@@ -1002,7 +1002,7 @@ void state_driving_iterate(fsm_t *fsm) {
 			inverter_header.StdId = inverter_enable.id;
 			inverter_header.DLC = 8;
 
-			result = CC_send_can_msg(&CAN_1, &inverter_header,
+			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header,
 					inverter_enable.data, &CC_GlobalState->CAN1_TxMailbox);
 
 		}
@@ -1010,7 +1010,7 @@ void state_driving_iterate(fsm_t *fsm) {
 		CC_GlobalState->inverter_enable_ticks = HAL_GetTick();
 	}
 
-// send accel and brake
+	// send accel and brake
 	if (((HAL_GetTick() - CC_GlobalState->inverter_cmd_ticks)
 			>= INVERTER_CMD_TICK_COUNT) && !CC_GlobalState->faultDetected) {
 		CC_SetVariable_t inverter_cmd = { 0 };
@@ -1025,7 +1025,7 @@ void state_driving_iterate(fsm_t *fsm) {
 					INVERTER_VAR_ACCEL, CC_GlobalState->accelTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			result = CC_send_can_msg(&CAN_1, &inverter_header,
+			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header,
 					inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 
 			// brake
@@ -1033,7 +1033,7 @@ void state_driving_iterate(fsm_t *fsm) {
 					INVERTER_VAR_BRAKE, CC_GlobalState->brakeTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			result = CC_send_can_msg(&CAN_1, &inverter_header,
+			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header,
 					inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 		}
 
