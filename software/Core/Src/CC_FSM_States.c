@@ -860,14 +860,34 @@ void state_driving_iterate(fsm_t *fsm) {
 		//CC_LogInfo("ADC Fault Detected\r\n", strlen("ADC Fault Detected\r\n"));
 	}
 	if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
-		/* Calculatee Brake Positions with Filter */
+		/* Calculate Brake Positions with Filter */
 		for (int i = 0; i < NUM_BRAKE_SENSORS; i++) {
-			/* Fetch Value & Apply Filter */
-			uint32_t y = CC_GlobalState->pedalScale
+			// update min and max
+			if (CC_GlobalState->brakeAdcValues[i]
+					> CC_GlobalState->brakeMax[i]) {
+				uint16_t old_val = CC_GlobalState->brakeMax[i];
+				CC_GlobalState->brakeMax[i] = CC_GlobalState->brakeAdcValues[i];
+				len = sprintf(x, "Updating Brake Max %d to %d from %d\r\n", i,
+						CC_GlobalState->brakeMax[i], old_val);
+				CC_LogInfo(x, len);
+			}
+
+			if (CC_GlobalState->brakeAdcValues[i]
+					< CC_GlobalState->brakeMin[i]) {
+				uint16_t old_val = CC_GlobalState->brakeMin[i];
+				CC_GlobalState->brakeMin[i] = CC_GlobalState->brakeAdcValues[i];
+				len = sprintf(x, "Updating Brake Min %d to %d from %d\r\n", i,
+						CC_GlobalState->brakeMin[i], old_val);
+				CC_LogInfo(x, len);
+			}
+
+			// Fetch Value & Apply Filter
+			/*uint32_t y = CC_GlobalState->pedalScale
 					* CC_GlobalState->brakeAdcValues[i]
 					+ (1.0 - CC_GlobalState->pedalScale)
 							* CC_GlobalState->rollingBrakeValues[i];
-			CC_GlobalState->rollingBrakeValues[i] = y;
+			CC_GlobalState->rollingBrakeValues[i] = y;*/
+			CC_GlobalState->rollingBrakeValues[i] = CC_GlobalState->brakeAdcValues[i];
 
 			/* Map to Max Duty Cycle */
 			brake_travel[i] = map(CC_GlobalState->rollingBrakeValues[i],
@@ -877,12 +897,33 @@ void state_driving_iterate(fsm_t *fsm) {
 
 		/* Calculate Accel Positions with Filter */
 		for (int i = 0; i < NUM_ACCEL_SENSORS; i++) {
-			/* Fetch Value & Apply Filter */
-			uint32_t y = CC_GlobalState->pedalScale
+
+			// update min and max
+			if (CC_GlobalState->accelAdcValues[i]
+					> CC_GlobalState->accelMax[i]) {
+				uint16_t old_val = CC_GlobalState->accelMax[i];
+				CC_GlobalState->accelMax[i] = CC_GlobalState->accelAdcValues[i];
+				len = sprintf(x, "Updating Accel Max %d to %d from %d\r\n", i,
+						CC_GlobalState->accelMax[i], old_val);
+				CC_LogInfo(x, len);
+			}
+
+			if (CC_GlobalState->accelAdcValues[i]
+					< CC_GlobalState->accelMin[i]) {
+				uint16_t old_val = CC_GlobalState->accelMin[i];
+				CC_GlobalState->accelMin[i] = CC_GlobalState->accelAdcValues[i];
+				len = sprintf(x, "Updating Accel Min %d to %d from %d\r\n", i,
+						CC_GlobalState->accelMin[i], old_val);
+				CC_LogInfo(x, len);
+			}
+
+			// Fetch Value & Apply Filter
+			/*uint32_t y = CC_GlobalState->pedalScale
 					* CC_GlobalState->accelAdcValues[i]
 					+ (1.0 - CC_GlobalState->pedalScale)
 							* CC_GlobalState->rollingAccelValues[i];
-			CC_GlobalState->rollingAccelValues[i] = y;
+			CC_GlobalState->rollingAccelValues[i] = y;*/
+			CC_GlobalState->rollingAccelValues[i] = CC_GlobalState->accelAdcValues[i];
 
 			/* Map to Max Duty Cycle */
 			accel_travel[i] = map(CC_GlobalState->rollingAccelValues[i],
@@ -890,53 +931,51 @@ void state_driving_iterate(fsm_t *fsm) {
 					MAX_DUTY_CYCLE);
 		}
 
-
 		/* Calculate Faulty ADC Reading */
 		bool currentFault = false;
 		/*
-		for (int i = 0; i < NUM_BRAKE_SENSORS; i++) {
-			for (int y = 0; y < NUM_BRAKE_SENSORS; y++) {
-				if (brake_travel[i] < (int32_t) brake_travel[y] - pedal_bounds
-						|| brake_travel[i]
-								> (int32_t) brake_travel[y] + pedal_bounds) {
-					currentFault = true;
-				}
-			}
-		}
-		for (int i = 0; i < NUM_ACCEL_SENSORS; i++) {
-			for (int y = 0; y < NUM_ACCEL_SENSORS; y++) {
-				if (accel_travel[i] < (int32_t) accel_travel[y] - pedal_bounds
-						|| accel_travel[i]
-								> (int32_t) accel_travel[y] + pedal_bounds) {
-					currentFault = true;
-				}
-			}
-		}
+		 for (int i = 0; i < NUM_BRAKE_SENSORS; i++) {
+		 for (int y = 0; y < NUM_BRAKE_SENSORS; y++) {
+		 if (brake_travel[i] < (int32_t) brake_travel[y] - pedal_bounds
+		 || brake_travel[i]
+		 > (int32_t) brake_travel[y] + pedal_bounds) {
+		 currentFault = true;
+		 }
+		 }
+		 }
+		 for (int i = 0; i < NUM_ACCEL_SENSORS; i++) {
+		 for (int y = 0; y < NUM_ACCEL_SENSORS; y++) {
+		 if (accel_travel[i] < (int32_t) accel_travel[y] - pedal_bounds
+		 || accel_travel[i]
+		 > (int32_t) accel_travel[y] + pedal_bounds) {
+		 currentFault = true;
+		 }
+		 }
+		 }
 
-		// Fault Handling - Comment Out to Stop Faulting
-		if (currentFault) {
-			// New Fault
-			if (!CC_GlobalState->faultDetected) {
-				//				CC_GlobalState->faultDetected = currentFault;
-				//				CC_GlobalState->implausibleTicks = HAL_GetTick();
-			}
-		} else {
-			// Reset Tripped Fault
-			CC_GlobalState->faultDetected = currentFault;
-			CC_GlobalState->implausibleTicks = 0;
-		}
-		*/
+		 // Fault Handling - Comment Out to Stop Faulting
+		 if (currentFault) {
+		 // New Fault
+		 if (!CC_GlobalState->faultDetected) {
+		 //				CC_GlobalState->faultDetected = currentFault;
+		 //				CC_GlobalState->implausibleTicks = HAL_GetTick();
+		 }
+		 } else {
+		 // Reset Tripped Fault
+		 CC_GlobalState->faultDetected = currentFault;
+		 CC_GlobalState->implausibleTicks = 0;
+		 }
+		 */
 
 		/* Convert Pedal Positions to Torque Commands */
 		CC_GlobalState->brakeTravel = MAX_DUTY_CYCLE - brake_travel[0];
 		CC_GlobalState->accelTravel = MAX_DUTY_CYCLE - accel_travel[0];
 
 		if (true) {
-				len = sprintf(x, "Accel: %d Brake: %d\r\n", CC_GlobalState->accelTravel,
-						CC_GlobalState->brakeTravel);
-				CC_LogInfo(x, len);
-			}
-
+			len = sprintf(x, "Accel: %d Brake: %d\r\n",
+					CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
+			CC_LogInfo(x, len);
+		}
 
 		// apply plausibility check to accelerator for pedal disconnect
 		for (int i = 0; i < NUM_ACCEL_SENSORS; i++) {
@@ -1002,7 +1041,7 @@ void state_driving_iterate(fsm_t *fsm) {
 			inverter_header.StdId = inverter_enable.id;
 			inverter_header.DLC = 8;
 
-			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header,
+			result = CC_send_can_msg(&CAN_1, &inverter_header,
 					inverter_enable.data, &CC_GlobalState->CAN1_TxMailbox);
 
 		}
@@ -1022,18 +1061,18 @@ void state_driving_iterate(fsm_t *fsm) {
 
 			// accel
 			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i],
-					INVERTER_VAR_ACCEL, CC_GlobalState->accelTravel);
+			INVERTER_VAR_ACCEL, CC_GlobalState->accelTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header,
+			result = CC_send_can_msg(&CAN_1, &inverter_header,
 					inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 
 			// brake
 			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i],
-					INVERTER_VAR_BRAKE, CC_GlobalState->brakeTravel);
+			INVERTER_VAR_BRAKE, CC_GlobalState->brakeTravel);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
-			result = HAL_CAN_AddTxMessage(&CAN_1, &inverter_header,
+			result = CC_send_can_msg(&CAN_1, &inverter_header,
 					inverter_cmd.data, &CC_GlobalState->CAN1_TxMailbox);
 		}
 
