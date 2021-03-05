@@ -37,6 +37,8 @@
 
 #define BRAKE_UPDATE_TICK_COUNT 20
 
+extern TIM_HandleTypeDef htim2;
+
 uint16_t inverter_node_ids[NUM_INVERTERS] = { INVERTER_LEFT_NODE_ID,
 INVERTER_RIGHT_NODE_ID };
 
@@ -81,7 +83,7 @@ void state_start_enter(fsm_t *fsm) {
 			CC_GlobalState->ADC_Debug = true;
 
 			/* Boards w/ Heartbeats */
-			CC_GlobalState->PDM_Debug = false;
+			CC_GlobalState->PDM_Debug = true;
 			CC_GlobalState->AMS_Debug = false;
 			CC_GlobalState->SHDN_1_Debug = false;
 			CC_GlobalState->SHDN_2_Debug = true;
@@ -246,6 +248,9 @@ void state_idle_enter(fsm_t *fsm) {
 }
 
 void state_idle_iterate(fsm_t *fsm) {
+#ifdef RTD_DEBUG
+	fsm_changeState(fsm, &drivingState, "RTD Engaged");
+#endif
 	char buf[80];
 	int len;
 	/* Check for Heartbeat Expiry */
@@ -560,8 +565,8 @@ void state_idle_exit(fsm_t *fsm) {
 		CC_GlobalState->readyToDriveTicks = HAL_GetTick();
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
-
-	/* RTD Siren & HV Startup */
+#ifndef RTD_DEBUG
+	// RTD Siren & HV Startup
 	CC_GlobalState->pdmTrackState = CC_GlobalState->pdmTrackState
 			| RTD_SIREN_MASK | HV_STARTUP;
 	PDM_SetChannelStates_t rtdSiren = Compose_PDM_SetChannelStates(
@@ -571,7 +576,7 @@ void state_idle_exit(fsm_t *fsm) {
 			.TransmitGlobalTime = DISABLE, };
 	CC_send_can_msg(&hcan2, &sirenHeader, rtdSiren.data,
 			&CC_GlobalState->CAN2_TxMailbox);
-
+#endif
 	len = sprintf(buf, "exit idle\r\n");
 	CC_LogInfo(buf, len);
 
@@ -616,7 +621,7 @@ void state_driving_enter(fsm_t *fsm) {
 		CC_GlobalState->accelMax[1] = ACCEL_PEDAL_TWO_MAX;
 		CC_GlobalState->accelMin[2] = ACCEL_PEDAL_THREE_MIN;
 		CC_GlobalState->accelMax[2] = ACCEL_PEDAL_THREE_MAX;
-
+#ifndef RTD_DEBUG
 		// set duty cycle of left and right, and amu fans
 		uint16_t fan_duty_cycle = 100;
 
@@ -646,7 +651,7 @@ void state_driving_enter(fsm_t *fsm) {
 
 		CC_send_can_msg(&CAN_2, &CAN_header, pdm_set_duty_msg.data,
 				&CC_GlobalState->CAN2_TxMailbox);
-
+#endif
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
 	/* Start Polling ADC */
@@ -670,12 +675,23 @@ void state_driving_enter(fsm_t *fsm) {
 	CC_send_can_msg(&CAN_1, &runRightHeader, runRightScript.data,
 			&CC_GlobalState->CAN1_TxMailbox);
 
+	// start ADC timer
+	HAL_TIM_Base_Start_IT(&htim2);
+
 	len = sprintf(buf, "exit rtd\r\n");
 	CC_LogInfo(buf, len);
+
+
+
 	return;
 }
 
+volatile uint8_t adc_reading = 0;
+
 void state_driving_iterate(fsm_t *fsm) {
+	char x[200];
+	uint32_t len;
+
 
 	if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
 		/* Flash RTD */
@@ -684,6 +700,8 @@ void state_driving_iterate(fsm_t *fsm) {
 					!CC_GlobalState->rtdLightActive);
 			CC_GlobalState->rtdLightActive = !CC_GlobalState->rtdLightActive;
 			CC_GlobalState->readyToDriveTicks = HAL_GetTick();
+
+#ifndef RTD_DEBUG
 
 			CC_GlobalState->pdmTrackState = CC_GlobalState->pdmTrackState
 					& (~RTD_SIREN_MASK);
@@ -694,6 +712,8 @@ void state_driving_iterate(fsm_t *fsm) {
 					.TransmitGlobalTime = DISABLE, };
 			CC_send_can_msg(&hcan2, &sirenHeader, rtdSiren.data,
 					&CC_GlobalState->CAN2_TxMailbox);
+
+#endif
 		}
 		/* AMS Heartbeat Expiry - Fatal Shutdown */
 		if ((HAL_GetTick() - CC_GlobalState->amsTicks) > 100
@@ -843,6 +863,20 @@ void state_driving_iterate(fsm_t *fsm) {
 		}
 	}
 
+	// adc reading event - every 5ms - 200hz
+	if (CC_GlobalState->adc_reading == 1) {
+		CC_GlobalState->adc_reading = 0;
+
+		// get the latest adc values and update their filter
+		for (int i = 0; i < NUM_BRAKE_SENSORS; i++) {
+
+		}
+
+
+		len = sprintf(x, "%d\r\n", HAL_GetTick());
+		CC_LogInfo(x, len);
+	}
+
 	/*
 	 * Read 3 Throttle ADC Values
 	 * Read 2 Brake ADC Values
@@ -851,17 +885,24 @@ void state_driving_iterate(fsm_t *fsm) {
 	uint32_t accel_travel[3];
 	uint32_t brake_sum = 0;
 	uint32_t accel_sum = 0;
-	uint32_t pedal_bounds = MAX_DUTY_CYCLE * CC_GlobalState->pedalScale;
-	char x[80];
-	uint32_t len;
+	//uint32_t pedal_bounds = MAX_DUTY_CYCLE * CC_GlobalState->pedalScale;
 
 	/* Echo ADC Failure for Debugging */
 	if (CC_GlobalState->faultDetected) {
 		//CC_LogInfo("ADC Fault Detected\r\n", strlen("ADC Fault Detected\r\n"));
 	}
+	if (false) {
 	if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT) == osOK) {
+
 		/* Calculate Brake Positions with Filter */
 		for (int i = 0; i < NUM_BRAKE_SENSORS; i++) {
+#ifdef DEBUG_RAW_ADC
+			len = sprintf(x, "b%d: %d -:%d +:%d \r\n", i,
+					CC_GlobalState->brakeAdcValues[i],
+					CC_GlobalState->brakeMin[i], CC_GlobalState->brakeMax[i]);
+			//CC_LogInfo(x, len);
+#endif
+
 			// update min and max
 			if (CC_GlobalState->brakeAdcValues[i]
 					> CC_GlobalState->brakeMax[i]) {
@@ -869,7 +910,7 @@ void state_driving_iterate(fsm_t *fsm) {
 				CC_GlobalState->brakeMax[i] = CC_GlobalState->brakeAdcValues[i];
 				len = sprintf(x, "Updating Brake Max %d to %d from %d\r\n", i,
 						CC_GlobalState->brakeMax[i], old_val);
-				CC_LogInfo(x, len);
+				//CC_LogInfo(x, len);
 			}
 
 			if (CC_GlobalState->brakeAdcValues[i]
@@ -878,16 +919,17 @@ void state_driving_iterate(fsm_t *fsm) {
 				CC_GlobalState->brakeMin[i] = CC_GlobalState->brakeAdcValues[i];
 				len = sprintf(x, "Updating Brake Min %d to %d from %d\r\n", i,
 						CC_GlobalState->brakeMin[i], old_val);
-				CC_LogInfo(x, len);
+				//CC_LogInfo(x, len);
 			}
 
 			// Fetch Value & Apply Filter
 			/*uint32_t y = CC_GlobalState->pedalScale
-					* CC_GlobalState->brakeAdcValues[i]
-					+ (1.0 - CC_GlobalState->pedalScale)
-							* CC_GlobalState->rollingBrakeValues[i];
-			CC_GlobalState->rollingBrakeValues[i] = y;*/
-			CC_GlobalState->rollingBrakeValues[i] = CC_GlobalState->brakeAdcValues[i];
+			 * CC_GlobalState->brakeAdcValues[i]
+			 + (1.0 - CC_GlobalState->pedalScale)
+			 * CC_GlobalState->rollingBrakeValues[i];
+			 CC_GlobalState->rollingBrakeValues[i] = y;*/
+			CC_GlobalState->rollingBrakeValues[i] =
+					CC_GlobalState->brakeAdcValues[i];
 
 			/* Map to Max Duty Cycle */
 			brake_travel[i] = map(CC_GlobalState->rollingBrakeValues[i],
@@ -897,6 +939,12 @@ void state_driving_iterate(fsm_t *fsm) {
 
 		/* Calculate Accel Positions with Filter */
 		for (int i = 0; i < NUM_ACCEL_SENSORS; i++) {
+#ifdef DEBUG_RAW_ADC
+			len = sprintf(x, "a%d: %d -:%d +:%d ", i,
+					CC_GlobalState->accelAdcValues[i],
+					CC_GlobalState->accelMin[i], CC_GlobalState->accelMax[i]);
+			//CC_LogInfo(x, len);
+#endif
 
 			// update min and max
 			if (CC_GlobalState->accelAdcValues[i]
@@ -905,7 +953,7 @@ void state_driving_iterate(fsm_t *fsm) {
 				CC_GlobalState->accelMax[i] = CC_GlobalState->accelAdcValues[i];
 				len = sprintf(x, "Updating Accel Max %d to %d from %d\r\n", i,
 						CC_GlobalState->accelMax[i], old_val);
-				CC_LogInfo(x, len);
+				//CC_LogInfo(x, len);
 			}
 
 			if (CC_GlobalState->accelAdcValues[i]
@@ -914,22 +962,28 @@ void state_driving_iterate(fsm_t *fsm) {
 				CC_GlobalState->accelMin[i] = CC_GlobalState->accelAdcValues[i];
 				len = sprintf(x, "Updating Accel Min %d to %d from %d\r\n", i,
 						CC_GlobalState->accelMin[i], old_val);
-				CC_LogInfo(x, len);
+				//CC_LogInfo(x, len);
 			}
 
 			// Fetch Value & Apply Filter
 			/*uint32_t y = CC_GlobalState->pedalScale
-					* CC_GlobalState->accelAdcValues[i]
-					+ (1.0 - CC_GlobalState->pedalScale)
-							* CC_GlobalState->rollingAccelValues[i];
-			CC_GlobalState->rollingAccelValues[i] = y;*/
-			CC_GlobalState->rollingAccelValues[i] = CC_GlobalState->accelAdcValues[i];
+			 * CC_GlobalState->accelAdcValues[i]
+			 + (1.0 - CC_GlobalState->pedalScale)
+			 * CC_GlobalState->rollingAccelValues[i];
+			 CC_GlobalState->rollingAccelValues[i] = y;*/
+			CC_GlobalState->rollingAccelValues[i] =
+					CC_GlobalState->accelAdcValues[i];
 
 			/* Map to Max Duty Cycle */
 			accel_travel[i] = map(CC_GlobalState->rollingAccelValues[i],
 					CC_GlobalState->accelMin[i], CC_GlobalState->accelMax[i], 0,
 					MAX_DUTY_CYCLE);
 		}
+
+#ifdef DEBUG_RAW_ADC
+			len = sprintf(x, "\r\n");
+			//CC_LogInfo(x, len);
+#endif
 
 		/* Calculate Faulty ADC Reading */
 		bool currentFault = false;
@@ -971,12 +1025,13 @@ void state_driving_iterate(fsm_t *fsm) {
 		CC_GlobalState->brakeTravel = MAX_DUTY_CYCLE - brake_travel[0];
 		CC_GlobalState->accelTravel = MAX_DUTY_CYCLE - accel_travel[0];
 
+#ifndef DEBUG_RAW_ADC
 		if (true) {
 			len = sprintf(x, "Accel: %d Brake: %d\r\n",
 					CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
 			CC_LogInfo(x, len);
 		}
-
+#endif
 		// apply plausibility check to accelerator for pedal disconnect
 		for (int i = 0; i < NUM_ACCEL_SENSORS; i++) {
 			// apply plausibilty check for pedal disconnect
@@ -999,6 +1054,8 @@ void state_driving_iterate(fsm_t *fsm) {
 
 		osSemaphoreRelease(CC_GlobalState->sem);
 	}
+	}
+#ifndef DEBUG_RAW_ADC
 
 // print pedal positions
 	if (false) {
@@ -1006,6 +1063,7 @@ void state_driving_iterate(fsm_t *fsm) {
 				CC_GlobalState->brakeTravel);
 		CC_LogInfo(x, len);
 	}
+#endif
 
 	/*
 	 * If Throttle and Brake Implausibility State Clock < 100ms
@@ -1055,10 +1113,11 @@ void state_driving_iterate(fsm_t *fsm) {
 		CC_SetVariable_t inverter_cmd = { 0 };
 
 		for (int i = 0; i < NUM_INVERTERS; i++) {
+#ifndef DEBUG_RAW_ADC
 			len = sprintf(x, "Inverter: %d Command - A: %d B: %d\r\n", i,
 					CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
 			CC_LogInfo(x, len);
-
+#endif
 			// accel
 			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i],
 			INVERTER_VAR_ACCEL, CC_GlobalState->accelTravel);

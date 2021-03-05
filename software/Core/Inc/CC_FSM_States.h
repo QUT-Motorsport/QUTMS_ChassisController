@@ -71,7 +71,9 @@ typedef struct
 	bool ccInit;
 	bool amsInit;
 
-	/* Analogue Values */
+	// Analogue Values
+	uint8_t adc_reading;
+
 	uint32_t brakeAdcValues[2];
 	uint32_t accelAdcValues[3];
 

@@ -135,66 +135,46 @@ __weak uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint32_t WriteAddr, uint32_t 
 /* can be used to modify previous code / undefine following code / add code */
 /* USER CODE END BeforeReadDMABlocksSection */
 /**
- * @brief  Reads block(s) from a specified address in an SD card, in DMA mode.
- * @param  pData: Pointer to the buffer that will contain the data to transmit
- * @param  ReadAddr: Address from where data is to be read
- * @param  NumOfBlocks: Number of SD blocks to read
- * @retval SD status
- */
-uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint32_t ReadAddr,
-		uint32_t NumOfBlocks) {
-	uint8_t sd_state = MSD_OK;
+  * @brief  Reads block(s) from a specified address in an SD card, in DMA mode.
+  * @param  pData: Pointer to the buffer that will contain the data to transmit
+  * @param  ReadAddr: Address from where data is to be read
+  * @param  NumOfBlocks: Number of SD blocks to read
+  * @retval SD status
+  */
+__weak uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks)
+{
+  uint8_t sd_state = MSD_OK;
 
-	// Since we are only using 1 DMA channel for SDIO
-	// Change DMA direction before calling SD Read
-	// Direction can only be changed when DMA is disabled
+  /* Read block(s) in DMA transfer mode */
+  if (HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t *)pData, ReadAddr, NumOfBlocks) != HAL_OK)
+  {
+    sd_state = MSD_ERROR;
+  }
 
-	__HAL_DMA_DISABLE(hsd1.hdmarx);
-	hsd1.hdmarx->Init.Direction = DMA_PERIPH_TO_MEMORY;
-	hsd1.hdmarx->Instance->CR &= ~DMA_SxCR_DIR;
-	hsd1.hdmarx->Instance->CR |= DMA_PERIPH_TO_MEMORY;
-
-	/* Read block(s) in DMA transfer mode */
-	if (HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t*) pData, ReadAddr, NumOfBlocks)
-			!= HAL_OK) {
-		sd_state = MSD_ERROR;
-	}
-
-	return sd_state;
+  return sd_state;
 }
 
 /* USER CODE BEGIN BeforeWriteDMABlocksSection */
 /* can be used to modify previous code / undefine following code / add code */
 /* USER CODE END BeforeWriteDMABlocksSection */
 /**
- * @brief  Writes block(s) to a specified address in an SD card, in DMA mode.
- * @param  pData: Pointer to the buffer that will contain the data to transmit
- * @param  WriteAddr: Address from where data is to be written
- * @param  NumOfBlocks: Number of SD blocks to write
- * @retval SD status
- */
-uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint32_t WriteAddr,
-		uint32_t NumOfBlocks) {
-	uint8_t sd_state = MSD_OK;
+  * @brief  Writes block(s) to a specified address in an SD card, in DMA mode.
+  * @param  pData: Pointer to the buffer that will contain the data to transmit
+  * @param  WriteAddr: Address from where data is to be written
+  * @param  NumOfBlocks: Number of SD blocks to write
+  * @retval SD status
+  */
+__weak uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks)
+{
+  uint8_t sd_state = MSD_OK;
 
-	// Since we are only using 1 DMA channel for SDIO
-	// Change DMA direction before calling SD Read
-	// Direction can only be changed when DMA is disabled
+  /* Write block(s) in DMA transfer mode */
+  if (HAL_SD_WriteBlocks_DMA(&hsd1, (uint8_t *)pData, WriteAddr, NumOfBlocks) != HAL_OK)
+  {
+    sd_state = MSD_ERROR;
+  }
 
-	__HAL_DMA_DISABLE(hsd1.hdmatx);
-
-	hsd1.hdmatx->Init.Direction = DMA_MEMORY_TO_PERIPH;
-
-	hsd1.hdmarx->Instance->CR &= ~DMA_SxCR_DIR;
-	hsd1.hdmarx->Instance->CR |= DMA_MEMORY_TO_PERIPH;
-
-	/* Write block(s) in DMA transfer mode */
-	if (HAL_SD_WriteBlocks_DMA(&hsd1, (uint8_t*) pData, WriteAddr, NumOfBlocks)
-			!= HAL_OK) {
-		sd_state = MSD_ERROR;
-	}
-
-	return sd_state;
+  return sd_state;
 }
 
 /* USER CODE BEGIN BeforeEraseSection */
