@@ -328,14 +328,9 @@ void state_driving_iterate(fsm_t *fsm) {
 		}
 
 		len = sprintf(x, "%d %d %d\r\n",
-				/*
 				CC_GlobalState->pedal_accel[0].current_filtered,
 				CC_GlobalState->pedal_accel[1].current_filtered,
 				CC_GlobalState->pedal_accel[2].current_filtered
-				*/
-				CC_GlobalState->accelAdcValues[0],
-				CC_GlobalState->accelAdcValues[1],
-				CC_GlobalState->accelAdcValues[2]
 				);
 					CC_LogInfo(x, len);
 	}
