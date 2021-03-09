@@ -23,6 +23,10 @@
 #include "SHDN_IMD_CAN_Messages.h"
 #include "SHDN_CAN_Messages.h"
 #include "Util.h"
+#include "window_filtering.h"
+
+#define NUM_BRAKE_SENSORS 2
+#define NUM_ACCEL_SENSORS 3
 
 /**
  * @brief Chassis Global State
@@ -74,19 +78,17 @@ typedef struct
 	// Analogue Values
 	uint8_t adc_reading;
 
-	uint32_t brakeAdcValues[2];
-	uint32_t accelAdcValues[3];
+	uint32_t accelAdcValues[NUM_ACCEL_SENSORS];
+	uint32_t brakeAdcValues[NUM_BRAKE_SENSORS];
 
-
-
+	window_filter_t pedal_accel[NUM_ACCEL_SENSORS];
+	window_filter_t pedal_brake[NUM_BRAKE_SENSORS];
 
 	uint32_t brakePressureThreshold;
-	uint32_t brakeMin[2];
-	uint32_t brakeMax[2];
-	uint32_t rollingBrakeValues[2];
-	uint32_t accelMin[3];
-	uint32_t accelMax[3];
-	uint32_t rollingAccelValues[3];
+	uint32_t brakeMin[NUM_BRAKE_SENSORS];
+	uint32_t brakeMax[NUM_BRAKE_SENSORS];
+	uint32_t accelMin[NUM_ACCEL_SENSORS];
+	uint32_t accelMax[NUM_ACCEL_SENSORS];
 
 	/* Formatted Pedal Travel Positions */
 	int16_t accelTravel;
@@ -129,7 +131,7 @@ typedef struct
 
 } CC_GlobalState_t;
 
-CC_GlobalState_t *CC_GlobalState;
+extern CC_GlobalState_t *CC_GlobalState;
 
 /**
  * @brief Dead state enter function
@@ -157,7 +159,7 @@ void state_dead_exit(fsm_t *fsm);
  * @note Initial FSM state, has no functionality
  * @details Next: idleState (Instantly)
  */
-state_t deadState;
+extern state_t deadState;
 
 /**
  * @brief Start state enter function. Initialises the CC_GlobalState
@@ -182,7 +184,7 @@ void state_start_exit(fsm_t *fsm);
  * @note LV System engaged
  * * @details Next: idleState (Boot executed)
  */
-state_t startState;
+extern state_t startState;
 
 /**
  * @brief Idle state enter function. Initialises the CC_GlobalState
@@ -207,7 +209,7 @@ void state_idle_exit(fsm_t *fsm);
  * @note Idle FSM state, waiting for RTD or charging CAN messages.
  * * @details Next: drivingState (RTD Engaged)
  */
-state_t idleState;
+extern state_t idleState;
 
 /**
  * Driving state enter function. Ensure heartbeat integrity before engaging tractive system
@@ -232,7 +234,7 @@ void state_driving_exit(fsm_t *fsm);
  * @note Driving FSM state
  * @details Next: idleState (Soft Shutdown)
  */
-state_t drivingState;
+extern state_t drivingState;
 
 /**
  * Debug state enter function.
@@ -256,6 +258,6 @@ void state_debug_exit(fsm_t *fsm);
  * @brief debugState for debugging functionality
  * @note Debugging FSM state
  */
-state_t debugState;
+extern state_t debugState;
 
 #endif /* INC_CC_FSM_STATES_H_ */
