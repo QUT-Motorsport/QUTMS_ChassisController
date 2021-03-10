@@ -313,26 +313,64 @@ void state_driving_iterate(fsm_t *fsm) {
 		for (int i = 0; i < NUM_BRAKE_SENSORS; i++) {
 			update_filtering(&CC_GlobalState->pedal_brake[i],
 					(uint16_t) CC_GlobalState->brakeAdcValues[i]);
-			//len = sprintf(x, " b%d %d", i, CC_GlobalState->pedal_brake[i].current_filtered);
-			//CC_LogInfo(x, len);
+
+			// update max and min values
+			if (CC_GlobalState->pedal_brake[i].current_filtered
+					> CC_GlobalState->brakeMax[i]) {
+				len = sprintf(x, "Updating Brake Max %d to %d from %d\r\n", i,
+						CC_GlobalState->pedal_brake[i].current_filtered,
+						CC_GlobalState->brakeMax[i]);
+				CC_LogInfo(x, len);
+
+				CC_GlobalState->brakeMax[i] =
+						CC_GlobalState->pedal_brake[i].current_filtered;
+			}
+
+			if (CC_GlobalState->pedal_brake[i].current_filtered
+					< CC_GlobalState->brakeMin[i]) {
+				len = sprintf(x, "Updating Brake Min %d to %d from %d\r\n", i,
+						CC_GlobalState->pedal_brake[i].current_filtered,
+						CC_GlobalState->brakeMin[i]);
+				CC_LogInfo(x, len);
+
+				CC_GlobalState->brakeMin[i] =
+						CC_GlobalState->pedal_brake[i].current_filtered;
+			}
 		}
 
-
 		for (int i = 0; i < NUM_ACCEL_SENSORS; i++) {
-			//HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-			//CC_GlobalState->accelAdcValues[i] = HAL_ADC_GetValue(&hadc1);
 			update_filtering(&CC_GlobalState->pedal_accel[i],
 					(uint16_t) CC_GlobalState->accelAdcValues[i]);
-			//len = sprintf(x, " a%d %d", i, CC_GlobalState->pedal_accel[i].current_filtered);
-			//CC_LogInfo(x, len);
+
+			// update max and min values
+			if (CC_GlobalState->pedal_accel[i].current_filtered
+					> CC_GlobalState->accelMax[i]) {
+
+				len = sprintf(x, "Updating Accel Max %d to %d from %d\r\n", i,
+						CC_GlobalState->pedal_accel[i].current_filtered,
+						CC_GlobalState->accelMax[i]);
+				CC_LogInfo(x, len);
+
+				CC_GlobalState->accelMax[i] =
+						CC_GlobalState->pedal_accel[i].current_filtered;
+			}
+
+			if (CC_GlobalState->pedal_accel[i].current_filtered
+					< CC_GlobalState->accelMin[i]) {
+				CC_GlobalState->accelMin[i] =
+						CC_GlobalState->pedal_accel[i].current_filtered;
+
+				len = sprintf(x, "Updating Accel Min %d to %d from %d\r\n", i,
+						CC_GlobalState->pedal_accel[i].current_filtered,
+						CC_GlobalState->accelMin[i]);
+				CC_LogInfo(x, len);
+			}
 		}
 
 		len = sprintf(x, "%d %d %d\r\n",
 				CC_GlobalState->pedal_accel[0].current_filtered,
-				CC_GlobalState->pedal_accel[1].current_filtered,
-				CC_GlobalState->pedal_accel[2].current_filtered
-				);
-					CC_LogInfo(x, len);
+				CC_GlobalState->accelMin[0], CC_GlobalState->accelMax[0]);
+		CC_LogInfo(x, len);
 	}
 
 	/*
@@ -349,9 +387,7 @@ void state_driving_iterate(fsm_t *fsm) {
 	if (CC_GlobalState->faultDetected) {
 		//CC_LogInfo("ADC Fault Detected\r\n", strlen("ADC Fault Detected\r\n"));
 	}
-
 #ifdef NO_DEF
-
 	if (false) {
 		if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT)
 				== osOK) {
@@ -431,7 +467,8 @@ void state_driving_iterate(fsm_t *fsm) {
 				// Fetch Value & Apply Filter
 
 				// Map to Max Duty Cycle
-				accel_travel[i] = map(CC_GlobalState->pedal_accel[i].current_filtered,
+				accel_travel[i] = map(
+						CC_GlobalState->pedal_accel[i].current_filtered,
 						CC_GlobalState->accelMin[i],
 						CC_GlobalState->accelMax[i], 0,
 						MAX_DUTY_CYCLE);
@@ -512,7 +549,9 @@ void state_driving_iterate(fsm_t *fsm) {
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
 	}
+
 #endif
+
 #ifndef DEBUG_RAW_ADC
 
 // print pedal positions
@@ -568,6 +607,10 @@ void state_driving_iterate(fsm_t *fsm) {
 	// send accel and brake
 	if (((HAL_GetTick() - CC_GlobalState->inverter_cmd_ticks)
 			>= INVERTER_CMD_TICK_COUNT) && !CC_GlobalState->faultDetected) {
+		// map accelerator value
+
+
+
 		CC_SetVariable_t inverter_cmd = { 0 };
 
 		for (int i = 0; i < NUM_INVERTERS; i++) {

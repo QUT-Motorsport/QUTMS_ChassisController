@@ -95,7 +95,7 @@ __NO_RETURN void fsm_thread_mainLoop(void* arg);
 #define BRAKE_PEDAL_TWO_MAX 3100
 
 
-#define ACCEL_PEDAL_ONE_MIN 2550
+#define ACCEL_PEDAL_ONE_MIN 2450
 #define ACCEL_PEDAL_ONE_MAX 3300
 #define ACCEL_PEDAL_TWO_MIN 2800
 #define ACCEL_PEDAL_TWO_MAX 3300
