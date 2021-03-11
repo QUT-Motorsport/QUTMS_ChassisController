@@ -8,7 +8,7 @@
 #define MOTOR_1_SUBINDEX 0x01
 #define MOTOR_2_SUBINDEX 0x02
 
-#define INVERTER_CMD_TICK_COUNT 5
+#define INVERTER_CMD_TICK_COUNT 100
 #define INVERTER_ENABLE_TICK_COUNT 15
 
 #define INVERTER_VAR_ACCEL 0x01
@@ -370,7 +370,7 @@ void state_driving_iterate(fsm_t *fsm) {
 		len = sprintf(x, "%d %d %d\r\n",
 				CC_GlobalState->pedal_accel[0].current_filtered,
 				CC_GlobalState->accelMin[0], CC_GlobalState->accelMax[0]);
-		CC_LogInfo(x, len);
+		//CC_LogInfo(x, len);
 	}
 
 	/*
@@ -381,7 +381,6 @@ void state_driving_iterate(fsm_t *fsm) {
 	uint32_t accel_travel[3];
 	uint32_t brake_sum = 0;
 	uint32_t accel_sum = 0;
-	//uint32_t pedal_bounds = MAX_DUTY_CYCLE * CC_GlobalState->pedalScale;
 
 	/* Echo ADC Failure for Debugging */
 	if (CC_GlobalState->faultDetected) {
@@ -538,28 +537,12 @@ void state_driving_iterate(fsm_t *fsm) {
 				}
 			}
 
-			// apply dead zones
-			if (CC_GlobalState->accelTravel < DEAD_ZONE_ACCEL) {
-				CC_GlobalState->accelTravel = 0;
-			}
-			if (CC_GlobalState->brakeTravel < DEAD_ZONE_BRAKE) {
-				CC_GlobalState->brakeTravel = 0;
-			}
+
 
 			osSemaphoreRelease(CC_GlobalState->sem);
 		}
 	}
 
-#endif
-
-#ifndef DEBUG_RAW_ADC
-
-// print pedal positions
-	if (false) {
-		len = sprintf(x, "Accel: %d Brake: %d\r\n", CC_GlobalState->accelTravel,
-				CC_GlobalState->brakeTravel);
-		CC_LogInfo(x, len);
-	}
 #endif
 
 	/*
@@ -607,10 +590,27 @@ void state_driving_iterate(fsm_t *fsm) {
 	// send accel and brake
 	if (((HAL_GetTick() - CC_GlobalState->inverter_cmd_ticks)
 			>= INVERTER_CMD_TICK_COUNT) && !CC_GlobalState->faultDetected) {
+
 		// map accelerator value
+		CC_GlobalState->accelTravel = MAX_DUTY_CYCLE - map(
+				CC_GlobalState->pedal_accel[0].current_filtered,
+				CC_GlobalState->accelMin[0], CC_GlobalState->accelMax[0], 0,
+				MAX_DUTY_CYCLE);
 
+		CC_GlobalState->brakeTravel = MAX_DUTY_CYCLE - map(
+				CC_GlobalState->pedal_brake[0].current_filtered,
+				CC_GlobalState->brakeMin[0], CC_GlobalState->brakeMax[0], 0,
+				MAX_DUTY_CYCLE);
 
-
+		// apply dead zones
+		if (CC_GlobalState->accelTravel < DEAD_ZONE_ACCEL) {
+			CC_GlobalState->accelTravel = 0;
+		}
+		/*
+		if (CC_GlobalState->brakeTravel < DEAD_ZONE_BRAKE) {
+			CC_GlobalState->brakeTravel = 0;
+		}
+*/
 		CC_SetVariable_t inverter_cmd = { 0 };
 
 		for (int i = 0; i < NUM_INVERTERS; i++) {

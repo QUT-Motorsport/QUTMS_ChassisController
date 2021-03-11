@@ -14,13 +14,6 @@
 #define CAN_2 hcan2
 #define CAN_3 hcan3
 
-
-
-#define CC_MASK PDM_POWER_CC_MASK
-#define RTD_SIREN_MASK PDMFLAG_RTD_SIREN
-
-
-
 #define FAN_CMD_TICK_COUNT 400
 
 
@@ -70,7 +63,7 @@ void state_start_enter(fsm_t *fsm) {
 			CC_GlobalState->ADC_Debug = true;
 
 			/* Boards w/ Heartbeats */
-			CC_GlobalState->PDM_Debug = true;
+			CC_GlobalState->PDM_Debug = false;
 			CC_GlobalState->AMS_Debug = false;
 			CC_GlobalState->SHDN_1_Debug = false;
 			CC_GlobalState->SHDN_2_Debug = true;

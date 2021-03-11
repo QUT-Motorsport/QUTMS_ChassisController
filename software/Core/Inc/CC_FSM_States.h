@@ -28,6 +28,9 @@
 #define NUM_BRAKE_SENSORS 2
 #define NUM_ACCEL_SENSORS 3
 
+#define CC_MASK PDM_POWER_CC_MASK
+#define RTD_SIREN_MASK PDMFLAG_RTD_SIREN
+
 /**
  * @brief Chassis Global State
  * @note Chassis Global State is shared across threads, so use the semaphore to gain control
