@@ -58,6 +58,10 @@ void state_driving_enter(fsm_t *fsm) {
 		CC_GlobalState->accelMax[1] = ACCEL_PEDAL_TWO_MAX;
 		CC_GlobalState->accelMin[2] = ACCEL_PEDAL_THREE_MIN;
 		CC_GlobalState->accelMax[2] = ACCEL_PEDAL_THREE_MAX;
+
+		CC_GlobalState->pressureMin = BRAKE_PRESSURE_MIN;
+		CC_GlobalState->pressureMax = BRAKE_PRESSURE_MAX;
+
 #ifndef RTD_DEBUG
 		// set duty cycle of left and right, and amu fans
 		uint16_t fan_duty_cycle = 100;
@@ -94,6 +98,14 @@ void state_driving_enter(fsm_t *fsm) {
 	/* Start Polling ADC */
 	HAL_ADC_Start_DMA(&hadc1, CC_GlobalState->accelAdcValues, 3);
 	HAL_ADC_Start_DMA(&hadc2, CC_GlobalState->brakeAdcValues, 2);
+	//HAL_ADC_Start_DMA(&hadc3, CC_GlobalState->pressureAdcValue, 1);
+
+	HAL_ADC_Start(&hadc3);
+	CC_GlobalState->pressureAdcValue = HAL_ADC_GetValue(&hadc3);
+
+	if (CC_GlobalState->pressureAdcValue < 400) {
+		CC_GlobalState->pressureAdcValue = 400;
+	}
 
 	/* Run MicroBasic Script on Inverter */
 	CC_SetBool_t runLeftScript = Compose_CC_SetBool(INVERTER_LEFT_NODE_ID, 0x01,
@@ -125,6 +137,9 @@ void state_driving_enter(fsm_t *fsm) {
 		initialize_filtering(&CC_GlobalState->pedal_accel[i],
 				(uint16_t) CC_GlobalState->accelAdcValues[i]);
 	}
+
+	initialize_filtering(&CC_GlobalState->pressure_brake,
+			(uint16_t) CC_GlobalState->pressureAdcValue);
 
 	len = sprintf(buf, "exit rtd\r\n");
 	CC_LogInfo(buf, len);
@@ -336,6 +351,8 @@ void state_driving_iterate(fsm_t *fsm) {
 				CC_GlobalState->brakeMin[i] =
 						CC_GlobalState->pedal_brake[i].current_filtered;
 			}
+
+
 		}
 
 		for (int i = 0; i < NUM_ACCEL_SENSORS; i++) {
@@ -365,12 +382,60 @@ void state_driving_iterate(fsm_t *fsm) {
 						CC_GlobalState->accelMin[i]);
 				CC_LogInfo(x, len);
 			}
+
+
 		}
 
-		len = sprintf(x, "%d %d %d\r\n",
-				CC_GlobalState->pedal_accel[0].current_filtered,
-				CC_GlobalState->accelMin[0], CC_GlobalState->accelMax[0]);
-		//CC_LogInfo(x, len);
+#ifdef DEBUG_RAW_ADC
+#ifndef BRAKE_PRESSURE
+				len = sprintf(x, "a%d: %d -:%d +:%d \r\n", 0,
+						CC_GlobalState->accelAdcValues[0],
+						CC_GlobalState->accelMin[0],
+						CC_GlobalState->accelMax[0]);
+				CC_LogInfo(x, len);
+#endif
+#endif
+		HAL_ADC_Start(&hadc3);
+		CC_GlobalState->pressureAdcValue = HAL_ADC_GetValue(&hadc3);
+
+		if (CC_GlobalState->pressureAdcValue < 400) {
+			CC_GlobalState->pressureAdcValue = 400;
+		}
+
+		update_filtering(&CC_GlobalState->pressure_brake,
+				(uint16_t) CC_GlobalState->pressureAdcValue);
+
+		if (CC_GlobalState->pressure_brake.current_filtered
+				> CC_GlobalState->pressureMax) {
+
+			len = sprintf(x, "Updating Brake P Max to %d from %d\r\n",
+					CC_GlobalState->pressure_brake.current_filtered,
+					CC_GlobalState->pressureMax);
+			CC_LogInfo(x, len);
+
+			CC_GlobalState->pressureMax =
+					CC_GlobalState->pressure_brake.current_filtered;
+		}
+
+		if (CC_GlobalState->pressure_brake.current_filtered
+				< CC_GlobalState->pressureMin) {
+			CC_GlobalState->pressureMin =
+					CC_GlobalState->pressure_brake.current_filtered;
+
+			len = sprintf(x, "Updating Brake P Min to %d from %d\r\n",
+					CC_GlobalState->pressure_brake.current_filtered,
+					CC_GlobalState->pressureMin);
+			CC_LogInfo(x, len);
+		}
+#ifdef DEBUG_RAW_ADC
+#ifdef BRAKE_PRESSURE
+		len = sprintf(x, "bp: %d -:%d +:%d\r\n",
+				CC_GlobalState->pressureAdcValue,
+				CC_GlobalState->pressureMin,
+				CC_GlobalState->pressureMax);
+		CC_LogInfo(x, len);
+#endif
+#endif
 	}
 
 	/*
@@ -386,6 +451,7 @@ void state_driving_iterate(fsm_t *fsm) {
 	if (CC_GlobalState->faultDetected) {
 		//CC_LogInfo("ADC Fault Detected\r\n", strlen("ADC Fault Detected\r\n"));
 	}
+
 #ifdef NO_DEF
 	if (false) {
 		if (osSemaphoreAcquire(CC_GlobalState->sem, SEM_ACQUIRE_TIMEOUT)
@@ -597,26 +663,39 @@ void state_driving_iterate(fsm_t *fsm) {
 				CC_GlobalState->accelMin[0], CC_GlobalState->accelMax[0], 0,
 				MAX_DUTY_CYCLE);
 
-		CC_GlobalState->brakeTravel = MAX_DUTY_CYCLE - map(
+		CC_GlobalState->brakeTravel = map(
 				CC_GlobalState->pedal_brake[0].current_filtered,
 				CC_GlobalState->brakeMin[0], CC_GlobalState->brakeMax[0], 0,
+				MAX_DUTY_CYCLE);
+
+		CC_GlobalState->brakePTravel = map(
+				CC_GlobalState->pressure_brake.current_filtered,
+				CC_GlobalState->pressureMin, CC_GlobalState->pressureMax, 0,
 				MAX_DUTY_CYCLE);
 
 		// apply dead zones
 		if (CC_GlobalState->accelTravel < DEAD_ZONE_ACCEL) {
 			CC_GlobalState->accelTravel = 0;
 		}
+
+		int16_t brake_value = 0;
+#ifdef BRAKE_PRESSURE
+		brake_value = CC_GlobalState->brakePTravel;
+#else
+		brake_value = CC_GlobalState->brakeTravel;
+#endif
+
 		/*
-		if (CC_GlobalState->brakeTravel < DEAD_ZONE_BRAKE) {
-			CC_GlobalState->brakeTravel = 0;
-		}
-*/
+		 if (brake_value < DEAD_ZONE_BRAKE) {
+		 brake_value = 0;
+		 }
+		 */
 		CC_SetVariable_t inverter_cmd = { 0 };
 
 		for (int i = 0; i < NUM_INVERTERS; i++) {
 #ifndef DEBUG_RAW_ADC
-			len = sprintf(x, "Inverter: %d Command - A: %d B: %d\r\n", i,
-					CC_GlobalState->accelTravel, CC_GlobalState->brakeTravel);
+			len = sprintf(x, "Inv: %d Cmd - A: %d B: %d\r\n", i,
+					CC_GlobalState->accelTravel, brake_value);
 			CC_LogInfo(x, len);
 #endif
 			// accel
@@ -629,7 +708,7 @@ void state_driving_iterate(fsm_t *fsm) {
 
 			// brake
 			inverter_cmd = Compose_CC_SetVariable(inverter_node_ids[i],
-			INVERTER_VAR_BRAKE, CC_GlobalState->brakeTravel);
+			INVERTER_VAR_BRAKE, brake_value);
 			inverter_header.StdId = inverter_cmd.id;
 			inverter_header.DLC = 8;
 			result = CC_send_can_msg(&hcan1, &inverter_header,

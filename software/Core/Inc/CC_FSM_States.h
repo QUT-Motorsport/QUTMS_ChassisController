@@ -84,8 +84,14 @@ typedef struct
 	uint32_t accelAdcValues[NUM_ACCEL_SENSORS];
 	uint32_t brakeAdcValues[NUM_BRAKE_SENSORS];
 
+	uint32_t pressureAdcValue;
+
 	window_filter_t pedal_accel[NUM_ACCEL_SENSORS];
 	window_filter_t pedal_brake[NUM_BRAKE_SENSORS];
+
+	window_filter_t pressure_brake;
+	uint32_t pressureMin;
+	uint32_t pressureMax;
 
 	uint32_t brakePressureThreshold;
 	uint32_t brakeMin[NUM_BRAKE_SENSORS];
@@ -96,6 +102,7 @@ typedef struct
 	/* Formatted Pedal Travel Positions */
 	int16_t accelTravel;
 	int16_t brakeTravel;
+	int16_t brakePTravel;
 	float pedalScale;
 
 	bool tractiveActive;
