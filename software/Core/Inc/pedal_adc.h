@@ -38,7 +38,7 @@ typedef struct pedal_values {
 
 extern pedal_values_t current_pedal_values;
 
-extern Timer_t timer_pedal_adc;
+extern ms_timer_t timer_pedal_adc;
 
 void setup_pedals_adc();
 

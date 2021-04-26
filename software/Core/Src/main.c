@@ -33,6 +33,7 @@
 #include <sys/unistd.h>
 
 #include "pedal_adc.h"
+#include "data_logger.h"
 
 /* USER CODE END Includes */
 
@@ -117,6 +118,13 @@ int main(void)
   MX_TIM2_Init();
   MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
+
+  if (HAL_SD_Init(&hsd1) != HAL_OK) {
+  		Error_Handler();
+  	}
+
+  setup_data_logger();
+  setup_CAN();
   setup_pedals_adc();
   /* USER CODE END 2 */
 
@@ -127,7 +135,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  Timer_update(&timer_pedal_adc, NULL);
+	  timer_update(&timer_CAN_queue, NULL);
+	  timer_update(&timer_pedal_adc, NULL);
+	  timer_update(&timer_data_logger, NULL);
   }
   /* USER CODE END 3 */
 }

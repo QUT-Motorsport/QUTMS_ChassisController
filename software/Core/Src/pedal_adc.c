@@ -13,7 +13,7 @@
 #include "CC_CAN_Messages.h"
 
 pedal_values_t current_pedal_values;
-Timer_t timer_pedal_adc;
+ms_timer_t timer_pedal_adc;
 
 int count = 0;
 
@@ -35,7 +35,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 }
 void setup_pedals_adc() {
 	// every 1ms, continuous
-	timer_pedal_adc = Timer_init(1, true, pedal_adc_timer_cb);
+	timer_pedal_adc = timer_init(1, true, pedal_adc_timer_cb);
 
 	// start dma requests
 	HAL_ADC_Start_DMA(&hadc1,
@@ -58,7 +58,7 @@ void setup_pedals_adc() {
 			ACCEL_FILTER_SIZE);
 
 	// start timer
-	Timer_start(&timer_pedal_adc);
+	timer_start(&timer_pedal_adc);
 }
 
 void pedal_adc_timer_cb(void *args) {
@@ -88,6 +88,10 @@ void pedal_adc_timer_cb(void *args) {
 				current_pedal_values.pedal_accel[0].current_filtered,
 				current_pedal_values.pedal_accel[1].current_filtered,
 				current_pedal_values.brake_pressure.current_filtered);
+
+		CAN_TxHeaderTypeDef header = { .ExtId = msg.id, .IDE =
+			CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data), .TransmitGlobalTime = DISABLE, };
+		CC_send_can_msg(&hcan2, &header, msg.data);
 	}
 
 }

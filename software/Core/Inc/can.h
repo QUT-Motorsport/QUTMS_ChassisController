@@ -29,6 +29,7 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 #include <Timer.h>
+#include <queue.h>
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan1;
@@ -36,7 +37,17 @@ extern CAN_HandleTypeDef hcan2;
 extern CAN_HandleTypeDef hcan3;
 
 /* USER CODE BEGIN Private defines */
+#define CAN_QUEUE_SIZE 25
+
 extern ms_timer_t timer_CAN_queue;
+extern message_queue_t queue_CAN1;
+extern message_queue_t queue_CAN2;
+extern message_queue_t queue_CAN3;
+
+extern uint32_t txMailbox_CAN1;
+extern uint32_t txMailbox_CAN2;
+extern uint32_t txMailbox_CAN3;
+
 /* USER CODE END Private defines */
 
 void MX_CAN1_Init(void);
@@ -46,6 +57,12 @@ void MX_CAN3_Init(void);
 /* USER CODE BEGIN Prototypes */
 void setup_CAN();
 void CAN_timer_cb(void *args);
+
+HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
+		CAN_TxHeaderTypeDef *pHeader, uint8_t aData[]);
+
+// called from CAN interrupts, just adds any messages to the CAN queues
+void handle_CAN_interrupt(CAN_HandleTypeDef *hcan, int fifo);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
