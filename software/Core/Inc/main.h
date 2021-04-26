@@ -39,6 +39,7 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 #define PRINT_RAW_PEDALS 0
+#define DEBUG_AMS 1
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -79,7 +80,6 @@ void Error_Handler(void);
 #define DASH_POWER_GPIO_Port GPIOE
 #define RTD_INPUT_Pin GPIO_PIN_15
 #define RTD_INPUT_GPIO_Port GPIOE
-#define RTD_INPUT_EXTI_IRQn EXTI15_10_IRQn
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
