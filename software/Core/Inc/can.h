@@ -28,7 +28,7 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include <Timer.h>
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan1;
@@ -36,7 +36,7 @@ extern CAN_HandleTypeDef hcan2;
 extern CAN_HandleTypeDef hcan3;
 
 /* USER CODE BEGIN Private defines */
-
+extern ms_timer_t timer_CAN_queue;
 /* USER CODE END Private defines */
 
 void MX_CAN1_Init(void);
@@ -44,8 +44,8 @@ void MX_CAN2_Init(void);
 void MX_CAN3_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
-		CAN_TxHeaderTypeDef *pHeader, uint8_t aData[], uint32_t *pTxMailbox);
+void setup_CAN();
+void CAN_timer_cb(void *args);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

@@ -5,8 +5,9 @@
  *      Author: Calvin Johnson
  */
 
+#if false
+
 #include "data_logger.h"
-#include "cmsis_os.h"
 #include "fatfs.h"
 #include "sdmmc.h"
 #include <string.h>
@@ -247,3 +248,6 @@ void add_CAN_log(CAN_log_t *log_item) {
 		osMessageQueuePut(log_CAN_queue, log_item, 0U, 0U);
 	}
 }
+
+
+#endif

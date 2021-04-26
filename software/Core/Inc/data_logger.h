@@ -5,6 +5,8 @@
  *      Author: Calvin Johnson
  */
 
+#if false
+
 #ifndef INC_DATA_LOGGER_H_
 #define INC_DATA_LOGGER_H_
 
@@ -35,3 +37,4 @@ void add_CAN_log(CAN_log_t *log_item);
 
 
 #endif /* INC_DATA_LOGGER_H_ */
+#endif

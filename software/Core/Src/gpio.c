@@ -37,6 +37,8 @@
         * Output
         * EVENT_OUT
         * EXTI
+     PA3   ------> ADCx_IN3
+     PA5   ------> ADCx_IN5
      PB13   ------> USB_OTG_HS_VBUS
 */
 void MX_GPIO_Init(void)
@@ -64,6 +66,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DASH_LED_POWER_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PAPin PAPin */
+  GPIO_InitStruct.Pin = BRAKE_PEDAL_1_Pin|BRAKE_PEDAL_2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PEPin PEPin */
   GPIO_InitStruct.Pin = HSOUT_RTD_LED_Pin|DASH_POWER_Pin;
