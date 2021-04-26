@@ -16,22 +16,31 @@
 
 #define ACCEL_FILTER_SIZE 128
 
-#define PEDAL_ACCEL_1_MAX
-#define PEDAL_ACCEL_1_MIN
-#define PEDAL_ACCEL_2_MAX
-#define PEDAL_ACCEL_2_MIN
-#define PEDAL_ACCEL_3_MAX
-#define PEDAL_ACCEL_3_MIN
+#define PEDAL_ACCEL_0_MAX 1380
+#define PEDAL_ACCEL_0_MIN 850
+#define PEDAL_ACCEL_1_MAX 3220
+#define PEDAL_ACCEL_1_MIN 3050
+
+#define PEDAL_DUTY_CYCLE 1000
+
+#define ADC_DIFF 25
 
 typedef struct pedal_values {
+	uint16_t pedal_accel_min[NUM_PEDAL_ACCEL];
+	uint16_t pedal_accel_max[NUM_PEDAL_ACCEL];
+
+	uint16_t brake_pressure_min;
+	uint16_t brake_pressure_max;
+
+	uint16_t pedal_accel_mapped[NUM_PEDAL_ACCEL];
+	uint16_t pedal_brake_mapped;
+
 	window_filter_t pedal_accel[NUM_PEDAL_ACCEL];
-	window_filter_t pedal_brake[NUM_PEDAL_BRAKE];
 	window_filter_t brake_pressure;
 
 	uint16_t raw_pedal_accel[NUM_PEDAL_ACCEL];
 	uint16_t raw_pedal_accel_dma[NUM_PEDAL_ACCEL];
-	uint32_t raw_pedal_brake[NUM_PEDAL_BRAKE];
-	uint32_t raw_pedal_brake_dma[NUM_PEDAL_BRAKE];
+
 	uint32_t raw_pressure_brake[1];
 	uint32_t raw_pressure_brake_dma[1];
 } pedal_values_t;
@@ -43,6 +52,8 @@ extern ms_timer_t timer_pedal_adc;
 void setup_pedals_adc();
 
 void pedal_adc_timer_cb(void *args);
+
+uint16_t map_value(uint16_t input, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
 
 
 

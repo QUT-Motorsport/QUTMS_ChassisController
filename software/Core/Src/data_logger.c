@@ -27,7 +27,9 @@ char f_name[80];
 char working_folder[80];
 FATFS fs;
 
-char serial_buffer[200];
+#define SERIAL_BUFFER_SIZE 200
+
+char serial_buffer[SERIAL_BUFFER_SIZE];
 
 /**
  * store each log session in it's own folder, which each reboot of CC corresponding to new session
@@ -42,7 +44,7 @@ int get_latest_folder() {
 	UINT i;
 	FILINFO fno;
 	int dir_num = -1;
-	int cur_folder = 0;
+	int cur_folder = -1;
 
 	// open root directory
 	res = f_opendir(&dir, "");
@@ -152,11 +154,12 @@ void log_serial_to_sd(serial_log_t *log_item, int folder) {
 		return;
 	}
 
-	// copy the string from data into our buffer (so we null terminate string lol)
-	strcpy(serial_buffer, log_item->data);
+	// copy the string from data into our buffer
+	memset(serial_buffer, 0, SERIAL_BUFFER_SIZE);
+	memcpy(serial_buffer, log_item->data, log_item->len);
 
 	// write
-	res = f_printf(&logfile, "%d:\t%s", log_item->current_ticks, serial_buffer);
+	res = f_printf(&logfile, "%s", serial_buffer);
 
 	// close and save data
 	res = f_close(&logfile);
@@ -188,11 +191,13 @@ void setup_data_logger() {
 
 	sprintf(working_folder, "%d", current_dir_num);
 
-	// create new directory for logging
-	res = f_mkdir(working_folder);
-	if (res != FR_OK) {
-		// big sad
-		sd_init = false;
+	if (sd_init) {
+		// create new directory for logging
+		res = f_mkdir(working_folder);
+		if (res != FR_OK) {
+			// big sad
+			sd_init = false;
+		}
 	}
 
 	if (!sd_init) {

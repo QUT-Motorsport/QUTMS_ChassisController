@@ -53,6 +53,14 @@ void setup_pedals_adc() {
 				ACCEL_FILTER_SIZE);
 	}
 
+	current_pedal_values.pedal_accel_min[0] = PEDAL_ACCEL_0_MIN;
+	current_pedal_values.pedal_accel_max[0] = PEDAL_ACCEL_0_MAX;
+	current_pedal_values.pedal_accel_min[1] = PEDAL_ACCEL_1_MIN;
+	current_pedal_values.pedal_accel_max[1] = PEDAL_ACCEL_1_MAX;
+
+	current_pedal_values.brake_pressure_min = 0;
+	current_pedal_values.brake_pressure_max = 1000;
+
 	window_filter_initialize(&current_pedal_values.brake_pressure,
 			current_pedal_values.raw_pressure_brake[0],
 			ACCEL_FILTER_SIZE);
@@ -66,22 +74,60 @@ void pedal_adc_timer_cb(void *args) {
 	for (int i = 0; i < NUM_PEDAL_ACCEL; i++) {
 		window_filter_update(&current_pedal_values.pedal_accel[i],
 				current_pedal_values.raw_pedal_accel[i]);
+
+		uint16_t pedal_value =
+				current_pedal_values.pedal_accel[i].current_filtered;
+
+		// update min/max?
+		if (pedal_value < current_pedal_values.pedal_accel_min[i]) {
+			/*if (pedal_value > current_pedal_values.pedal_accel_min[i] - ADC_DIFF) {
+				printf("update min %i from %i to %i\r\n", i,
+						current_pedal_values.pedal_accel_min[i], pedal_value);
+				current_pedal_values.pedal_accel_min[i] = pedal_value;
+			} else {*/
+				pedal_value = current_pedal_values.pedal_accel_min[i];
+			//}
+		}
+
+		if (pedal_value > current_pedal_values.pedal_accel_max[i]) {
+			/*if (pedal_value < current_pedal_values.pedal_accel_max[i] + ADC_DIFF) {
+				printf("update max %i from %i to %i\r\n", i,
+						current_pedal_values.pedal_accel_max[i], pedal_value);
+				current_pedal_values.pedal_accel_max[i] = pedal_value;
+			} else {*/
+				pedal_value = current_pedal_values.pedal_accel_max[i];
+			//}
+		}
+
+		current_pedal_values.pedal_accel_mapped[i] = PEDAL_DUTY_CYCLE
+				- map_value(pedal_value,
+						current_pedal_values.pedal_accel_min[i],
+						current_pedal_values.pedal_accel_max[i], 0,
+						PEDAL_DUTY_CYCLE);
 	}
 
 	window_filter_update(&current_pedal_values.brake_pressure,
 			current_pedal_values.raw_pressure_brake[0]);
 
+	// update min/max?
+
+	current_pedal_values.pedal_brake_mapped = map_value(
+			current_pedal_values.brake_pressure.current_filtered,
+			current_pedal_values.brake_pressure_min,
+			current_pedal_values.brake_pressure_max, 0,
+			PEDAL_DUTY_CYCLE);
+
+	// safety check for disconnect
+	if (current_pedal_values.pedal_accel[0].current_filtered < 50) {
+		current_pedal_values.pedal_accel_mapped[0] = 0;
+	}
+
+	// map to 0-1000
+
 	count++;
 
 	if (count == 10) {
 		count = 0;
-
-		// print raw values
-		printf(
-				"%i %i\t%i\r\n", ///*\t%i %i\t %i\r\n",
-				current_pedal_values.pedal_accel[0].current_filtered,
-				current_pedal_values.pedal_accel[1].current_filtered,
-				current_pedal_values.brake_pressure.current_filtered);
 
 		// log to CAN
 		CC_TransmitPedals_t msg = Compose_CC_TransmitPedals(
@@ -90,8 +136,19 @@ void pedal_adc_timer_cb(void *args) {
 				current_pedal_values.brake_pressure.current_filtered);
 
 		CAN_TxHeaderTypeDef header = { .ExtId = msg.id, .IDE =
-			CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data), .TransmitGlobalTime = DISABLE, };
+		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data),
+				.TransmitGlobalTime = DISABLE, };
 		CC_send_can_msg(&hcan2, &header, msg.data);
+#if PRINT_RAW_PEDALS == 1
+		printf("%i %i\r\n",
+				current_pedal_values.pedal_accel[0].current_filtered,
+				current_pedal_values.pedal_accel_mapped[0]);
+#endif
 	}
+}
 
+uint16_t map_value(uint16_t input, uint16_t in_min, uint16_t in_max,
+		uint16_t out_min, uint16_t out_max) {
+	return (input - in_min) * (out_max - out_min) / (float) (in_max - in_min)
+			+ out_min;
 }

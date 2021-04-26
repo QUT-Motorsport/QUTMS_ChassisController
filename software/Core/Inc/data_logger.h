@@ -15,7 +15,6 @@
 #define LOG_CAN_QUEUE_SIZE 100
 
 typedef struct serial_log {
-	uint32_t current_ticks;
 	char data[200];
 	int len;
 } serial_log_t;

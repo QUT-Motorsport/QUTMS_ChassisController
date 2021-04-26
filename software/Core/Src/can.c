@@ -319,7 +319,83 @@ void setup_CAN() {
 		printf("ERROR: FAILED TO SETUP CAN3 QUEUE\r\n");
 	}
 
-	// setup CAN lines
+	// start CAN lines
+	if (HAL_CAN_Start(&hcan1) != HAL_OK) {
+		printf("ERROR: FAILED TO START CAN1\r\n");
+		Error_Handler();
+	}
+	if (HAL_CAN_Start(&hcan2) != HAL_OK) {
+		printf("ERROR: FAILED TO START CAN2\r\n");
+		Error_Handler();
+	}
+	if (HAL_CAN_Start(&hcan3) != HAL_OK) {
+		printf("ERROR: FAILED TO START CAN3\r\n");
+		Error_Handler();
+	}
+
+	// setup CAN filters
+	CAN_FilterTypeDef sFilterConfig;
+
+	sFilterConfig.FilterBank = 0;
+	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	sFilterConfig.FilterIdHigh = 0x0000;
+	sFilterConfig.FilterIdLow = 0x0001;
+	sFilterConfig.FilterMaskIdHigh = 0x0000;
+	sFilterConfig.FilterMaskIdLow = 0x0000;
+	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+	sFilterConfig.FilterActivation = ENABLE;
+	sFilterConfig.SlaveStartFilterBank = 14;
+
+	if (HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig) != HAL_OK) {
+		printf("failed to config filter on can1\r\n");
+		Error_Handler();
+	}
+
+	sFilterConfig.FilterBank = 14;
+
+	if (HAL_CAN_ConfigFilter(&hcan2, &sFilterConfig) != HAL_OK) {
+		printf("failed to config filter on can2\r\n");
+		Error_Handler();
+	}
+
+	sFilterConfig.FilterBank = 28;
+
+	if (HAL_CAN_ConfigFilter(&hcan3, &sFilterConfig) != HAL_OK) {
+		printf("failed to config filter on can3\r\n");
+		Error_Handler();
+	}
+
+	// activate notifications / interrupts
+	if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN1 notification on RX0");
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO1_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN1 notification on RX1");
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN2 notification on RX0");
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO1_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN2 notification on RX1");
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan3, CAN_IT_RX_FIFO0_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN3 notification on RX0");
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan3, CAN_IT_RX_FIFO1_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN3 notification on RX1");
+	}
 
 	// setup timer
 	timer_CAN_queue = timer_init(1, true, CAN_timer_cb);
@@ -371,7 +447,7 @@ HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
 	msg.DLC = pHeader->DLC;
 	msg.timestamp = HAL_GetTick();
 
-	queue_add(&queue_CAN_log, &msg);
+
 
 	uint32_t *pTxMailbox;
 	if (hcan == &hcan1) {
@@ -383,7 +459,15 @@ HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
 	}
 
 	// finally send CAN msg
-	return HAL_CAN_AddTxMessage(hcan, pHeader, aData, pTxMailbox);
+	HAL_StatusTypeDef result = HAL_CAN_AddTxMessage(hcan, pHeader, aData, pTxMailbox);
+	if (result != HAL_OK) {
+		printf("FAILED TO SEND CAN\r\n");
+	}
+
+	queue_add(&queue_CAN_log, &msg);
+
+
+	return result;
 }
 
 /* USER CODE END 1 */
