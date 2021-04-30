@@ -139,7 +139,7 @@ int main(void)
 	fsm = fsm_new(&deadState);
 
 	fsm_setLogFunction(&fsm, &printf);
-	fsm_reset(&fsm, &startState);
+	fsm_reset(&fsm, &drivingState);
 
   /* USER CODE END 2 */
 
@@ -152,9 +152,10 @@ int main(void)
 
 		timer_update(&timer_CAN_queue, NULL);
 		timer_update(&timer_pedal_adc, NULL);
-		timer_update(&timer_data_logger, NULL);
 
 		fsm_iterate(&fsm);
+
+		timer_update(&timer_data_logger, NULL);
 
 		HAL_Delay(1);
 	}

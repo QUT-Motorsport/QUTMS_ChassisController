@@ -35,7 +35,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 }
 void setup_pedals_adc() {
 	// every 1ms, continuous
-	timer_pedal_adc = timer_init(1, true, pedal_adc_timer_cb);
+	timer_pedal_adc = timer_init(2, true, pedal_adc_timer_cb);
 
 	// start dma requests
 	HAL_ADC_Start_DMA(&hadc1,
@@ -58,8 +58,8 @@ void setup_pedals_adc() {
 	current_pedal_values.pedal_accel_min[1] = PEDAL_ACCEL_1_MIN;
 	current_pedal_values.pedal_accel_max[1] = PEDAL_ACCEL_1_MAX;
 
-	current_pedal_values.brake_pressure_min = 0;
-	current_pedal_values.brake_pressure_max = 1000;
+	current_pedal_values.brake_pressure_min = PEDAL_BRAKE_MIN;
+	current_pedal_values.brake_pressure_max = PEDAL_BRAKE_MAX;
 
 	window_filter_initialize(&current_pedal_values.brake_pressure,
 			current_pedal_values.raw_pressure_brake[0],
@@ -109,6 +109,14 @@ void pedal_adc_timer_cb(void *args) {
 	window_filter_update(&current_pedal_values.brake_pressure,
 			current_pedal_values.raw_pressure_brake[0]);
 
+	if (current_pedal_values.brake_pressure.current_filtered > current_pedal_values.brake_pressure_max) {
+		current_pedal_values.brake_pressure.current_filtered = current_pedal_values.brake_pressure_max;
+	}
+
+	if (current_pedal_values.brake_pressure.current_filtered < current_pedal_values.brake_pressure_min) {
+			current_pedal_values.brake_pressure.current_filtered = current_pedal_values.brake_pressure_min;
+		}
+
 	// update min/max?
 
 	current_pedal_values.pedal_brake_mapped = map_value(
@@ -131,9 +139,9 @@ void pedal_adc_timer_cb(void *args) {
 
 		// log to CAN
 		CC_TransmitPedals_t msg = Compose_CC_TransmitPedals(
-				current_pedal_values.pedal_accel[0].current_filtered,
-				current_pedal_values.pedal_accel[1].current_filtered,
-				current_pedal_values.brake_pressure.current_filtered);
+				current_pedal_values.pedal_accel_mapped[0],
+				current_pedal_values.pedal_accel_mapped[1],
+				current_pedal_values.pedal_brake_mapped);
 
 		CAN_TxHeaderTypeDef header = { .ExtId = msg.id, .IDE =
 		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data),
@@ -141,8 +149,15 @@ void pedal_adc_timer_cb(void *args) {
 		CC_send_can_msg(&hcan2, &header, msg.data);
 #if PRINT_RAW_PEDALS == 1
 		printf("%i %i\r\n",
-				current_pedal_values.pedal_accel[0].current_filtered,
-				current_pedal_values.pedal_accel_mapped[0]);
+				current_pedal_values.pedal_accel_mapped[0],
+				current_pedal_values.pedal_brake_mapped);
+
+		/*printf("%i %i %i %i\r\n",
+						current_pedal_values.brake_pressure.current_filtered,
+						current_pedal_values.brake_pressure_min,
+						current_pedal_values.brake_pressure_max,
+						current_pedal_values.pedal_brake_mapped);
+						*/
 #endif
 	}
 }

@@ -215,7 +215,7 @@ void setup_data_logger() {
 	}
 
 	// setup timer
-	timer_data_logger = timer_init(50, true, data_logger_timer_cb);
+	timer_data_logger = timer_init(25, true, data_logger_timer_cb);
 
 	// start timer
 	timer_start(&timer_data_logger);
@@ -224,19 +224,24 @@ void setup_data_logger() {
 void data_logger_timer_cb(void *args) {
 	// poll for CAN messages (higher priority than serial lol)
 
+	int log_count = 0;
+	int MAX_LOG = 8;
+
 	CAN_MSG_Generic_t msg;
-	while (queue_next(&queue_CAN_log, &msg)) {
+	while (queue_next(&queue_CAN_log, &msg) && log_count < MAX_LOG) {
 		// only bother actually logging if sd card is working lol
 		if (sd_init) {
 			log_can_to_sd(&msg, current_dir_num);
 		}
+		log_count++;
 	}
 
 	serial_log_t log_item;
-	while (queue_next(&queue_serial_log, &log_item)) {
+	while (queue_next(&queue_serial_log, &log_item) && log_count < MAX_LOG) {
 		// only bother actually logging if sd card is working lol
 		if (sd_init) {
 			log_serial_to_sd(&log_item, current_dir_num);
 		}
+		log_count++;
 	}
 }

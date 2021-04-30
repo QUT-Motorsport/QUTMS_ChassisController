@@ -465,21 +465,25 @@ HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
 	msg.DLC = pHeader->DLC;
 	msg.timestamp = HAL_GetTick();
 
+	int can_idx = 0;
 
 
 	uint32_t *pTxMailbox;
 	if (hcan == &hcan1) {
 		pTxMailbox = &txMailbox_CAN1;
+		can_idx = 1;
 	} else if (hcan == &hcan2) {
 		pTxMailbox = &txMailbox_CAN2;
+		can_idx = 2;
 	} else if (hcan == &hcan3) {
 		pTxMailbox = &txMailbox_CAN3;
+		can_idx = 3;
 	}
 
 	// finally send CAN msg
 	HAL_StatusTypeDef result = HAL_CAN_AddTxMessage(hcan, pHeader, aData, pTxMailbox);
 	if (result != HAL_OK) {
-		printf("FAILED TO SEND CAN\r\n");
+		printf("FAILED TO SEND CAN %i - e: %lu\r\n", can_idx, hcan->ErrorCode);
 	}
 
 	queue_add(&queue_CAN_log, &msg);

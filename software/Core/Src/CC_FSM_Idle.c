@@ -33,7 +33,7 @@ void state_idle_enter(fsm_t *fsm) {
 	RTD_state.precharge_ticks = 0;
 	RTD_state.RTD_ticks = 0;
 
-	timer_rtd_light = timer_init(1000, true, rtd_light_timer_cb);
+	timer_rtd_light = timer_init(500, true, rtd_light_timer_cb);
 
 	return;
 }
@@ -73,7 +73,7 @@ void state_idle_iterate(fsm_t *fsm) {
 			printf("shutdown\r\n");
 
 			// change to error state
-			fsm_changeState(fsm, &shutdownState, "Fatal Shutdown");
+			//fsm_changeState(fsm, &shutdownState, "Fatal Shutdown");
 		} else if (msg.ID == AMS_Ready_ID) {
 			if (!RTD_state.precharge_done) {
 				printf("AMS ready received\r\n");
@@ -96,15 +96,13 @@ void state_idle_iterate(fsm_t *fsm) {
 	RTD_state.AMS_init = true;
 #endif
 
-	printf("RTD: %i\r\n", HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin));
+	//printf("rtd: %i\r\n", HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin));
 
 	if (RTD_state.AMS_init) {
 		if (!RTD_state.precharge_enabled) {
 			if (!timer_isRunning(&timer_rtd_light)) {
 				timer_start(&timer_rtd_light);
 			}
-
-
 
 			if (HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin)) {
 				if (RTD_state.precharge_ticks == 0) {
@@ -199,5 +197,5 @@ void state_idle_exit(fsm_t *fsm) {
 }
 
 void rtd_light_timer_cb(void *args) {
-	HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin, GPIO_PIN_SET);
+	HAL_GPIO_TogglePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin);
 }

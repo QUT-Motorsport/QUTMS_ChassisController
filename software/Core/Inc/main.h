@@ -39,7 +39,8 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 #define PRINT_RAW_PEDALS 0
-#define DEBUG_AMS 1
+#define DEBUG_AMS 0
+#define RTD_DEBUG 1
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
