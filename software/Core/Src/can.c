@@ -409,12 +409,14 @@ void CAN_timer_cb(void *args) {
 }
 
 void handle_CAN_interrupt(CAN_HandleTypeDef *hcan, int fifo) {
-	int fill = HAL_CAN_GetRxFifoFillLevel(hcan, fifo);
+	__disable_irq();
+	//int fill = HAL_CAN_GetRxFifoFillLevel(hcan, fifo);
 
 	CAN_MSG_Generic_t msg;
 	CAN_RxHeaderTypeDef header;
 
-	for (int i = 0; i < fill; i++) {
+	while(HAL_CAN_GetRxFifoFillLevel(hcan, fifo) > 0) {
+	//for (int i = 0; i < fill; i++) {
 		if (HAL_CAN_GetRxMessage(hcan, fifo, &header, msg.data) != HAL_OK) {
 			printf("failed to read CAN msg");
 		}
@@ -437,6 +439,7 @@ void handle_CAN_interrupt(CAN_HandleTypeDef *hcan, int fifo) {
 		// add to CAN logging queue
 		queue_add(&queue_CAN_log, &msg);
 	}
+	__enable_irq();
 }
 
 uint8_t msg_count[3];

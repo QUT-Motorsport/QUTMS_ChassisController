@@ -127,10 +127,13 @@ void inverter_timer_cb(void *args) {
 		fsm_changeState((fsm_t*) args, &idleState, "Apps Shutdown");
 	}
 
-	if (enabled_count < 10) {
+	enabled_count++;
+
+	if (enabled_count > 10) {
+		enabled_count = 0;
 		// resend enabled to inverters
 		roboteq_update_enabled(true);
-		enabled_count++;
+
 	}
 
 

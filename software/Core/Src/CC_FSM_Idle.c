@@ -132,6 +132,13 @@ void state_idle_iterate(fsm_t *fsm) {
 			timer_stop(&timer_rtd_light);
 
 			if (!RTD_state.precharge_done) {
+//				// Resend Precharge Command
+//				AMS_StartUp_t ams_startup = Compose_AMS_StartUp();
+//				CAN_TxHeaderTypeDef header = { .ExtId = ams_startup.id,
+//						.IDE = CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = 0,
+//						.TransmitGlobalTime = DISABLE, };
+//				CC_send_can_msg(&hcan2, &header, NULL);
+
 				// wait for AMS to finish precharge
 				HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin,
 						GPIO_PIN_RESET);

@@ -90,7 +90,6 @@ void roboteq_update_enabled(bool state) {
 }
 
 void roboteq_send_pedals(uint16_t accel, uint16_t brake) {
-	printf("A: %i B: %i\r\n", accel, brake);
 
 	CC_SetVariable_t inverter_cmd = { 0 };
 
@@ -107,14 +106,14 @@ void roboteq_send_pedals(uint16_t accel, uint16_t brake) {
 	inverter_header.DLC = 8;
 	result = CC_send_can_msg(&hcan1, &inverter_header, inverter_cmd.data);
 
-	inverter_cmd = Compose_CC_SetVariable(INVERTER_LEFT_NODE_ID,
+	inverter_cmd = Compose_CC_SetVariable(INVERTER_RIGHT_NODE_ID,
 	INVERTER_VAR_ACCEL, accel);
 	inverter_header.StdId = inverter_cmd.id;
 	inverter_header.DLC = 8;
 	result = CC_send_can_msg(&hcan1, &inverter_header, inverter_cmd.data);
 
 	// brake
-	inverter_cmd = Compose_CC_SetVariable(INVERTER_RIGHT_NODE_ID,
+	inverter_cmd = Compose_CC_SetVariable(INVERTER_LEFT_NODE_ID,
 	INVERTER_VAR_BRAKE, brake);
 	inverter_header.StdId = inverter_cmd.id;
 	inverter_header.DLC = 8;
@@ -125,4 +124,6 @@ void roboteq_send_pedals(uint16_t accel, uint16_t brake) {
 	inverter_header.StdId = inverter_cmd.id;
 	inverter_header.DLC = 8;
 	result = CC_send_can_msg(&hcan1, &inverter_header, inverter_cmd.data);
+
+	printf("A: %i B: %i\r\n", accel, brake);
 }
