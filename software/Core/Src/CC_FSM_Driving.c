@@ -23,6 +23,9 @@ void inverter_timer_cb(void *args);
 
 int16_t motor_amps[4];
 
+int inv_count = 0;
+int enabled_count = 0;
+
 void state_driving_enter(fsm_t *fsm) {
 	// send enable to inverters
 	roboteq_update_enabled(true);
@@ -38,6 +41,9 @@ void state_driving_enter(fsm_t *fsm) {
 	motor_amps[1] = 0;
 	motor_amps[2] = 0;
 	motor_amps[3] = 0;
+
+	inv_count = 0;
+	enabled_count = 0;
 }
 
 void state_driving_iterate(fsm_t *fsm) {
@@ -73,7 +79,7 @@ void state_driving_iterate(fsm_t *fsm) {
 
 			if (index == 0x2100) {
 				// motor amps
-				int16_t *temp = (int16_t *)&raw_data;
+				int16_t *temp = (int16_t*) &raw_data;
 				motor_amps[num_id * 2 + subindex] = *temp;
 			}
 		}
@@ -107,8 +113,6 @@ void state_driving_exit(fsm_t *fsm) {
 	timer_stop(&timer_inverters);
 }
 
-int inv_count = 0;
-
 void inverter_timer_cb(void *args) {
 	// calculate APPS
 	if (false) {
@@ -123,20 +127,13 @@ void inverter_timer_cb(void *args) {
 		fsm_changeState((fsm_t*) args, &idleState, "Apps Shutdown");
 	}
 
-	inv_count++;
-
-	if (inv_count == 20) {
-		inv_count = 0;
-
-		printf("MA: %d %d %d %d\r\n",
-				motor_amps[0],
-				motor_amps[1],
-				motor_amps[2],
-				motor_amps[3]);
+	if (enabled_count < 10) {
+		// resend enabled to inverters
+		roboteq_update_enabled(true);
+		enabled_count++;
 	}
 
-	// resend enabled to inverters
-	roboteq_update_enabled(true);
+
 
 	uint16_t accel = current_pedal_values.pedal_accel_mapped[0];
 
@@ -147,6 +144,15 @@ void inverter_timer_cb(void *args) {
 	// send pedal values to inverters
 	roboteq_send_pedals(accel, current_pedal_values.pedal_brake_mapped);
 
-	roboteq_request_motor_amps();
+	inv_count++;
+
+	if (inv_count == 20) {
+		inv_count = 0;
+
+		printf("MA: %d %d %d %d\r\n", motor_amps[0], motor_amps[1],
+				motor_amps[2], motor_amps[3]);
+
+		roboteq_request_motor_amps();
+	}
 
 }

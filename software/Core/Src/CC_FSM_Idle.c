@@ -46,6 +46,7 @@ void state_idle_iterate(fsm_t *fsm) {
 	// CAN2
 	while (queue_next(&queue_CAN2, &msg)) {
 		if (msg.ID == AMS_HeartbeatResponse_ID) {
+			printf("ams\r\n");
 			heartbeats.AMS = true;
 
 			bool initialised = false;

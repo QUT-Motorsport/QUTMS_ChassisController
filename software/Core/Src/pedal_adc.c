@@ -134,7 +134,7 @@ void pedal_adc_timer_cb(void *args) {
 
 	count++;
 
-	if (count == 10) {
+	if (count >= 50) {
 		count = 0;
 
 		// log to CAN

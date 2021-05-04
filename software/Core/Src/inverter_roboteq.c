@@ -96,7 +96,7 @@ void roboteq_send_pedals(uint16_t accel, uint16_t brake) {
 
 	uint8_t result = 0;
 
-	CAN_TxHeaderTypeDef inverter_header = { 0 };
+	CAN_TxHeaderTypeDef inverter_header = {0};
 	inverter_header.IDE = CAN_ID_STD;
 	inverter_header.RTR = CAN_RTR_DATA;
 	inverter_header.TransmitGlobalTime = DISABLE;

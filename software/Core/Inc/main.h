@@ -38,7 +38,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-#define PRINT_RAW_PEDALS 0
+#define PRINT_RAW_PEDALS 1
 #define DEBUG_AMS 0
 #define RTD_DEBUG 1
 /* USER CODE END ET */
@@ -83,6 +83,8 @@ void Error_Handler(void);
 #define RTD_INPUT_GPIO_Port GPIOE
 /* USER CODE BEGIN Private defines */
 
+
+#define UART_TIMEOUT 1000
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
