@@ -26,8 +26,12 @@ void vesc_send_shutdown()
 	// send shutdown to all lines
 
 	CC_FatalShutdown_t fatalShutdown = Compose_CC_FatalShutdown();
-	CAN_TxHeaderTypeDef header = { .ExtId = fatalShutdown.id, .IDE = CAN_ID_EXT,
-			.RTR = CAN_RTR_DATA, .DLC = 1, .TransmitGlobalTime = DISABLE, };
+	CAN_TxHeaderTypeDef header = {
+			.ExtId = fatalShutdown.id,
+			.IDE = CAN_ID_EXT,
+			.RTR = CAN_RTR_DATA,
+			.DLC = 1, .TransmitGlobalTime = DISABLE,
+	};
 	uint8_t data[1] = { 0xF };
 
 	CC_send_can_msg(&hcan1, &header, data);
@@ -63,7 +67,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake)
 		{
 			// Regen Zone
 			torque = VESC_CURRENT_MIN;
-			regen = VESC_REGEN_MAX - (VESC_REGEN_MAX * ac * (1.0/VESC_DEADZONE_MIN));
+			regen = VESC_REGEN_MAX - (VESC_REGEN_MAX * ac * (1.0f/VESC_DEADZONE_MIN));
 
 			if(regen > VESC_REGEN_MAX) regen = VESC_REGEN_MAX;
 			if(regen < VESC_REGEN_MIN) regen = VESC_REGEN_MIN;
@@ -76,7 +80,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake)
 		} else if(ac > VESC_DEADZONE_MAX)
 		{
 			// Torque Zone
-			torque = VESC_CURRENT_MAX * (ac - VESC_DEADZONE_MAX) * (1.0/(1.0f - VESC_DEADZONE_MAX));
+			torque = VESC_CURRENT_MAX * (ac - VESC_DEADZONE_MAX) * (1.0f/(1.0f - VESC_DEADZONE_MAX));
 			regen = VESC_REGEN_MIN;
 
 			if(torque > VESC_CURRENT_MAX) torque = VESC_CURRENT_MAX;
@@ -109,7 +113,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake)
 		CC_send_can_msg(&hcan1, &regenHeader, regenCommand.data);
 	}
 
-	printf("Demanded Torque, Regen of: [%i, %i](as float)\r\n", (int)torque, (int)regen);
+	printf("Demanded Torque, Regen of: [%i, %i](rounded)\r\n", (int)torque, (int)regen);
 }
 
 void vesc_request_motor_amps()
