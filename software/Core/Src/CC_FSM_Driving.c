@@ -13,7 +13,7 @@
 #include <stdbool.h>
 
 #include "pedal_adc.h"
-#include "inverter_roboteq.h"
+#include "inverter.h"
 
 state_t drivingState = { &state_driving_enter, &state_driving_iterate,
 		&state_driving_exit, "Driving_s" };
@@ -28,7 +28,7 @@ int enabled_count = 0;
 
 void state_driving_enter(fsm_t *fsm) {
 	// send enable to inverters
-	roboteq_update_enabled(true);
+	inverter_update_enabled(true);
 
 	// update duty cycle on fans
 
@@ -57,7 +57,7 @@ void state_driving_iterate(fsm_t *fsm) {
 			heartbeats.AMS = true;
 		} else if (msg.ID == SHDN_ShutdownTriggered_ID) {
 			// send shutdown to inverters
-			roboteq_send_shutdown();
+			inverter_send_shutdown();
 
 			// change to error state
 			fsm_changeState(fsm, &shutdownState, "Fatal Shutdown");
@@ -119,7 +119,7 @@ void inverter_timer_cb(void *args) {
 		// apps failed
 
 		// turn off inverters nicely
-		roboteq_update_enabled(false);
+		inverter_update_enabled(false);
 
 		// disable last stage of rtd so they have to press button again
 
@@ -132,7 +132,7 @@ void inverter_timer_cb(void *args) {
 	if (enabled_count > 10) {
 		enabled_count = 0;
 		// resend enabled to inverters
-		roboteq_update_enabled(true);
+		inverter_update_enabled(true);
 
 	}
 
@@ -145,7 +145,7 @@ void inverter_timer_cb(void *args) {
 	}
 
 	// send pedal values to inverters
-	roboteq_send_pedals(accel, current_pedal_values.pedal_brake_mapped);
+	inverter_send_pedals(accel, current_pedal_values.pedal_brake_mapped);
 
 	inv_count++;
 
@@ -155,7 +155,7 @@ void inverter_timer_cb(void *args) {
 		printf("MA: %d %d %d %d\r\n", motor_amps[0], motor_amps[1],
 				motor_amps[2], motor_amps[3]);
 
-		roboteq_request_motor_amps();
+		inverter_request_motor_amps();
 	}
 
 }

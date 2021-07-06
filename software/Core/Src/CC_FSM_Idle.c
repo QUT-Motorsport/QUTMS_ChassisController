@@ -69,7 +69,7 @@ void state_idle_iterate(fsm_t *fsm) {
 
 		} else if (msg.ID == SHDN_ShutdownTriggered_ID) {
 			// send shutdown to inverters
-			//roboteq_send_shutdown();
+			//inverter_send_shutdown();
 
 			printf("shutdown\r\n");
 
