@@ -414,6 +414,7 @@ void handle_CAN_interrupt(CAN_HandleTypeDef *hcan, int fifo) {
 
 	CAN_MSG_Generic_t msg;
 	CAN_RxHeaderTypeDef header;
+	CAN_TxHeaderTypeDef headerTx;
 
 	while(HAL_CAN_GetRxFifoFillLevel(hcan, fifo) > 0) {
 	//for (int i = 0; i < fill; i++) {
@@ -429,6 +430,14 @@ void handle_CAN_interrupt(CAN_HandleTypeDef *hcan, int fifo) {
 
 		// add to CAN recieve queue
 		if (hcan == &hcan1) {
+			// if it's an inverter msg, forward onto CAN2
+			headerTx.ExtId = header.ExtId;
+			headerTx.StdId = header.StdId;
+			headerTx.IDE = header.IDE;
+			headerTx.RTR = header.RTR;
+			headerTx.DLC = header.DLC;
+			CC_send_can_msg(&hcan2, &headerTx, msg.data);
+
 			queue_add(&queue_CAN1, &msg);
 		} else if (hcan == &hcan2) {
 			queue_add(&queue_CAN2, &msg);
