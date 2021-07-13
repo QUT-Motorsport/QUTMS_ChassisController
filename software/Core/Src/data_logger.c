@@ -169,7 +169,7 @@ void log_serial_to_sd(serial_log_t *log_item, int folder) {
 void setup_data_logger() {
 	FRESULT res;
 
-	sd_init = true;
+	sd_init = false;
 
 	// mount sd card
 	res = f_mount(&fs, "", 0);
