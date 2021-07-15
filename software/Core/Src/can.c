@@ -436,7 +436,7 @@ void handle_CAN_interrupt(CAN_HandleTypeDef *hcan, int fifo) {
 			headerTx.IDE = header.IDE;
 			headerTx.RTR = header.RTR;
 			headerTx.DLC = header.DLC;
-			CC_send_can_msg(&hcan2, &headerTx, msg.data);
+			HAL_CAN_AddTxMessage(&hcan2, &headerTx, msg.data, &txMailbox_CAN2);
 
 			queue_add(&queue_CAN1, &msg);
 		} else if (hcan == &hcan2) {
@@ -446,12 +446,13 @@ void handle_CAN_interrupt(CAN_HandleTypeDef *hcan, int fifo) {
 		}
 
 		// add to CAN logging queue
-		queue_add(&queue_CAN_log, &msg);
+		//queue_add(&queue_CAN_log, &msg);
 	}
 	__enable_irq();
 }
 
 uint8_t msg_count[3];
+int test = 0;
 
 HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
 		CAN_TxHeaderTypeDef *pHeader, uint8_t aData[]) {
@@ -481,11 +482,19 @@ HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
 		pTxMailbox = &txMailbox_CAN3;
 		can_idx = 2;
 	}
+/*
+	test = 0;
+	if (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
+		for (int i = 0; i < 10; i++) {
+			test = test + 1;
+		}
+	}
+
 
 	while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
 		printf("\r");
 	}
-
+*/
 	/*
 
 	 msg_count[can_idx]++;

@@ -88,7 +88,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake)
 		}
 	}
 
-	for(VESC_ID i = FL; i < RR; i++)
+	for(VESC_ID i = FL; i <= RR; i++)
 	{
 		// Set Torque
 		VESC_SetCurrent_t torqueCommand = Compose_VESC_SetCurrent(i, torque);
@@ -100,6 +100,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake)
 		};
 
 		CC_send_can_msg(&hcan1, &torqueHeader, torqueCommand.data);
+		CC_send_can_msg(&hcan2, &torqueHeader, torqueCommand.data);
 
 		// Set Regen
 		VESC_SetCurrentBrake_t regenCommand = Compose_VESC_SetCurrentBrake(i, regen);
@@ -110,7 +111,8 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake)
 				.ExtId = regenCommand.id,
 		};
 
-		CC_send_can_msg(&hcan1, &regenHeader, regenCommand.data);
+		//CC_send_can_msg(&hcan1, &regenHeader, regenCommand.data);
+		//CC_send_can_msg(&hcan2, &regenHeader, regenCommand.data);
 	}
 
 	printf("Demanded Torque, Regen of: [%i, %i](rounded)\r\n", (int)torque, (int)regen);

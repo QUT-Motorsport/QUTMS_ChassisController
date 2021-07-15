@@ -121,21 +121,21 @@ int main(void) {
 	MX_CAN2_Init();
 	MX_CAN3_Init();
 	MX_ADC1_Init();
-	MX_SDMMC1_SD_Init();
-	MX_FATFS_Init();
+	//MX_SDMMC1_SD_Init();
+	//MX_FATFS_Init();
 	MX_TIM2_Init();
 	MX_ADC3_Init();
 	/* USER CODE BEGIN 2 */
 
 	printf("start\r\n");
-
+/*
 	if (HAL_SD_Init(&hsd1) != HAL_OK) {
 		printf("failed to init sd\r\n");
 		Error_Handler();
 	}
 
 	printf("sd init\r\n");
-
+*/
 	//setup_data_logger();
 	setup_CAN();
 

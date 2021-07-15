@@ -67,7 +67,7 @@ void state_driving_iterate(fsm_t *fsm) {
 	// CAN1
 	while (queue_next(&queue_CAN1, &msg)) {
 		//printf("CAN1 id:%x\r\n", msg.ID);
-
+/*
 		if ((msg.ID & ~0x7F) == 0x580) {
 			// response
 			uint16_t node_id = msg.ID & 0x7f;
@@ -90,7 +90,7 @@ void state_driving_iterate(fsm_t *fsm) {
 		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data),
 				.TransmitGlobalTime = DISABLE, };
 		CC_send_can_msg(&hcan2, &header, msg.data);
-
+*/
 	}
 
 	// CAN3
@@ -114,6 +114,7 @@ void state_driving_exit(fsm_t *fsm) {
 }
 
 void inverter_timer_cb(void *args) {
+	/*
 	// calculate APPS
 	if (false) {
 		// apps failed
@@ -126,6 +127,7 @@ void inverter_timer_cb(void *args) {
 		// go back to idle
 		fsm_changeState((fsm_t*) args, &idleState, "Apps Shutdown");
 	}
+	*/
 
 	enabled_count++;
 

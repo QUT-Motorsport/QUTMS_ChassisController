@@ -37,7 +37,7 @@ extern CAN_HandleTypeDef hcan2;
 extern CAN_HandleTypeDef hcan3;
 
 /* USER CODE BEGIN Private defines */
-#define CAN_QUEUE_SIZE 25
+#define CAN_QUEUE_SIZE 50
 
 extern ms_timer_t timer_CAN_queue;
 extern message_queue_t queue_CAN1;
