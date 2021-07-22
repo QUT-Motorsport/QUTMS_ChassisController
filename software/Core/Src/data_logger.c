@@ -5,6 +5,8 @@
  *      Author: Calvin Johnson
  */
 
+#ifdef DATA_LOG
+
 #include "data_logger.h"
 #include "fatfs.h"
 #include "sdmmc.h"
@@ -245,3 +247,5 @@ void data_logger_timer_cb(void *args) {
 		log_count++;
 	}
 }
+
+#endif

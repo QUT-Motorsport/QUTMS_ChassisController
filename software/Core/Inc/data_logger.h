@@ -8,6 +8,8 @@
 #ifndef INC_DATA_LOGGER_H_
 #define INC_DATA_LOGGER_H_
 
+#ifdef DATA_LOG
+
 #include <Timer.h>
 #include <queue.h>
 
@@ -53,5 +55,6 @@ void add_CAN_log(CAN_log_t *log_item);
 
 
 
+#endif
 #endif
 #endif /* INC_DATA_LOGGER_H_ */
