@@ -79,6 +79,20 @@ void state_idle_iterate(fsm_t *fsm) {
 			if (!RTD_state.precharge_done) {
 				printf("AMS ready received\r\n");
 				RTD_state.precharge_done = true;
+
+
+				// precharge done, tell AMS to open contactors for RTD
+				// broadcast RTD
+				CC_ReadyToDrive_t readyToDrive = Compose_CC_ReadyToDrive();
+				CAN_TxHeaderTypeDef header = { .ExtId = readyToDrive.id, .IDE =
+				CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = 1, .TransmitGlobalTime = DISABLE, };
+				uint8_t data[1] = { 0xF };
+
+				CC_send_can_msg(&hcan1, &header, data);
+				CC_send_can_msg(&hcan2, &header, data);
+				CC_send_can_msg(&hcan3, &header, data);
+
+				// car is now 'live', but won't send throttle commands until button is pressed again
 			}
 		}
 	}
@@ -186,17 +200,6 @@ void state_idle_iterate(fsm_t *fsm) {
 }
 
 void state_idle_exit(fsm_t *fsm) {
-
-	// broadcast RTD
-	CC_ReadyToDrive_t readyToDrive = Compose_CC_ReadyToDrive();
-	CAN_TxHeaderTypeDef header = { .ExtId = readyToDrive.id, .IDE =
-	CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = 1, .TransmitGlobalTime = DISABLE, };
-	uint8_t data[1] = { 0xF };
-
-	CC_send_can_msg(&hcan1, &header, data);
-	CC_send_can_msg(&hcan2, &header, data);
-	CC_send_can_msg(&hcan3, &header, data);
-
 	// activate siren
 
 	printf("exit idle\r\n");
