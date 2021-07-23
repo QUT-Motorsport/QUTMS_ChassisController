@@ -90,29 +90,34 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake)
 
 	for(VESC_ID i = FL; i <= RR; i++)
 	{
-		// Set Torque
-		VESC_SetCurrent_t torqueCommand = Compose_VESC_SetCurrent(i, torque);
-		CAN_TxHeaderTypeDef torqueHeader = {
-				.IDE = CAN_ID_EXT,
-				.RTR = CAN_RTR_DATA,
-				.DLC = sizeof(torqueCommand.data),
-				.ExtId = torqueCommand.id,
-		};
+		// If our regen value is > 0, we only send brake command, else send torque command
+		if(regen > 0.0f)
+		{
+			// Set Regen
+			VESC_SetCurrentBrake_t regenCommand = Compose_VESC_SetCurrentBrake(i, regen);
+			CAN_TxHeaderTypeDef regenHeader = {
+					.IDE = CAN_ID_EXT,
+					.RTR = CAN_RTR_DATA,
+					.DLC = sizeof(regenCommand.data),
+					.ExtId = regenCommand.id,
+			};
 
-		CC_send_can_msg(&hcan1, &torqueHeader, torqueCommand.data);
-		CC_send_can_msg(&hcan2, &torqueHeader, torqueCommand.data);
+			CC_send_can_msg(&hcan1, &regenHeader, regenCommand.data);
+			CC_send_can_msg(&hcan2, &regenHeader, regenCommand.data);
+		} else
+		{
+			// Set Torque
+			VESC_SetCurrent_t torqueCommand = Compose_VESC_SetCurrent(i, torque);
+			CAN_TxHeaderTypeDef torqueHeader = {
+					.IDE = CAN_ID_EXT,
+					.RTR = CAN_RTR_DATA,
+					.DLC = sizeof(torqueCommand.data),
+					.ExtId = torqueCommand.id,
+			};
 
-		// Set Regen
-		VESC_SetCurrentBrake_t regenCommand = Compose_VESC_SetCurrentBrake(i, regen);
-		CAN_TxHeaderTypeDef regenHeader = {
-				.IDE = CAN_ID_EXT,
-				.RTR = CAN_RTR_DATA,
-				.DLC = sizeof(regenCommand.data),
-				.ExtId = regenCommand.id,
-		};
-
-		//CC_send_can_msg(&hcan1, &regenHeader, regenCommand.data);
-		//CC_send_can_msg(&hcan2, &regenHeader, regenCommand.data);
+			CC_send_can_msg(&hcan1, &torqueHeader, torqueCommand.data);
+			CC_send_can_msg(&hcan2, &torqueHeader, torqueCommand.data);
+		}
 	}
 
 	printf("Demanded Torque, Regen of: [%i, %i](rounded)\r\n", (int)torque, (int)regen);
