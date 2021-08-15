@@ -127,3 +127,54 @@ void vesc_request_motor_amps()
 {
 	return; // We get this in VESC_Status_1_ID
 }
+
+void vesc_torque_vectoring(double steeringAngle, double* fl, double* fr, double* rl, double* rr)
+{
+	    // l = wheelbase
+    // w = trackwidth
+    // b = steering angle
+    // r = radius of turning circle
+    // alpha = angle of centre of rotation to front inner wheel
+    // d = distance of  rear inner wheel to centre of rotation
+    // rref = radius of turning circle to front outer wheel (primary wheel)
+	
+    double b = steeringAngle;
+
+    double l = 1.535;
+    double w = 1.2;
+
+    double rref;
+    double rRL;
+    double rRR;
+    double rFL;
+    double rFR;
+    double d;
+    double alpha;
+
+    if (b > 0) {
+        rFR = l/sin(b);
+        d = l/tan(b);
+        alpha = atan(l/(w+d));
+        rFL = l/sin(alpha);
+        rRR= d;
+        rRL = d+w;
+        rref = rFL;
+    }
+    else if (b < 0) {
+        rFL = l/sin(b);
+        d = l/tan(b);
+        alpha = atan(l/(w+d));
+        rFR = l/sin(alpha);
+        rRL= d;
+        rRR = w + d;
+        rref = rFR;
+    }
+    else {
+        rFR = 1; rFL = 1; rRR = 1; rRL = 1; rref = 1;
+    }
+
+    *fr = (rFR/rref);
+    *fl = (rFL/rref);
+    *rr = (rRR/rref);
+    *rl = (rRL/rref);
+}
