@@ -30,6 +30,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 		// brake pressure
 		current_pedal_values.raw_pressure_brake[0] =
 				current_pedal_values.raw_pressure_brake_dma[0];
+		current_pedal_values.raw_steering[0] = current_pedal_values.raw_pressure_brake_dma[1];
 
 	}
 }
@@ -41,7 +42,7 @@ void setup_pedals_adc() {
 	HAL_ADC_Start_DMA(&hadc1,
 			(uint32_t*) current_pedal_values.raw_pedal_accel_dma,
 			NUM_PEDAL_ACCEL);
-	HAL_ADC_Start_DMA(&hadc3, current_pedal_values.raw_pressure_brake_dma, 1);
+	HAL_ADC_Start_DMA(&hadc3, current_pedal_values.raw_pressure_brake_dma, 2);
 
 	// wait for first dma round
 	HAL_Delay(1);
@@ -64,6 +65,10 @@ void setup_pedals_adc() {
 	window_filter_initialize(&current_pedal_values.brake_pressure,
 			current_pedal_values.raw_pressure_brake[0],
 			ACCEL_FILTER_SIZE);
+
+	window_filter_initialize(&current_pedal_values.steering_angle,
+				current_pedal_values.raw_steering[0],
+				ACCEL_FILTER_SIZE);
 
 	// start timer
 	timer_start(&timer_pedal_adc);
@@ -109,6 +114,9 @@ void pedal_adc_timer_cb(void *args) {
 	window_filter_update(&current_pedal_values.brake_pressure,
 			current_pedal_values.raw_pressure_brake[0]);
 
+	window_filter_update(&current_pedal_values.steering_angle,
+				current_pedal_values.raw_steering[0]);
+
 	if (current_pedal_values.brake_pressure.current_filtered > current_pedal_values.brake_pressure_max) {
 		current_pedal_values.brake_pressure.current_filtered = current_pedal_values.brake_pressure_max;
 	}
@@ -141,7 +149,8 @@ void pedal_adc_timer_cb(void *args) {
 		CC_TransmitPedals_t msg = Compose_CC_TransmitPedals(
 				current_pedal_values.pedal_accel_mapped[0],
 				current_pedal_values.pedal_accel_mapped[1],
-				current_pedal_values.pedal_brake_mapped);
+				current_pedal_values.pedal_brake_mapped,
+				current_pedal_values.steering_angle.current_filtered);
 
 		CAN_TxHeaderTypeDef header = { .ExtId = msg.id, .IDE =
 		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data),

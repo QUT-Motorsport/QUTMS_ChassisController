@@ -45,7 +45,10 @@ typedef struct pedal_values {
 	uint16_t raw_pedal_accel_dma[NUM_PEDAL_ACCEL];
 
 	uint32_t raw_pressure_brake[1];
-	uint32_t raw_pressure_brake_dma[1];
+	uint32_t raw_pressure_brake_dma[2];
+
+	uint16_t raw_steering[1];
+	window_filter_t steering_angle;
 } pedal_values_t;
 
 extern pedal_values_t current_pedal_values;
