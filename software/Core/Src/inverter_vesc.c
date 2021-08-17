@@ -161,6 +161,7 @@ void vesc_torque_vectoring(double steeringAngle, double* fl, double* fr, double*
         rref = rFL;
     }
     else if (b < 0) {
+		b = b*-1;
         rFL = l/sin(b);
         d = l/tan(b);
         alpha = atan(l/(w+d));
