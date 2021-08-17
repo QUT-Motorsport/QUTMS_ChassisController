@@ -30,8 +30,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 		// brake pressure
 		current_pedal_values.raw_pressure_brake[0] =
 				current_pedal_values.raw_pressure_brake_dma[0];
-		current_pedal_values.raw_steering[0] = current_pedal_values.raw_pressure_brake_dma[1];
-
+	} else if (hadc == &hadc2) {
+		memcpy(current_pedal_values.raw_steering,
+				current_pedal_values.raw_steering_dma,
+				sizeof(uint32_t) * NUM_STEERING);
 	}
 }
 void setup_pedals_adc() {
@@ -42,7 +44,9 @@ void setup_pedals_adc() {
 	HAL_ADC_Start_DMA(&hadc1,
 			(uint32_t*) current_pedal_values.raw_pedal_accel_dma,
 			NUM_PEDAL_ACCEL);
-	HAL_ADC_Start_DMA(&hadc3, current_pedal_values.raw_pressure_brake_dma, 2);
+	HAL_ADC_Start_DMA(&hadc3, current_pedal_values.raw_pressure_brake_dma, 1);
+	HAL_ADC_Start_DMA(&hadc2, current_pedal_values.raw_steering_dma,
+	NUM_STEERING);
 
 	// wait for first dma round
 	HAL_Delay(1);
@@ -66,9 +70,11 @@ void setup_pedals_adc() {
 			current_pedal_values.raw_pressure_brake[0],
 			ACCEL_FILTER_SIZE);
 
-	window_filter_initialize(&current_pedal_values.steering_angle,
-				current_pedal_values.raw_steering[0],
+	for (int i = 0; i < NUM_STEERING; i++) {
+		window_filter_initialize(&current_pedal_values.steering_angle[i],
+				current_pedal_values.raw_steering[i],
 				ACCEL_FILTER_SIZE);
+	}
 
 	// start timer
 	timer_start(&timer_pedal_adc);
@@ -86,21 +92,21 @@ void pedal_adc_timer_cb(void *args) {
 		// update min/max?
 		if (pedal_value < current_pedal_values.pedal_accel_min[i]) {
 			/*if (pedal_value > current_pedal_values.pedal_accel_min[i] - ADC_DIFF) {
-				printf("update min %i from %i to %i\r\n", i,
-						current_pedal_values.pedal_accel_min[i], pedal_value);
-				current_pedal_values.pedal_accel_min[i] = pedal_value;
-			} else {*/
-				pedal_value = current_pedal_values.pedal_accel_min[i];
+			 printf("update min %i from %i to %i\r\n", i,
+			 current_pedal_values.pedal_accel_min[i], pedal_value);
+			 current_pedal_values.pedal_accel_min[i] = pedal_value;
+			 } else {*/
+			pedal_value = current_pedal_values.pedal_accel_min[i];
 			//}
 		}
 
 		if (pedal_value > current_pedal_values.pedal_accel_max[i]) {
 			/*if (pedal_value < current_pedal_values.pedal_accel_max[i] + ADC_DIFF) {
-				printf("update max %i from %i to %i\r\n", i,
-						current_pedal_values.pedal_accel_max[i], pedal_value);
-				current_pedal_values.pedal_accel_max[i] = pedal_value;
-			} else {*/
-				pedal_value = current_pedal_values.pedal_accel_max[i];
+			 printf("update max %i from %i to %i\r\n", i,
+			 current_pedal_values.pedal_accel_max[i], pedal_value);
+			 current_pedal_values.pedal_accel_max[i] = pedal_value;
+			 } else {*/
+			pedal_value = current_pedal_values.pedal_accel_max[i];
 			//}
 		}
 
@@ -114,16 +120,22 @@ void pedal_adc_timer_cb(void *args) {
 	window_filter_update(&current_pedal_values.brake_pressure,
 			current_pedal_values.raw_pressure_brake[0]);
 
-	window_filter_update(&current_pedal_values.steering_angle,
-				current_pedal_values.raw_steering[0]);
-
-	if (current_pedal_values.brake_pressure.current_filtered > current_pedal_values.brake_pressure_max) {
-		current_pedal_values.brake_pressure.current_filtered = current_pedal_values.brake_pressure_max;
+	for (int i = 0; i < NUM_STEERING; i++) {
+		window_filter_update(&current_pedal_values.steering_angle[i],
+				current_pedal_values.raw_steering[i]);
 	}
 
-	if (current_pedal_values.brake_pressure.current_filtered < current_pedal_values.brake_pressure_min) {
-			current_pedal_values.brake_pressure.current_filtered = current_pedal_values.brake_pressure_min;
-		}
+	if (current_pedal_values.brake_pressure.current_filtered
+			> current_pedal_values.brake_pressure_max) {
+		current_pedal_values.brake_pressure.current_filtered =
+				current_pedal_values.brake_pressure_max;
+	}
+
+	if (current_pedal_values.brake_pressure.current_filtered
+			< current_pedal_values.brake_pressure_min) {
+		current_pedal_values.brake_pressure.current_filtered =
+				current_pedal_values.brake_pressure_min;
+	}
 
 	// update min/max?
 
@@ -149,24 +161,30 @@ void pedal_adc_timer_cb(void *args) {
 		CC_TransmitPedals_t msg = Compose_CC_TransmitPedals(
 				current_pedal_values.pedal_accel_mapped[0],
 				current_pedal_values.pedal_accel_mapped[1],
-				current_pedal_values.pedal_brake_mapped,
-				current_pedal_values.steering_angle.current_filtered);
+				current_pedal_values.pedal_brake_mapped);
 
 		CAN_TxHeaderTypeDef header = { .ExtId = msg.id, .IDE =
 		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data),
 				.TransmitGlobalTime = DISABLE, };
 		CC_send_can_msg(&hcan2, &header, msg.data);
+
+		CC_TransmitSteering_t msg2 = Compose_CC_TransmitSteering(
+				current_pedal_values.steering_angle[0].current_filtered,
+				current_pedal_values.steering_angle[1].current_filtered);
+		header.ExtId = msg2.id;
+		header.DLC = sizeof(msg2.data);
+		CC_send_can_msg(&hcan2, &header, msg2.data);
+
 #if PRINT_RAW_PEDALS == 1
-		printf("%i %i\r\n",
-				current_pedal_values.pedal_accel_mapped[0],
+		printf("%i %i\r\n", current_pedal_values.pedal_accel_mapped[0],
 				current_pedal_values.pedal_brake_mapped);
 
 		/*printf("%i %i %i %i\r\n",
-						current_pedal_values.brake_pressure.current_filtered,
-						current_pedal_values.brake_pressure_min,
-						current_pedal_values.brake_pressure_max,
-						current_pedal_values.pedal_brake_mapped);
-						*/
+		 current_pedal_values.brake_pressure.current_filtered,
+		 current_pedal_values.brake_pressure_min,
+		 current_pedal_values.brake_pressure_max,
+		 current_pedal_values.pedal_brake_mapped);
+		 */
 #endif
 	}
 }

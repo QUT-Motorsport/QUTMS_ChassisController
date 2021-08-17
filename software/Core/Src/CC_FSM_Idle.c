@@ -71,7 +71,9 @@ void state_idle_iterate(fsm_t *fsm) {
 			// send shutdown to inverters
 			//inverter_send_shutdown();
 
-			printf("shutdown\r\n");
+			if (msg.data[0] == 0) {
+				printf("shutdown\r\n");
+			}
 
 			// change to error state
 			//fsm_changeState(fsm, &shutdownState, "Fatal Shutdown");

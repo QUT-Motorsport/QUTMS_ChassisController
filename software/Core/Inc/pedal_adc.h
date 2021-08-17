@@ -13,6 +13,7 @@
 
 #define NUM_PEDAL_ACCEL 2
 #define NUM_PEDAL_BRAKE 2
+#define NUM_STEERING 2
 
 #define ACCEL_FILTER_SIZE 32
 
@@ -45,10 +46,11 @@ typedef struct pedal_values {
 	uint16_t raw_pedal_accel_dma[NUM_PEDAL_ACCEL];
 
 	uint32_t raw_pressure_brake[1];
-	uint32_t raw_pressure_brake_dma[2];
+	uint32_t raw_pressure_brake_dma[1];
 
-	uint16_t raw_steering[1];
-	window_filter_t steering_angle;
+	uint32_t raw_steering[2];
+	uint32_t raw_steering_dma[2];
+	window_filter_t steering_angle[2];
 } pedal_values_t;
 
 extern pedal_values_t current_pedal_values;

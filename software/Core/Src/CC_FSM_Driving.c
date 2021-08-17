@@ -57,40 +57,45 @@ void state_driving_iterate(fsm_t *fsm) {
 			heartbeats.AMS = true;
 		} else if (msg.ID == SHDN_ShutdownTriggered_ID) {
 			// send shutdown to inverters
-			inverter_send_shutdown();
 
-			// change to error state
-			fsm_changeState(fsm, &shutdownState, "Fatal Shutdown");
+			uint8_t shutdown_state = msg.data[0];
+
+			if (shutdown_state == 0) {
+				inverter_send_shutdown();
+
+				// change to error state
+				fsm_changeState(fsm, &shutdownState, "Fatal Shutdown");
+			}
 		}
 	}
 
 	// CAN1
 	while (queue_next(&queue_CAN1, &msg)) {
 		//printf("CAN1 id:%x\r\n", msg.ID);
-/*
-		if ((msg.ID & ~0x7F) == 0x580) {
-			// response
-			uint16_t node_id = msg.ID & 0x7f;
-			uint16_t index = msg.data[0] | (msg.data[1] << 8);
-			uint8_t subindex = msg.data[2];
-			uint16_t raw_data = msg.data[3] | (msg.data[4] << 8);
+		/*
+		 if ((msg.ID & ~0x7F) == 0x580) {
+		 // response
+		 uint16_t node_id = msg.ID & 0x7f;
+		 uint16_t index = msg.data[0] | (msg.data[1] << 8);
+		 uint8_t subindex = msg.data[2];
+		 uint16_t raw_data = msg.data[3] | (msg.data[4] << 8);
 
-			uint8_t num_id = node_id & 0b1;
+		 uint8_t num_id = node_id & 0b1;
 
-			if (index == 0x2100) {
-				// motor amps
-				int16_t *temp = (int16_t*) &raw_data;
-				motor_amps[num_id * 2 + subindex] = *temp;
-			}
-		}
+		 if (index == 0x2100) {
+		 // motor amps
+		 int16_t *temp = (int16_t*) &raw_data;
+		 motor_amps[num_id * 2 + subindex] = *temp;
+		 }
+		 }
 
-		// forward all CAN1 messages to CAN2
+		 // forward all CAN1 messages to CAN2
 
-		CAN_TxHeaderTypeDef header = { .ExtId = msg.ID, .IDE =
-		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data),
-				.TransmitGlobalTime = DISABLE, };
-		CC_send_can_msg(&hcan2, &header, msg.data);
-*/
+		 CAN_TxHeaderTypeDef header = { .ExtId = msg.ID, .IDE =
+		 CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data),
+		 .TransmitGlobalTime = DISABLE, };
+		 CC_send_can_msg(&hcan2, &header, msg.data);
+		 */
 	}
 
 	// CAN3
@@ -115,19 +120,19 @@ void state_driving_exit(fsm_t *fsm) {
 
 void inverter_timer_cb(void *args) {
 	/*
-	// calculate APPS
-	if (false) {
-		// apps failed
+	 // calculate APPS
+	 if (false) {
+	 // apps failed
 
-		// turn off inverters nicely
-		inverter_update_enabled(false);
+	 // turn off inverters nicely
+	 inverter_update_enabled(false);
 
-		// disable last stage of rtd so they have to press button again
+	 // disable last stage of rtd so they have to press button again
 
-		// go back to idle
-		fsm_changeState((fsm_t*) args, &idleState, "Apps Shutdown");
-	}
-	*/
+	 // go back to idle
+	 fsm_changeState((fsm_t*) args, &idleState, "Apps Shutdown");
+	 }
+	 */
 
 	enabled_count++;
 
@@ -137,8 +142,6 @@ void inverter_timer_cb(void *args) {
 		inverter_update_enabled(true);
 
 	}
-
-
 
 	uint16_t accel = current_pedal_values.pedal_accel_mapped[0];
 
