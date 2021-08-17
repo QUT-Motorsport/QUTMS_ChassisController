@@ -29,6 +29,12 @@
 
 #define ADC_DIFF 25
 
+#define STEER_OFFSET_0 -44
+#define STEER_OFFSET_1 -9
+
+#define STEER_MIN 380
+#define STEER_MAX 3260
+
 typedef struct pedal_values {
 	uint16_t pedal_accel_min[NUM_PEDAL_ACCEL];
 	uint16_t pedal_accel_max[NUM_PEDAL_ACCEL];
@@ -48,8 +54,8 @@ typedef struct pedal_values {
 	uint32_t raw_pressure_brake[1];
 	uint32_t raw_pressure_brake_dma[1];
 
-	uint32_t raw_steering[2];
-	uint32_t raw_steering_dma[2];
+	uint16_t raw_steering[2];
+	uint16_t raw_steering_dma[2];
 	window_filter_t steering_angle[2];
 } pedal_values_t;
 
@@ -62,7 +68,8 @@ void setup_pedals_adc();
 void pedal_adc_timer_cb(void *args);
 
 uint16_t map_value(uint16_t input, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
-
+double map_capped(uint16_t input, uint16_t in_min, uint16_t in_max,
+		uint16_t out_min, uint16_t out_max);
 
 
 #endif /* INC_PEDAL_ADC_H_ */

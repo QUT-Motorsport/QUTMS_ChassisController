@@ -8,6 +8,7 @@
 #include "main.h"
 #include "pedal_adc.h"
 #include "adc.h"
+#include <math.h>
 
 #include <stdio.h>
 #include "CC_CAN_Messages.h"
@@ -31,9 +32,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 		current_pedal_values.raw_pressure_brake[0] =
 				current_pedal_values.raw_pressure_brake_dma[0];
 	} else if (hadc == &hadc2) {
-		memcpy(current_pedal_values.raw_steering,
-				current_pedal_values.raw_steering_dma,
-				sizeof(uint32_t) * NUM_STEERING);
+		current_pedal_values.raw_steering[0] =
+				current_pedal_values.raw_steering_dma[0];
+		current_pedal_values.raw_steering[1] =
+				current_pedal_values.raw_steering_dma[1];
 	}
 }
 void setup_pedals_adc() {
@@ -45,7 +47,7 @@ void setup_pedals_adc() {
 			(uint32_t*) current_pedal_values.raw_pedal_accel_dma,
 			NUM_PEDAL_ACCEL);
 	HAL_ADC_Start_DMA(&hadc3, current_pedal_values.raw_pressure_brake_dma, 1);
-	HAL_ADC_Start_DMA(&hadc2, current_pedal_values.raw_steering_dma,
+	HAL_ADC_Start_DMA(&hadc2, (uint32_t*) current_pedal_values.raw_steering_dma,
 	NUM_STEERING);
 
 	// wait for first dma round
@@ -167,10 +169,48 @@ void pedal_adc_timer_cb(void *args) {
 		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data),
 				.TransmitGlobalTime = DISABLE, };
 		CC_send_can_msg(&hcan2, &header, msg.data);
+		/*
+		 // convert steering angle to radians
+		 double steering_0 = ((STEER_MAX
+		 - current_pedal_values.steering_angle[0].current_filtered) * 360
+		 / STEER_MAX);
+		 double steering_1 =
+		 ((current_pedal_values.steering_angle[1].current_filtered) * 360
+		 / STEER_MAX);
+		 */
 
+		double steering_0 = map_capped(
+				current_pedal_values.steering_angle[0].current_filtered,
+				STEER_MIN, STEER_MAX, 0, 360);
+		double steering_1 = 360 - map_capped(
+				current_pedal_values.steering_angle[1].current_filtered,
+				STEER_MIN, STEER_MAX, 0, 360);
+
+		if (steering_0 > 180) {
+			steering_0 -= 360;
+		} else if (steering_0 < -180) {
+			steering_0 += 360;
+		}
+
+		if (steering_1 > 180) {
+			steering_1 -= 360;
+		} else if (steering_1 < -180) {
+			steering_1 += 360;
+		}
+
+
+
+		//steering_0 -= STEER_OFFSET_0;
+		//steering_1 -= STEER_OFFSET_1;
+
+		CC_TransmitSteering_t msg2 = Compose_CC_TransmitSteering(
+						(uint16_t)(steering_0+180),
+						(uint16_t)(steering_1+180));
+/*
 		CC_TransmitSteering_t msg2 = Compose_CC_TransmitSteering(
 				current_pedal_values.steering_angle[0].current_filtered,
 				current_pedal_values.steering_angle[1].current_filtered);
+				*/
 		header.ExtId = msg2.id;
 		header.DLC = sizeof(msg2.data);
 		CC_send_can_msg(&hcan2, &header, msg2.data);
@@ -193,4 +233,16 @@ uint16_t map_value(uint16_t input, uint16_t in_min, uint16_t in_max,
 		uint16_t out_min, uint16_t out_max) {
 	return (input - in_min) * (out_max - out_min) / (float) (in_max - in_min)
 			+ out_min;
+}
+
+double map_capped(uint16_t input, uint16_t in_min, uint16_t in_max,
+		uint16_t out_min, uint16_t out_max) {
+	if (input < in_min) {
+		input = in_min;
+	} else if (input > in_max) {
+		input = in_max;
+	}
+
+	return (double) (input - in_min) * (double) (out_max - out_min)
+			/ (double) (in_max - in_min) + (double) out_min;
 }
