@@ -97,6 +97,7 @@ void state_idle_iterate(fsm_t *fsm) {
 
 #if DEBUG_AMS==1
 	RTD_state.AMS_init = true;
+	RTD_state.precharge_done = true;
 #endif
 
 	//printf("rtd: %i\r\n", HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin));

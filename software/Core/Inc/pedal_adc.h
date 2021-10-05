@@ -71,5 +71,8 @@ uint16_t map_value(uint16_t input, uint16_t in_min, uint16_t in_max, uint16_t ou
 double map_capped(uint16_t input, uint16_t in_min, uint16_t in_max,
 		uint16_t out_min, uint16_t out_max);
 
+extern double steering_0;
+extern double steering_1;
+
 
 #endif /* INC_PEDAL_ADC_H_ */

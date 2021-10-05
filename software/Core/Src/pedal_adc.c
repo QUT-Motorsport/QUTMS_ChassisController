@@ -20,6 +20,9 @@ int count = 0;
 
 bool accel_update = false;
 
+double steering_0 = 0;
+double steering_1 = 0;
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	if (hadc == &hadc1) {
 		// accel
@@ -179,10 +182,10 @@ void pedal_adc_timer_cb(void *args) {
 		 / STEER_MAX);
 		 */
 
-		double steering_0 = map_capped(
+		steering_0 = map_capped(
 				current_pedal_values.steering_angle[0].current_filtered,
 				STEER_MIN, STEER_MAX, 0, 360);
-		double steering_1 = 360 - map_capped(
+		steering_1 = 360 - map_capped(
 				current_pedal_values.steering_angle[1].current_filtered,
 				STEER_MIN, STEER_MAX, 0, 360);
 
