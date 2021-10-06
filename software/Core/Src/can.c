@@ -1,18 +1,18 @@
 /**
   ******************************************************************************
-  * File Name          : CAN.c
-  * Description        : This file provides code for the configuration
-  *                      of the CAN instances.
+  * @file    can.c
+  * @brief   This file provides code for the configuration
+  *          of the CAN instances.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
   *
   ******************************************************************************
   */
@@ -21,34 +21,18 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
+#include <stdio.h>
+#include <QUTMS_can.h>
 #include "data_logger.h"
-#include "string.h"
-#include "stm32f7xx_hal_can.h"
-#include <stdlib.h>
 
-HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
-		CAN_TxHeaderTypeDef *pHeader, uint8_t aData[], uint32_t *pTxMailbox) {
-	// pull out the CAN msg for logging
-	CAN_MSG_Generic_t msg;
-	memcpy(msg.data, aData, pHeader->DLC);
-	msg.hcan = hcan;
-	msg.header.DLC = pHeader->DLC;
-	msg.header.ExtId = pHeader->ExtId;
-	msg.header.IDE = pHeader->IDE;
-	msg.header.RTR = pHeader->RTR;
-	msg.header.StdId = pHeader->StdId;
+ms_timer_t timer_CAN_queue;
+message_queue_t queue_CAN1;
+message_queue_t queue_CAN2;
+message_queue_t queue_CAN3;
 
-	// wrap msg in log object
-	CAN_log_t log_msg = { 0 };
-	log_msg.can_msg = msg;
-	log_msg.current_ticks = HAL_GetTick();
-
-	// log can msg
-	add_CAN_log(&log_msg);
-
-	// finally send CAN msg
-	return HAL_CAN_AddTxMessage(hcan, pHeader, aData, pTxMailbox);
-}
+uint32_t txMailbox_CAN1;
+uint32_t txMailbox_CAN2;
+uint32_t txMailbox_CAN3;
 
 /* USER CODE END 0 */
 
@@ -60,6 +44,13 @@ CAN_HandleTypeDef hcan3;
 void MX_CAN1_Init(void)
 {
 
+  /* USER CODE BEGIN CAN1_Init 0 */
+
+  /* USER CODE END CAN1_Init 0 */
+
+  /* USER CODE BEGIN CAN1_Init 1 */
+
+  /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
   hcan1.Init.Prescaler = 6;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
@@ -76,12 +67,22 @@ void MX_CAN1_Init(void)
   {
     Error_Handler();
   }
+  /* USER CODE BEGIN CAN1_Init 2 */
+
+  /* USER CODE END CAN1_Init 2 */
 
 }
 /* CAN2 init function */
 void MX_CAN2_Init(void)
 {
 
+  /* USER CODE BEGIN CAN2_Init 0 */
+
+  /* USER CODE END CAN2_Init 0 */
+
+  /* USER CODE BEGIN CAN2_Init 1 */
+
+  /* USER CODE END CAN2_Init 1 */
   hcan2.Instance = CAN2;
   hcan2.Init.Prescaler = 6;
   hcan2.Init.Mode = CAN_MODE_NORMAL;
@@ -98,12 +99,22 @@ void MX_CAN2_Init(void)
   {
     Error_Handler();
   }
+  /* USER CODE BEGIN CAN2_Init 2 */
+
+  /* USER CODE END CAN2_Init 2 */
 
 }
 /* CAN3 init function */
 void MX_CAN3_Init(void)
 {
 
+  /* USER CODE BEGIN CAN3_Init 0 */
+
+  /* USER CODE END CAN3_Init 0 */
+
+  /* USER CODE BEGIN CAN3_Init 1 */
+
+  /* USER CODE END CAN3_Init 1 */
   hcan3.Instance = CAN3;
   hcan3.Init.Prescaler = 6;
   hcan3.Init.Mode = CAN_MODE_NORMAL;
@@ -120,6 +131,9 @@ void MX_CAN3_Init(void)
   {
     Error_Handler();
   }
+  /* USER CODE BEGIN CAN3_Init 2 */
+
+  /* USER CODE END CAN3_Init 2 */
 
 }
 
@@ -155,9 +169,9 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /* CAN1 interrupt Init */
-    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-    HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
   /* USER CODE BEGIN CAN1_MspInit 1 */
 
@@ -195,9 +209,9 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* CAN2 interrupt Init */
-    HAL_NVIC_SetPriority(CAN2_RX0_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(CAN2_RX0_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(CAN2_RX0_IRQn);
-    HAL_NVIC_SetPriority(CAN2_RX1_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(CAN2_RX1_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(CAN2_RX1_IRQn);
   /* USER CODE BEGIN CAN2_MspInit 1 */
 
@@ -235,9 +249,9 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /* CAN3 interrupt Init */
-    HAL_NVIC_SetPriority(CAN3_RX0_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(CAN3_RX0_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(CAN3_RX0_IRQn);
-    HAL_NVIC_SetPriority(CAN3_RX1_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(CAN3_RX1_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(CAN3_RX1_IRQn);
   /* USER CODE BEGIN CAN3_MspInit 1 */
 
@@ -336,6 +350,223 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
+void setup_CAN() {
+	// setup CAN queue
+	if (queue_init(&queue_CAN1, sizeof(CAN_MSG_Generic_t),
+	CAN_QUEUE_SIZE) == false) {
+		printf("ERROR: FAILED TO SETUP CAN1 QUEUE\r\n");
+	}
+
+	if (queue_init(&queue_CAN2, sizeof(CAN_MSG_Generic_t),
+	CAN_QUEUE_SIZE) == false) {
+		printf("ERROR: FAILED TO SETUP CAN2 QUEUE\r\n");
+	}
+
+	if (queue_init(&queue_CAN2, sizeof(CAN_MSG_Generic_t),
+	CAN_QUEUE_SIZE) == false) {
+		printf("ERROR: FAILED TO SETUP CAN3 QUEUE\r\n");
+	}
+
+	// start CAN lines
+	if (HAL_CAN_Start(&hcan1) != HAL_OK) {
+		printf("ERROR: FAILED TO START CAN1\r\n");
+		Error_Handler();
+	}
+	if (HAL_CAN_Start(&hcan2) != HAL_OK) {
+		printf("ERROR: FAILED TO START CAN2\r\n");
+		Error_Handler();
+	}
+	if (HAL_CAN_Start(&hcan3) != HAL_OK) {
+		printf("ERROR: FAILED TO START CAN3\r\n");
+		Error_Handler();
+	}
+
+	// setup CAN filters
+	CAN_FilterTypeDef sFilterConfig;
+
+	sFilterConfig.FilterBank = 0;
+	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	sFilterConfig.FilterIdHigh = 0x0000;
+	sFilterConfig.FilterIdLow = 0x0001;
+	sFilterConfig.FilterMaskIdHigh = 0x0000;
+	sFilterConfig.FilterMaskIdLow = 0x0000;
+	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+	sFilterConfig.FilterActivation = ENABLE;
+	sFilterConfig.SlaveStartFilterBank = 14;
+
+	if (HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig) != HAL_OK) {
+		printf("failed to config filter on can1\r\n");
+		Error_Handler();
+	}
+
+	sFilterConfig.FilterBank = 14;
+
+	if (HAL_CAN_ConfigFilter(&hcan2, &sFilterConfig) != HAL_OK) {
+		printf("failed to config filter on can2\r\n");
+		Error_Handler();
+	}
+
+	sFilterConfig.FilterBank = 28;
+
+	if (HAL_CAN_ConfigFilter(&hcan3, &sFilterConfig) != HAL_OK) {
+		printf("failed to config filter on can3\r\n");
+		Error_Handler();
+	}
+
+	// activate notifications / interrupts
+	if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN1 notification on RX0");
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO1_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN1 notification on RX1");
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN2 notification on RX0");
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO1_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN2 notification on RX1");
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan3, CAN_IT_RX_FIFO0_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN3 notification on RX0");
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan3, CAN_IT_RX_FIFO1_MSG_PENDING)
+			!= HAL_OK) {
+		printf("Failed to activate CAN3 notification on RX1");
+	}
+
+	// setup timer
+	timer_CAN_queue = timer_init(1, true, CAN_timer_cb);
+
+	// start timer
+	timer_start(&timer_CAN_queue);
+}
+
+void CAN_timer_cb(void *args) {
+
+}
+
+void handle_CAN_interrupt(CAN_HandleTypeDef *hcan, int fifo) {
+	__disable_irq();
+	//int fill = HAL_CAN_GetRxFifoFillLevel(hcan, fifo);
+
+	CAN_MSG_Generic_t msg;
+	CAN_RxHeaderTypeDef header;
+	CAN_TxHeaderTypeDef headerTx;
+
+	while(HAL_CAN_GetRxFifoFillLevel(hcan, fifo) > 0) {
+	//for (int i = 0; i < fill; i++) {
+		if (HAL_CAN_GetRxMessage(hcan, fifo, &header, msg.data) != HAL_OK) {
+			printf("failed to read CAN msg");
+		}
+
+		msg.hcan = hcan;
+		msg.ID = header.IDE == CAN_ID_EXT ? header.ExtId : header.StdId;
+		msg.ID_TYPE = header.IDE == CAN_ID_EXT ? 1 : 0;
+		msg.DLC = header.DLC;
+		msg.timestamp = HAL_GetTick();
+
+		// add to CAN recieve queue
+		if (hcan == &hcan1) {
+			// if it's an inverter msg, forward onto CAN2
+			headerTx.ExtId = header.ExtId;
+			headerTx.StdId = header.StdId;
+			headerTx.IDE = header.IDE;
+			headerTx.RTR = header.RTR;
+			headerTx.DLC = header.DLC;
+			HAL_CAN_AddTxMessage(&hcan2, &headerTx, msg.data, &txMailbox_CAN2);
+
+			queue_add(&queue_CAN1, &msg);
+		} else if (hcan == &hcan2) {
+			queue_add(&queue_CAN2, &msg);
+		} else if (hcan == &hcan3) {
+			queue_add(&queue_CAN3, &msg);
+		}
+
+		// add to CAN logging queue
+		//queue_add(&queue_CAN_log, &msg);
+	}
+	__enable_irq();
+}
+
+uint8_t msg_count[3];
+int test = 0;
+
+HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
+		CAN_TxHeaderTypeDef *pHeader, uint8_t aData[]) {
+	// pull out the CAN msg for logging
+	CAN_MSG_Generic_t msg;
+
+	for (int i = 0; i < pHeader->DLC; i++) {
+		msg.data[i] = aData[i];
+	}
+
+	msg.hcan = hcan;
+	msg.ID = pHeader->IDE == CAN_ID_EXT ? pHeader->ExtId : pHeader->StdId;
+	msg.ID_TYPE = pHeader->IDE == CAN_ID_EXT ? 1 : 0;
+	msg.DLC = pHeader->DLC;
+	msg.timestamp = HAL_GetTick();
+
+	int can_idx = 0;
+
+	uint32_t *pTxMailbox;
+	if (hcan == &hcan1) {
+		pTxMailbox = &txMailbox_CAN1;
+		can_idx = 0;
+	} else if (hcan == &hcan2) {
+		pTxMailbox = &txMailbox_CAN2;
+		can_idx = 1;
+	} else if (hcan == &hcan3) {
+		pTxMailbox = &txMailbox_CAN3;
+		can_idx = 2;
+	}
+/*
+	test = 0;
+	if (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
+		for (int i = 0; i < 10; i++) {
+			test = test + 1;
+		}
+	}
+
+
+	while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
+		printf("\r");
+	}
+*/
+	/*
+
+	 msg_count[can_idx]++;
+
+	 if (msg_count[can_idx] > 2) {
+	 HAL_Delay(1);
+	 msg_count[can_idx] = 0;
+	 }
+	 */
+
+	// finally send CAN msg
+	HAL_StatusTypeDef result = HAL_CAN_AddTxMessage(hcan, pHeader, aData,
+			pTxMailbox);
+	if (result != HAL_OK) {
+		printf("FAILED TO SEND CAN %i - e: %lu\r\n", can_idx + 1,
+				hcan->ErrorCode);
+	}
+
+#ifdef DATA_LOG
+	queue_add(&queue_CAN_log, &msg);
+#endif
+
+	return result;
+}
 
 /* USER CODE END 1 */
 
