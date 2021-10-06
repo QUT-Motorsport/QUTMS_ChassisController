@@ -83,28 +83,28 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 
 	double tvValues[4] = { 1, 1, 1, 1 };
 	// calculate torque vectoring
-
+/*
 	if (enable_tv) {
 		vesc_torque_vectoring(steering_0, &tvValues[0], &tvValues[1],
 				&tvValues[2], &tvValues[3]);
 	}
-
+*/
 	for (VESC_ID i = FL; i <= RR; i++) {
 		// If our regen value is > 0, we only send brake command, else send torque command
 		if (regen > 0.0f) {
 			// Set Regen
 			VESC_SetCurrentBrake_t regenCommand = Compose_VESC_SetCurrentBrake(
-					i, regen * tvValues[i]);
+					i, regen);
 			CAN_TxHeaderTypeDef regenHeader = { .IDE = CAN_ID_EXT, .RTR =
 					CAN_RTR_DATA, .DLC = sizeof(regenCommand.data), .ExtId =
 					regenCommand.id, };
 
-			CC_send_can_msg(&hcan1, &regenHeader, regenCommand.data);
-			CC_send_can_msg(&hcan2, &regenHeader, regenCommand.data);
+			//CC_send_can_msg(&hcan1, &regenHeader, regenCommand.data);
+			//CC_send_can_msg(&hcan2, &regenHeader, regenCommand.data);
 		} else {
 			// Set Torque
 			VESC_SetCurrent_t torqueCommand = Compose_VESC_SetCurrent(i,
-					torque * tvValues[i]);
+					torque);
 			CAN_TxHeaderTypeDef torqueHeader = { .IDE = CAN_ID_EXT, .RTR =
 					CAN_RTR_DATA, .DLC = sizeof(torqueCommand.data), .ExtId =
 					torqueCommand.id, };
