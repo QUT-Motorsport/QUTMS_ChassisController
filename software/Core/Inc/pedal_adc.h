@@ -29,8 +29,8 @@
 
 #define ADC_DIFF 25
 
-#define STEER_OFFSET_0 -44
-#define STEER_OFFSET_1 -9
+#define STEER_OFFSET_0 -7.25
+#define STEER_OFFSET_1 -6
 
 #define STEER_MIN 380
 #define STEER_MAX 3260

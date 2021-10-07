@@ -185,35 +185,25 @@ void pedal_adc_timer_cb(void *args) {
 		steering_0 = map_capped(
 				current_pedal_values.steering_angle[0].current_filtered,
 				STEER_MIN, STEER_MAX, 0, 360);
-		steering_1 = 360 - map_capped(
-				current_pedal_values.steering_angle[1].current_filtered,
-				STEER_MIN, STEER_MAX, 0, 360);
+		steering_1 = 360
+				- map_capped(
+						current_pedal_values.steering_angle[1].current_filtered,
+						STEER_MIN, STEER_MAX, 0, 360);
 
-		if (steering_0 > 180) {
-			steering_0 -= 360;
-		} else if (steering_0 < -180) {
-			steering_0 += 360;
-		}
+		// flip angle
+		steering_0 = 180 - steering_0;
+		steering_1 = 180 - steering_1;
 
-		if (steering_1 > 180) {
-			steering_1 -= 360;
-		} else if (steering_1 < -180) {
-			steering_1 += 360;
-		}
-
-
-
-		//steering_0 -= STEER_OFFSET_0;
-		//steering_1 -= STEER_OFFSET_1;
+		steering_0 += STEER_OFFSET_0;
+		steering_1 += STEER_OFFSET_1;
 
 		CC_TransmitSteering_t msg2 = Compose_CC_TransmitSteering(
-						(uint16_t)(steering_0+180),
-						(uint16_t)(steering_1+180));
-/*
-		CC_TransmitSteering_t msg2 = Compose_CC_TransmitSteering(
-				current_pedal_values.steering_angle[0].current_filtered,
-				current_pedal_values.steering_angle[1].current_filtered);
-				*/
+				(uint16_t) (steering_0 + 180), (uint16_t) (steering_1 + 180));
+		/*
+		 CC_TransmitSteering_t msg2 = Compose_CC_TransmitSteering(
+		 current_pedal_values.steering_angle[0].current_filtered,
+		 current_pedal_values.steering_angle[1].current_filtered);
+		 */
 		header.ExtId = msg2.id;
 		header.DLC = sizeof(msg2.data);
 		CC_send_can_msg(&hcan2, &header, msg2.data);
