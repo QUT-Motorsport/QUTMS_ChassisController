@@ -36,6 +36,6 @@ void CC_OD_handleCAN(CAN_MSG_Generic_t *msg, CAN_HandleTypeDef *hcan) {
 		header.ExtId = msg.id;
 		header.DLC = sizeof(msg.data);
 
-		CC_send_can_msg(hcan, &header, NULL);
+		CC_send_can_msg(hcan, &header, msg.data);
 	}
 }
