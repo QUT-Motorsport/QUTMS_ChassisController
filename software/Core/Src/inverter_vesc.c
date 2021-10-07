@@ -7,8 +7,13 @@
 
 #include "inverter_vesc.h"
 #include "pedal_adc.h"
+#include "can_dict.h"
+
+#include <math.h>
 
 bool enable_tv = false;
+
+uint16_t vesc_current_max = VESC_CURRENT_MAX;
 
 void vesc_send_shutdown() {
 	// Shutdown VESCs
@@ -38,6 +43,11 @@ void vesc_update_enabled(bool state) {
 }
 
 void vesc_send_pedals(uint16_t accel, uint16_t brake) {
+
+	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_INV_CURRENT)) {
+		vesc_current_max = OD_getValue(&CC_obj_dict, CC_OD_IDX_INV_CURRENT, true);
+	}
+
 	// Accel & Brake come in as 0-1000;
 	float ac = accel / 1000.0f;
 	float br = brake / 1000.0f;
@@ -55,7 +65,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 		// Accelerate
 		if (ac <= VESC_DEADZONE_MIN) {
 			// Regen Zone
-			torque = VESC_CURRENT_MIN;
+			torque = vesc_current_max;
 			regen = VESC_REGEN_MAX
 					- (VESC_REGEN_MAX * ac * (1.0f / VESC_DEADZONE_MIN));
 
@@ -70,12 +80,12 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 			regen = VESC_REGEN_MIN;
 		} else if (ac > VESC_DEADZONE_MAX) {
 			// Torque Zone
-			torque = VESC_CURRENT_MAX * (ac - VESC_DEADZONE_MAX)
+			torque = vesc_current_max * (ac - VESC_DEADZONE_MAX)
 					* (1.0f / (1.0f - VESC_DEADZONE_MAX));
 			regen = VESC_REGEN_MIN;
 
-			if (torque > VESC_CURRENT_MAX)
-				torque = VESC_CURRENT_MAX;
+			if (torque > vesc_current_max)
+				torque = vesc_current_max;
 			if (torque < VESC_CURRENT_MIN)
 				torque = VESC_CURRENT_MIN;
 		}

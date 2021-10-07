@@ -14,6 +14,7 @@
 
 #include "pedal_adc.h"
 #include "inverter.h"
+#include "can_dict.h"
 
 state_t drivingState = { &state_driving_enter, &state_driving_iterate,
 		&state_driving_exit, "Driving_s" };
@@ -66,6 +67,8 @@ void state_driving_iterate(fsm_t *fsm) {
 				// change to error state
 				fsm_changeState(fsm, &shutdownState, "Fatal Shutdown");
 			}
+		} else if (msg.ID == CC_OBJ_DICT_ID) {
+			CC_OD_handleCAN(&msg, &hcan2);
 		}
 	}
 

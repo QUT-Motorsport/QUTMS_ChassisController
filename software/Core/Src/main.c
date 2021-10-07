@@ -35,6 +35,7 @@
 #include "CC_FSM_States.h"
 #include "pedal_adc.h"
 #include "data_logger.h"
+#include "can_dict.h"
 
 /* USER CODE END Includes */
 
@@ -139,8 +140,12 @@ int main(void)
 	//setup_data_logger();
 	setup_CAN();
 
+	// setup CAN object dictionary
+	CC_OD_init();
+
 	printf("CAN\r\n");
 	setup_pedals_adc();
+
 
 	printf("pedals\r\n");
 

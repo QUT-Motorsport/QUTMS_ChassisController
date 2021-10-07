@@ -16,6 +16,7 @@
 #include "CC_FSM_States.h"
 #include "RTD.h"
 #include "pedal_adc.h"
+#include "can_dict.h"
 
 state_t idleState = { &state_idle_enter, &state_idle_iterate, &state_idle_exit,
 		"Idle_s" };
@@ -82,6 +83,8 @@ void state_idle_iterate(fsm_t *fsm) {
 				printf("AMS ready received\r\n");
 				RTD_state.precharge_done = true;
 			}
+		} else if (msg.ID == CC_OBJ_DICT_ID) {
+			CC_OD_handleCAN(&msg, &hcan2);
 		}
 	}
 
