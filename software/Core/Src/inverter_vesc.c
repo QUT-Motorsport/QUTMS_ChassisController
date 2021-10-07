@@ -67,7 +67,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 		// Accelerate
 		if (ac <= VESC_DEADZONE_MIN) {
 			// Regen Zone
-			torque = vesc_current_max;
+			torque = VESC_CURRENT_MIN;
 			regen = VESC_REGEN_MAX
 					- (VESC_REGEN_MAX * ac * (1.0f / VESC_DEADZONE_MIN));
 
