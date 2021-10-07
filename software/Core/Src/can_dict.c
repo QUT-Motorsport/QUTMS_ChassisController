@@ -17,6 +17,7 @@ void CC_OD_init() {
 	OD_init(&CC_obj_dict);
 
 	OD_setValue(&CC_obj_dict, CC_OD_IDX_INV_CURRENT, VESC_CURRENT_MAX);
+	OD_setValue(&CC_obj_dict, CC_OD_IDX_ENABLE_TV, 0);
 }
 
 void CC_OD_handleCAN(CAN_MSG_Generic_t *msg, CAN_HandleTypeDef *hcan) {

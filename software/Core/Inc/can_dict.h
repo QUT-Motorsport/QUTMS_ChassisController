@@ -13,6 +13,7 @@
 #include "can.h"
 
 #define CC_OD_IDX_INV_CURRENT 0x1
+#define CC_OD_IDX_ENABLE_TV 0x2
 
 extern obj_dict_t CC_obj_dict;
 

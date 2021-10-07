@@ -11,9 +11,8 @@
 
 #include <math.h>
 
-bool enable_tv = true;
-
 uint16_t vesc_current_max = VESC_CURRENT_MAX;
+uint16_t enable_tv = 0;
 
 int32_t vesc_rpm;
 
@@ -47,7 +46,12 @@ void vesc_update_enabled(bool state) {
 void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 
 	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_INV_CURRENT)) {
-		vesc_current_max = OD_getValue(&CC_obj_dict, CC_OD_IDX_INV_CURRENT, true);
+		vesc_current_max = OD_getValue(&CC_obj_dict, CC_OD_IDX_INV_CURRENT,
+				true);
+	}
+
+	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_ENABLE_TV)) {
+		enable_tv = OD_getValue(&CC_obj_dict, CC_OD_IDX_ENABLE_TV, true);
 	}
 
 	// Accel & Brake come in as 0-1000;
@@ -96,19 +100,20 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 	double tvValues[4] = { 1, 1, 1, 1 };
 	// calculate torque vectoring
 
-	if (enable_tv) {
+	if (enable_tv == 1) {
 		vesc_torque_vectoring(steering_0, &tvValues[0], &tvValues[1],
 				&tvValues[2], &tvValues[3]);
 	}
 
 	for (VESC_ID i = FL; i <= RR; i++) {
 		// If our regen value is > 0, we only send brake command, else send torque command
-		if (regen > 0.0f && (float)(vesc_rpm / (21.0f * 4.5f)) > 500.0f/4.5f) {
+		if (regen > 0.0f
+				&& (float) (vesc_rpm / (21.0f * 4.5f)) > 500.0f / 4.5f) {
 			// Set Regen
 			VESC_SetCurrentBrake_t regenCommand = Compose_VESC_SetCurrentBrake(
 					i, regen);
 			CAN_TxHeaderTypeDef regenHeader = { .IDE = CAN_ID_EXT, .RTR =
-					CAN_RTR_DATA, .DLC = sizeof(regenCommand.data), .ExtId =
+			CAN_RTR_DATA, .DLC = sizeof(regenCommand.data), .ExtId =
 					regenCommand.id, };
 
 			CC_send_can_msg(&hcan1, &regenHeader, regenCommand.data);
@@ -118,7 +123,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 			VESC_SetCurrent_t torqueCommand = Compose_VESC_SetCurrent(i,
 					torque * tvValues[i]);
 			CAN_TxHeaderTypeDef torqueHeader = { .IDE = CAN_ID_EXT, .RTR =
-					CAN_RTR_DATA, .DLC = sizeof(torqueCommand.data), .ExtId =
+			CAN_RTR_DATA, .DLC = sizeof(torqueCommand.data), .ExtId =
 					torqueCommand.id, };
 
 			CC_send_can_msg(&hcan1, &torqueHeader, torqueCommand.data);
@@ -188,7 +193,6 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 	*rl = (rRL / rref);
 }
 
-void vesc_setRPM(int32_t thisRPM)
-{
+void vesc_setRPM(int32_t thisRPM) {
 	vesc_rpm = thisRPM;
 }

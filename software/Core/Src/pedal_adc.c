@@ -130,22 +130,20 @@ void pedal_adc_timer_cb(void *args) {
 				current_pedal_values.raw_steering[i]);
 	}
 
-	if (current_pedal_values.brake_pressure.current_filtered
-			> current_pedal_values.brake_pressure_max) {
-		current_pedal_values.brake_pressure.current_filtered =
-				current_pedal_values.brake_pressure_max;
+	uint16_t brake_val = current_pedal_values.brake_pressure.current_filtered;
+
+	if (brake_val > current_pedal_values.brake_pressure_max) {
+		brake_val = current_pedal_values.brake_pressure_max;
 	}
 
-	if (current_pedal_values.brake_pressure.current_filtered
-			< current_pedal_values.brake_pressure_min) {
-		current_pedal_values.brake_pressure.current_filtered =
-				current_pedal_values.brake_pressure_min;
+	if (brake_val < current_pedal_values.brake_pressure_min) {
+		brake_val = current_pedal_values.brake_pressure_min;
 	}
 
 	// update min/max?
 
 	current_pedal_values.pedal_brake_mapped = map_value(
-			current_pedal_values.brake_pressure.current_filtered,
+			brake_val,
 			current_pedal_values.brake_pressure_min,
 			current_pedal_values.brake_pressure_max, 0,
 			PEDAL_DUTY_CYCLE);
@@ -166,7 +164,8 @@ void pedal_adc_timer_cb(void *args) {
 		CC_TransmitPedals_t msg = Compose_CC_TransmitPedals(
 				current_pedal_values.pedal_accel_mapped[0],
 				current_pedal_values.pedal_accel_mapped[1],
-				current_pedal_values.pedal_brake_mapped);
+				current_pedal_values.pedal_brake_mapped,
+				current_pedal_values.brake_pressure.current_filtered);
 
 		CAN_TxHeaderTypeDef header = { .ExtId = msg.id, .IDE =
 		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data),
