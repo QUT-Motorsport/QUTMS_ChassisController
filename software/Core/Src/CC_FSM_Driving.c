@@ -69,6 +69,15 @@ void state_driving_iterate(fsm_t *fsm) {
 			}
 		} else if (msg.ID == CC_OBJ_DICT_ID) {
 			CC_OD_handleCAN(&msg, &hcan2);
+		} else if(msg.ID == VESC_CAN_PACKET_STATUS)
+		{
+			VESC_ID id;
+			int32_t rpm;
+			float current;
+			float duty;
+			Parse_VESC_CANPacketStatus(msg.data, &id, &rpm, &current, &duty);
+			printf("rpm: %li, sending to inverter\r\n", rpm);
+			vesc_setRPM(rpm);
 		}
 	}
 

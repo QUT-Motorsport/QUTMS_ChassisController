@@ -31,5 +31,6 @@ void vesc_update_enabled(bool state);
 void vesc_send_pedals(uint16_t accel, uint16_t brake);
 void vesc_torque_vectoring(double steeringAngle, double* fl, double* fr, double* rl, double* rr);
 void vesc_request_motor_amps();
+void vesc_setRPM(int32_t rpm);
 
 #endif /* INC_INVERTER_VESC_H_ */

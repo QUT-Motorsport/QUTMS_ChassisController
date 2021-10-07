@@ -15,6 +15,8 @@ bool enable_tv = false;
 
 uint16_t vesc_current_max = VESC_CURRENT_MAX;
 
+int32_t vesc_rpm;
+
 void vesc_send_shutdown() {
 	// Shutdown VESCs
 	for (VESC_ID i = FL; i < RR; i++) {
@@ -101,7 +103,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 */
 	for (VESC_ID i = FL; i <= RR; i++) {
 		// If our regen value is > 0, we only send brake command, else send torque command
-		if (regen > 0.0f) {
+		if (regen > 0.0f && (float)(vesc_rpm / (21.0f * 4.5f)) > 500.0f/4.5f) {
 			// Set Regen
 			VESC_SetCurrentBrake_t regenCommand = Compose_VESC_SetCurrentBrake(
 					i, regen);
@@ -184,4 +186,9 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 	*fl = (rFL / rref);
 	*rr = (rRR / rref);
 	*rl = (rRL / rref);
+}
+
+void vesc_setRPM(int32_t thisRPM)
+{
+	vesc_rpm = thisRPM;
 }
