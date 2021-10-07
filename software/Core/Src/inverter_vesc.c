@@ -111,8 +111,8 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 					CAN_RTR_DATA, .DLC = sizeof(regenCommand.data), .ExtId =
 					regenCommand.id, };
 
-			//CC_send_can_msg(&hcan1, &regenHeader, regenCommand.data);
-			//CC_send_can_msg(&hcan2, &regenHeader, regenCommand.data);
+			CC_send_can_msg(&hcan1, &regenHeader, regenCommand.data);
+			CC_send_can_msg(&hcan2, &regenHeader, regenCommand.data);
 		} else {
 			// Set Torque
 			VESC_SetCurrent_t torqueCommand = Compose_VESC_SetCurrent(i,
