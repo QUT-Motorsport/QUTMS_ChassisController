@@ -12,7 +12,7 @@
 #include <math.h>
 
 uint16_t vesc_current_max = VESC_CURRENT_MAX;
-uint16_t enable_tv = 0;
+uint16_t enable_tv = 1;
 
 int32_t vesc_rpm;
 
@@ -161,8 +161,10 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 	double rFR;
 	double d;
 	double alpha;
+	double deadzone = 5 * M_PI / 180.0f;
+	double straightratio = 0.8;
 
-	if (b > 0) {
+	if (b > deadzone) {
 		rFR = l / sin(b);
 		d = l / tan(b);
 		alpha = atan(l / (w + d));
@@ -170,7 +172,7 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 		rRR = d;
 		rRL = d + w;
 		rref = rFL;
-	} else if (b < 0) {
+	} else if (b < -(deadzone)) {
 		b = b * -1;
 		rFL = l / sin(b);
 		d = l / tan(b);
@@ -180,8 +182,8 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 		rRR = w + d;
 		rref = rFR;
 	} else {
-		rFR = 1;
-		rFL = 1;
+		rFR = straightratio;
+		rFL = straightratio;
 		rRR = 1;
 		rRL = 1;
 		rref = 1;
