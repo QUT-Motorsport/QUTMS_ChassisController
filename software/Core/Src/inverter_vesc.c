@@ -54,6 +54,18 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 		enable_tv = OD_getValue(&CC_obj_dict, CC_OD_IDX_ENABLE_TV, true);
 	}
 
+	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_DEADZONE)) {
+		deadzone = OD_getValue(&CC_obj_dict, CC_OD_IDX_DEADZONE, true);
+	}
+
+	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_STRAIGHTRATIO)) {
+		straightratio = OD_getValue(&CC_obj_dict, CC_OD_IDX_STRAIGHTRATIO, true);
+	}
+
+	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_BOOST)) {
+		boost = OD_getValue(&CC_obj_dict, CC_OD_IDX_BOOST, true);
+	}
+
 	// Accel & Brake come in as 0-1000;
 	float ac = accel / 1000.0f;
 	float br = brake / 1000.0f;
@@ -161,6 +173,9 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 	double rFR;
 	double d;
 	double alpha;
+	double boost = 0.05;
+	double rboost;
+	double lboost;
 	double deadzone = 5 * M_PI / 180.0f;
 	double straightratio = 0.8;
 
@@ -172,6 +187,8 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 		rRR = d;
 		rRL = d + w;
 		rref = rFL;
+		lboost = 0;
+		rboost = boost;
 	} else if (b < -(deadzone)) {
 		b = b * -1;
 		rFL = l / sin(b);
@@ -181,18 +198,23 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 		rRL = d;
 		rRR = w + d;
 		rref = rFR;
+		rboost = 0;
+		lboost = boost;
 	} else {
 		rFR = straightratio;
 		rFL = straightratio;
 		rRR = 1;
 		rRL = 1;
 		rref = 1;
+		boost = 0;
+		rboost = 0;
+		lboost = 0;
 	}
 
-	*fr = (rFR / rref);
-	*fl = (rFL / rref);
-	*rr = (rRR / rref);
-	*rl = (rRL / rref);
+	*fr = (rFR / rref) + rboost;
+	*fl = (rFL / rref) + lboost;
+	*rr = (rRR / rref) + boost;
+	*rl = (rRL / rref) + boost;
 }
 
 void vesc_setRPM(int32_t thisRPM) {

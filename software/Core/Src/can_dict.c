@@ -17,6 +17,9 @@ void CC_OD_init() {
 	OD_init(&CC_obj_dict);
 
 	OD_setValue(&CC_obj_dict, CC_OD_IDX_INV_CURRENT, VESC_CURRENT_MAX);
+	OD_setValue(&CC_obj_dict, CC_OD_IDX_DEADZONE, 0);
+	OD_setValue(&CC_obj_dict, CC_OD_IDX_STRAIGHTRATIO, 0);
+	OD_setValue(&CC_obj_dict, CC_OD_IDX_BOOST, 0);
 	OD_setValue(&CC_obj_dict, CC_OD_IDX_ENABLE_TV, 0);
 }
 
