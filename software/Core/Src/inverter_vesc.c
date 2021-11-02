@@ -117,6 +117,9 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 				&tvValues[2], &tvValues[3]);
 	}
 
+	double rearTorque = abs(steering_0) < deadzone ? torque + scalar : torque;
+	double torqueRequest[4] = {torque, torque, rearTorque, rearTorque}
+
 	for (VESC_ID i = FL; i <= RR; i++) {
 		// If our regen value is > 0, we only send brake command, else send torque command
 		if (regen > 0.0f
@@ -133,7 +136,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 		} else {
 			// Set Torque
 			VESC_SetCurrent_t torqueCommand = Compose_VESC_SetCurrent(i,
-					torque * tvValues[i]);
+					torqueRequest[i] * tvValues[i]);
 			CAN_TxHeaderTypeDef torqueHeader = { .IDE = CAN_ID_EXT, .RTR =
 			CAN_RTR_DATA, .DLC = sizeof(torqueCommand.data), .ExtId =
 					torqueCommand.id, };
@@ -177,7 +180,6 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 	double rboost;
 	double lboost;
 	double deadzone = 5 * M_PI / 180.0f;
-	double straightratio = 0.8;
 
 	if (b > deadzone) {
 		rFR = l / sin(b);
@@ -201,8 +203,8 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 		rboost = 0;
 		lboost = boost;
 	} else {
-		rFR = straightratio;
-		rFL = straightratio;
+		rFR = 1;
+		rFL = 1;
 		rRR = 1;
 		rRL = 1;
 		rref = 1;
