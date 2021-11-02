@@ -58,8 +58,8 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 		deadzone = OD_getValue(&CC_obj_dict, CC_OD_IDX_DEADZONE, true);
 	}
 
-	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_STRAIGHTRATIO)) {
-		straightratio = OD_getValue(&CC_obj_dict, CC_OD_IDX_STRAIGHTRATIO, true);
+	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_SCALAR)) {
+		scalar = OD_getValue(&CC_obj_dict, CC_OD_IDX_SCALAR, true);
 	}
 
 	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_BOOST)) {
