@@ -179,7 +179,6 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 	double rFR;
 	double d;
 	double alpha;
-	double boost = 0;
 	double rboost;
 	double lboost;
 
