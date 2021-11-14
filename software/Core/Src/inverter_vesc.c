@@ -13,6 +13,7 @@
 
 uint16_t vesc_current_max = VESC_CURRENT_MAX;
 uint16_t enable_tv = 1;
+uint16_t scalar = 0;
 
 int32_t vesc_rpm;
 
@@ -176,7 +177,7 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 	double rFR;
 	double d;
 	double alpha;
-	double boost = 0.05;
+	double boost = 0;
 	double rboost;
 	double lboost;
 	double deadzone = 5 * M_PI / 180.0f;
