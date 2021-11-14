@@ -13,7 +13,9 @@
 
 uint16_t vesc_current_max = VESC_CURRENT_MAX;
 uint16_t enable_tv = 1;
+uint16_t boost = 0;
 uint16_t scalar = 0;
+uint16_t deadzone = 5 * M_PI / 180.0f;
 
 int32_t vesc_rpm;
 
@@ -119,7 +121,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 	}
 
 	double rearTorque = abs(steering_0) < deadzone ? torque + scalar : torque;
-	double torqueRequest[4] = {torque, torque, rearTorque, rearTorque}
+	double torqueRequest[4] = {torque, torque, rearTorque, rearTorque};
 
 	for (VESC_ID i = FL; i <= RR; i++) {
 		// If our regen value is > 0, we only send brake command, else send torque command
@@ -180,7 +182,6 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 	double boost = 0;
 	double rboost;
 	double lboost;
-	double deadzone = 5 * M_PI / 180.0f;
 
 	if (b > deadzone) {
 		rFR = l / sin(b);
