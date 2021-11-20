@@ -33,4 +33,6 @@ void vesc_torque_vectoring(double steeringAngle, double* fl, double* fr, double*
 void vesc_request_motor_amps();
 void vesc_setRPM(int32_t rpm);
 
+extern int32_t motor_rpm[4];
+
 #endif /* INC_INVERTER_VESC_H_ */
