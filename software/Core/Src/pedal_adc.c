@@ -115,12 +115,14 @@ void pedal_adc_timer_cb(void *args) {
 			//}
 		}
 
-		current_pedal_values.pedal_accel_mapped[i] = PEDAL_DUTY_CYCLE
-				- map_value(pedal_value,
+		current_pedal_values.pedal_accel_mapped[i] = map_value(pedal_value,
 						current_pedal_values.pedal_accel_min[i],
 						current_pedal_values.pedal_accel_max[i], 0,
 						PEDAL_DUTY_CYCLE);
 	}
+
+	// correct accel 1 orientation
+	current_pedal_values.pedal_accel_mapped[1] = PEDAL_DUTY_CYCLE - current_pedal_values.pedal_accel_mapped[1];
 
 	window_filter_update(&current_pedal_values.brake_pressure,
 			current_pedal_values.raw_pressure_brake[0]);
@@ -208,8 +210,17 @@ void pedal_adc_timer_cb(void *args) {
 		CC_send_can_msg(&hcan2, &header, msg2.data);
 
 #if PRINT_RAW_PEDALS == 1
-		printf("%i %i\r\n", current_pedal_values.pedal_accel_mapped[0],
-				current_pedal_values.pedal_brake_mapped);
+		/*
+		 printf("%i %i\r\n", current_pedal_values.pedal_accel[0].current_filtered,
+				current_pedal_values.pedal_accel[1].current_filtered);
+				*/
+
+		uint8_t apps = 0;
+
+		apps = abs(current_pedal_values.pedal_accel_mapped[0] - current_pedal_values.pedal_accel_mapped[1]) > 100 ? 1 : 0;
+
+		printf("%i %i %i\r\n", current_pedal_values.pedal_accel_mapped[0],
+				current_pedal_values.pedal_accel_mapped[1], apps);
 
 		/*printf("%i %i %i %i\r\n",
 		 current_pedal_values.brake_pressure.current_filtered,
