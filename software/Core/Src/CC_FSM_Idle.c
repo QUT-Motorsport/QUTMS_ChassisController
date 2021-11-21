@@ -25,6 +25,7 @@ ms_timer_t timer_rtd_light;
 void rtd_light_timer_cb(void *args);
 
 void state_idle_enter(fsm_t *fsm) {
+	debugCAN_enterState(CC_STATE_ID_Idle);
 
 	// set initial pin states
 	HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port, HSOUT_RTD_LED_Pin,
@@ -192,6 +193,8 @@ void state_idle_iterate(fsm_t *fsm) {
 }
 
 void state_idle_exit(fsm_t *fsm) {
+	debugCAN_exitState(CC_STATE_ID_Idle);
+
 	// activate siren
 
 	// broadcast RTD

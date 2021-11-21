@@ -28,6 +28,8 @@ int inv_count = 0;
 int enabled_count = 0;
 
 void state_driving_enter(fsm_t *fsm) {
+	debugCAN_enterState(CC_STATE_ID_Driving);
+
 	// send enable to inverters
 	inverter_update_enabled(true);
 
@@ -128,6 +130,8 @@ void state_driving_iterate(fsm_t *fsm) {
 }
 
 void state_driving_exit(fsm_t *fsm) {
+	debugCAN_exitState(CC_STATE_ID_Driving);
+
 	// only exit here for either soft shutdown (pedals out of sync)
 	// or big shutdown -> power is going off
 
