@@ -84,6 +84,16 @@ void Error_Handler(void);
 
 
 #define UART_TIMEOUT 1000
+
+// 10% of 1000
+#define APPS_DIFF 150
+
+// 100ms
+#define PEDAL_IMPLAUSIBILITY_TIMEOUT 100
+
+// 50mv
+#define ADC_DISCONNECT_CUTOFF 50
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

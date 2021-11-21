@@ -8,6 +8,8 @@
 #ifndef INC_PEDAL_ADC_H_
 #define INC_PEDAL_ADC_H_
 
+#include <stdbool.h>
+
 #include <Timer.h>
 #include "window_filtering.h"
 
@@ -17,10 +19,10 @@
 
 #define ACCEL_FILTER_SIZE 32
 
-#define PEDAL_ACCEL_0_MAX 2303
-#define PEDAL_ACCEL_0_MIN 1510
-#define PEDAL_ACCEL_1_MAX 1510
-#define PEDAL_ACCEL_1_MIN 717
+#define PEDAL_ACCEL_0_MAX 2253
+#define PEDAL_ACCEL_0_MIN 1460
+#define PEDAL_ACCEL_1_MAX 1500
+#define PEDAL_ACCEL_1_MIN 707
 
 #define PEDAL_BRAKE_MIN 400
 #define PEDAL_BRAKE_MAX 750
@@ -57,6 +59,22 @@ typedef struct pedal_values {
 	uint16_t raw_steering[2];
 	uint16_t raw_steering_dma[2];
 	window_filter_t steering_angle[2];
+
+	// To comply with T.4.2, specifically T.4.2.4 and T.4.2.5
+	bool APPS_disable_motors;
+	bool APPS_implausibility_present;
+	uint32_t APPS_implausibility_start;
+
+	// To comply with T.4.3.3
+	bool BSE_disable_motors;
+	bool BSE_implausibility_present;
+	uint32_t BSE_implausibility_start;
+
+	// To comply with EV.5.7
+	bool pedal_disable_motors;
+
+
+
 } pedal_values_t;
 
 extern pedal_values_t current_pedal_values;
