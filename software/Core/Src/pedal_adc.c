@@ -210,18 +210,34 @@ void pedal_adc_timer_cb(void *args) {
 		CC_send_can_msg(&hcan2, &header, msg2.data);
 
 #if PRINT_RAW_PEDALS == 1
+
+		float pa0 = (-15 * (22+15)/(22.0f) * current_pedal_values.pedal_accel[0].current_filtered / 1000.0f) + 37.5;
+		float pa1 = (-15 * (22+15)/(22.0f) * current_pedal_values.pedal_accel[1].current_filtered / 1000.0f) + 37.5;
+
+		uint8_t apps = 0;
+
+				int diff = abs(current_pedal_values.pedal_accel_mapped[0] - current_pedal_values.pedal_accel_mapped[1]);
+
+				apps = diff > 100 ? 1 : 0;
+
+		 printf("%i\t%i\t%i\t%i\t%i\t%i\t%i %i\r\n", current_pedal_values.pedal_accel[0].current_filtered, (int)pa0,current_pedal_values.pedal_accel_mapped[0],
+				current_pedal_values.pedal_accel[1].current_filtered, (int)pa1, current_pedal_values.pedal_accel_mapped[1],
+				apps, diff);
+
 		/*
 		 printf("%i %i\r\n", current_pedal_values.pedal_accel[0].current_filtered,
 				current_pedal_values.pedal_accel[1].current_filtered);
 				*/
-
+/*
 		uint8_t apps = 0;
 
-		apps = abs(current_pedal_values.pedal_accel_mapped[0] - current_pedal_values.pedal_accel_mapped[1]) > 100 ? 1 : 0;
+		int diff = abs(current_pedal_values.pedal_accel_mapped[0] - current_pedal_values.pedal_accel_mapped[1]);
 
-		printf("%i %i %i\r\n", current_pedal_values.pedal_accel_mapped[0],
-				current_pedal_values.pedal_accel_mapped[1], apps);
+		apps = diff > 100 ? 1 : 0;
 
+		printf("%i %i %i %i\r\n", current_pedal_values.pedal_accel_mapped[0],
+				current_pedal_values.pedal_accel_mapped[1], apps, diff);
+*/
 		/*printf("%i %i %i %i\r\n",
 		 current_pedal_values.brake_pressure.current_filtered,
 		 current_pedal_values.brake_pressure_min,
