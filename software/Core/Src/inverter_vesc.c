@@ -21,9 +21,6 @@ uint16_t deadzone = 5 * M_PI / 180.0f;
 
 int32_t vesc_rpm;
 
-int32_t motor_rpm[4];
-
-
 void vesc_send_shutdown() {
 	// Shutdown VESCs
 	for (VESC_ID i = FL; i < RR; i++) {
@@ -227,33 +224,6 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 		rboost = 0;
 		lboost = 0;
 	}
-
-	double *rW[4] = {&rFL, &rFR, &rRL, &rRR};
-	double badrpmcount[4] = {0, 0, 0, 0};
-
-	//Find min rpm value
-	
-	int32_t min_rpm = INT32_MAX;
-	if(enable_overrpm == 1) {
-		for (int i = 0; i < 4; i++) {
-			if (motor_rpm[i] != 0 && motor_rpm[i] < min_rpm) {
-				min_rpm = motor_rpm[i];
-			}
-		}
-
-		//for loop see if 1 is certain threshold above 
-		for (int i = 0; i < 4; i++) {
-			int32_t diff = motor_rpm[i] - min_rpm;
-
-			if (diff > 0 && ( ((float)diff/min_rpm) > 0.5 )) {
-				if(badrpmcount[i] > 10) {
-					*(rW[i]) = 0;
-				}
-				badrpmcount[i] += 1;
-			}
-		}
-	}
-
 
 	*fr = (rFR / rref) + rboost;
 	*fl = (rFL / rref) + lboost;
