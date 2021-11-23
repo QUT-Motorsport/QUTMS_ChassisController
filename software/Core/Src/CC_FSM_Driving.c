@@ -80,11 +80,7 @@ void state_driving_iterate(fsm_t *fsm) {
 			float duty;
 			Parse_VESC_CANPacketStatus(msg.data, &id, &rpm, &current, &duty);
 //			printf("rpm: %li, sending to inverter\r\n", rpm);
-			//vesc_setRPM(rpm);
-
-			if (id < 4 && id >= 0) {
-				motor_rpm[id] = rpm;
-			}
+			vesc_setRPM(rpm);
 		}
 	}
 

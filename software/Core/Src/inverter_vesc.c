@@ -246,27 +246,6 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 		lboost = 0;
 	}
 
-	double *rW[4] = { &rFL, &rFR, &rRL, &rRR };
-
-	//Find min rpm value
-
-	int32_t min_rpm = INT32_MAX;
-
-	for (int i = 0; i < 4; i++) {
-		if (motor_rpm[i] != 0 && motor_rpm[i] < min_rpm) {
-			min_rpm = motor_rpm[i];
-		}
-	}
-
-	//for loop see if 1 is certain threshold above 
-	for (int i = 0; i < 4; i++) {
-		int32_t diff = motor_rpm[i] - min_rpm;
-
-		if (diff > 0 && (((float) diff / min_rpm) > 0.5)) {
-			*(rW[i]) = 0;
-		}
-	}
-
 	*fr = (rFR / rref) + rboost;
 	*fl = (rFL / rref) + lboost;
 	*rr = (rRR / rref) + boost;
