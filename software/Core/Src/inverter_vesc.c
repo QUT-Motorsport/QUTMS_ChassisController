@@ -229,7 +229,7 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 	}
 
 	double *rW[4] = {&rFL, &rFR, &rRL, &rRR};
-	double badrpmcount[4] = {0, 0, 0, 0};
+	uint8_t badrpmcount[4] = {0, 0, 0, 0};
 
 	//Find min rpm value
 	
@@ -245,11 +245,15 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 		for (int i = 0; i < 4; i++) {
 			int32_t diff = motor_rpm[i] - min_rpm;
 
-			if (diff > 0 && ( ((float)diff/min_rpm) > 0.5 )) {
-				if(badrpmcount[i] > 10) {
+			if (diff > 0 && ( ((float)diff/min_rpm) > 0.5 )) {				
+				if(badrpmcount[i] >= 10) {
 					*(rW[i]) = 0;
+
+				} else {
+					badrpmcount[i] += 1;
 				}
-				badrpmcount[i] += 1;
+			} else {
+				badrpmcount[i] = 0;
 			}
 		}
 	}
