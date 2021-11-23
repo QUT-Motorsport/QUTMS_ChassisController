@@ -17,6 +17,7 @@
 #define CC_OD_IDX_SCALAR 0x3
 #define CC_OD_IDX_BOOST 0x4
 #define CC_OD_IDX_DEADZONE 0x5
+#define CC_OD_IDX_ENABE_OVERRPM 0x6
 
 extern obj_dict_t CC_obj_dict;
 
