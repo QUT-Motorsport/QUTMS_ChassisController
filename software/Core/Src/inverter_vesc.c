@@ -14,7 +14,6 @@
 
 uint16_t vesc_current_max = VESC_CURRENT_MAX;
 uint16_t enable_tv = 1;
-uint16_t enable_overrpm = 1;
 uint16_t boost = 0;
 uint16_t scalar = 0;
 uint16_t deadzone = 5 * M_PI / 180.0f;
@@ -59,10 +58,6 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 
 	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_ENABLE_TV)) {
 		enable_tv = OD_getValue(&CC_obj_dict, CC_OD_IDX_ENABLE_TV, true);
-	}
-
-	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_ENABLE_OVERRPM)) {
-		enable_overrpm = OD_getValue(&CC_obj_dict, CC_OD_IDX_ENABLE_OVERRPM, true);
 	}
 
 	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_DEADZONE)) {
