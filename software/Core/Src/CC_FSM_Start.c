@@ -9,6 +9,7 @@
 #include "main.h"
 #include <FSM.h>
 #include "RTD.h"
+#include "debugCAN.h"
 
 state_t deadState = { &state_dead_enter, &state_dead_iterate, &state_dead_exit,
 		"Dead_s" };

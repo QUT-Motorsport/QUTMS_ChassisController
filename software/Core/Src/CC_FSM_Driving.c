@@ -15,6 +15,7 @@
 #include "pedal_adc.h"
 #include "inverter.h"
 #include "can_dict.h"
+#include "debugCAN.h"
 
 state_t drivingState = { &state_driving_enter, &state_driving_iterate,
 		&state_driving_exit, "Driving_s" };

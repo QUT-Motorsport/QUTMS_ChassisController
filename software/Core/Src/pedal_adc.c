@@ -177,7 +177,8 @@ void update_APPS() {
 	bool APPS_implausibility_check = false;
 
 	for (int i = 0; i < NUM_PEDAL_ACCEL; i++) {
-		if (current_pedal_values.pedal_accel[i].current_filtered < ADC_DISCONNECT_CUTOFF) {
+		if (current_pedal_values.pedal_accel[i].current_filtered
+				< ADC_DISCONNECT_CUTOFF) {
 			APPS_implausibility_check = true;
 		}
 	}
@@ -213,6 +214,11 @@ void update_BSE() {
 	// TODO: calculate correct status based off brake pressure sensor
 	current_pedal_values.BSE_implausibility_present = false;
 
+	if (current_pedal_values.brake_pressure.current_filtered
+			< ADC_DISCONNECT_CUTOFF) {
+		current_pedal_values.BSE_implausibility_present = true;
+	}
+
 	if (current_pedal_values.BSE_implausibility_present) {
 		// current implausibility detected
 		if (current_pedal_values.BSE_implausibility_start == 0) {
@@ -234,7 +240,17 @@ void update_pedal_plausibility() {
 	// TODO: check via accel pedal and brake pressure
 
 	// if brake AND accel > 25% -> pedal_disable_motors = true
+	if ((current_pedal_values.pedal_brake_mapped > BRAKE_MIN_ACTIVATION) && (current_pedal_values.pedal_accel_mapped[0] > 250)) {
+		current_pedal_values.pedal_disable_motors = true;
+	}
+
+
 	// if accel < 5% -> pedal_disable_motors = false
+	if (current_pedal_values.pedal_disable_motors) {
+		if (current_pedal_values.pedal_accel_mapped[0] < 50) {
+			current_pedal_values.pedal_disable_motors = false;
+		}
+	}
 }
 
 void pedal_adc_timer_cb(void *args) {
@@ -294,29 +310,37 @@ void pedal_adc_timer_cb(void *args) {
 		CC_send_can_msg(&hcan2, &header, msg2.data);
 
 #if PRINT_RAW_PEDALS == 1
+		/*
+		 float pa0 =
+		 (-15 * (22 + 15) / (22.0f)
+		 * current_pedal_values.pedal_accel[0].current_filtered
+		 / 1000.0f) + 37.5;
+		 float pa1 =
+		 (-15 * (22 + 15) / (22.0f)
+		 * current_pedal_values.pedal_accel[1].current_filtered
+		 / 1000.0f) + 37.5;
 
-		float pa0 =
-				(-15 * (22 + 15) / (22.0f)
-						* current_pedal_values.pedal_accel[0].current_filtered
-						/ 1000.0f) + 37.5;
-		float pa1 =
-				(-15 * (22 + 15) / (22.0f)
-						* current_pedal_values.pedal_accel[1].current_filtered
-						/ 1000.0f) + 37.5;
+		 uint8_t apps = 0;
 
-		uint8_t apps = 0;
+		 int diff = abs(
+		 current_pedal_values.pedal_accel_mapped[0]
+		 - current_pedal_values.pedal_accel_mapped[1]);
 
-		int diff = abs(
-				current_pedal_values.pedal_accel_mapped[0]
-						- current_pedal_values.pedal_accel_mapped[1]);
+		 apps = diff > APPS_DIFF ? 1 : 0;
 
-		apps = diff > APPS_DIFF ? 1 : 0;
+		 printf("%li\t%i\t%i\t%li\t%i\t%i\t%i %i %i\r\n",
+		 current_pedal_values.pedal_accel[0].current_filtered, (int) pa0,
+		 current_pedal_values.pedal_accel_mapped[0],
+		 current_pedal_values.pedal_accel[1].current_filtered, (int) pa1,
+		 current_pedal_values.pedal_accel_mapped[1], apps, current_pedal_values.APPS_disable_motors ? 1 : 0, diff);
+		 */
 
-		printf("%li\t%i\t%i\t%li\t%i\t%i\t%i %i %i\r\n",
-				current_pedal_values.pedal_accel[0].current_filtered, (int) pa0,
-				current_pedal_values.pedal_accel_mapped[0],
-				current_pedal_values.pedal_accel[1].current_filtered, (int) pa1,
-				current_pedal_values.pedal_accel_mapped[1], apps, current_pedal_values.APPS_disable_motors ? 1 : 0, diff);
+		printf("a: %i, b: %i, p: %i \t a: %i \t b: %i\r\n",
+				current_pedal_values.APPS_disable_motors ? 1 : 0,
+				current_pedal_values.BSE_disable_motors ? 1 : 0,
+				current_pedal_values.pedal_disable_motors ? 1 : 0,
+						current_pedal_values.pedal_accel_mapped[0],
+						current_pedal_values.pedal_brake_mapped);
 
 		/*
 		 printf("%i %i\r\n", current_pedal_values.pedal_accel[0].current_filtered,
