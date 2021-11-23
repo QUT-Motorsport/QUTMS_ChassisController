@@ -8,6 +8,7 @@
 #include <FSM.h>
 #include "inverter.h"
 #include "CC_FSM_States.h"
+#include "debugCAN.h"
 
 state_t shutdownState = { &state_shutdown_enter, &state_shutdown_iterate,
 		&state_shutdown_exit, "Shutdown_s" };

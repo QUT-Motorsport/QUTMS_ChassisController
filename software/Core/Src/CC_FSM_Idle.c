@@ -17,6 +17,7 @@
 #include "RTD.h"
 #include "pedal_adc.h"
 #include "can_dict.h"
+#include "debugCAN.h"
 
 state_t idleState = { &state_idle_enter, &state_idle_iterate, &state_idle_exit,
 		"Idle_s" };

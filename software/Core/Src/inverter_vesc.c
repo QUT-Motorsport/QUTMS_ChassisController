@@ -53,6 +53,8 @@ void vesc_update_enabled(bool state) {
 
 void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 
+	bool disable_motor = current_pedal_values.APPS_disable_motors || current_pedal_values.BSE_disable_motors || current_pedal_values.pedal_disable_motors;
+
 	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_INV_CURRENT)) {
 		vesc_current_max = OD_getValue(&CC_obj_dict, CC_OD_IDX_INV_CURRENT,
 				true);
@@ -147,8 +149,11 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 			CC_send_can_msg(&hcan2, &regenHeader, regenCommand.data);
 		} else {
 			// Set Torque
+
+
+
 			VESC_SetCurrent_t torqueCommand = Compose_VESC_SetCurrent(i,
-					torqueRequest[i] * tvValues[i]);
+					disable_motor ? 0 : torqueRequest[i] * tvValues[i]);
 			CAN_TxHeaderTypeDef torqueHeader = { .IDE = CAN_ID_EXT, .RTR =
 			CAN_RTR_DATA, .DLC = sizeof(torqueCommand.data), .ExtId =
 					torqueCommand.id, };
