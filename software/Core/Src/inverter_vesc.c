@@ -22,6 +22,12 @@ int32_t vesc_rpm;
 
 int32_t motor_rpm[4];
 
+bool regen_mode = false;
+
+VESC_SetCurrentBrake_t regenCommand;
+VESC_SetCurrent_t torqueCommand;
+
+CAN_TxHeaderTypeDef vescHeader = { .IDE = CAN_ID_EXT, .RTR = CAN_RTR_DATA };
 
 void vesc_send_shutdown() {
 	// Shutdown VESCs
@@ -52,11 +58,13 @@ void vesc_update_enabled(bool state) {
 
 void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 
-	bool disable_motor = current_pedal_values.APPS_disable_motors || current_pedal_values.BSE_disable_motors || current_pedal_values.pedal_disable_motors;
+	bool disable_motor = current_pedal_values.APPS_disable_motors
+			|| current_pedal_values.BSE_disable_motors
+			|| current_pedal_values.pedal_disable_motors;
 
 	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_INV_CURRENT)) {
 		vesc_current_max = OD_getValue(&CC_obj_dict, CC_OD_IDX_INV_CURRENT,
-				true);
+		true);
 	}
 
 	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_ENABLE_TV)) {
@@ -82,13 +90,9 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 	float torque = 0.0f;
 	float regen = 0.0f;
 
-	if (br >= VESC_BRAKE_THRESHOLD) // If we are on the brakes, do not accelerate, full regen
-	{
-		// Brake
-		torque = VESC_CURRENT_MIN;
-		regen = VESC_REGEN_MAX;
-
-	} else {
+	// only care about calculating torque / regen if we're not pressing on the brake
+	// as pedal implausibility will disable torque / regen commands
+	if (br <= VESC_BRAKE_THRESHOLD) {
 		// Accelerate
 		if (ac <= VESC_DEADZONE_MIN) {
 			// Regen Zone
@@ -96,12 +100,13 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 			regen = VESC_REGEN_MAX
 					- (VESC_REGEN_MAX * ac * (1.0f / VESC_DEADZONE_MIN));
 
-			if (regen > VESC_REGEN_MAX)
+			if (regen > VESC_REGEN_MAX) {
 				regen = VESC_REGEN_MAX;
-			if (regen < VESC_REGEN_MIN)
+			} else if (regen < VESC_REGEN_MIN) {
 				regen = VESC_REGEN_MIN;
+			}
 
-		} else if (ac > VESC_DEADZONE_MIN && ac <= VESC_DEADZONE_MAX) {
+		} else if ((ac > VESC_DEADZONE_MIN) && (ac <= VESC_DEADZONE_MAX)) {
 			// Dead Zone
 			torque = VESC_CURRENT_MIN;
 			regen = VESC_REGEN_MIN;
@@ -111,10 +116,12 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 					* (1.0f / (1.0f - VESC_DEADZONE_MAX));
 			regen = VESC_REGEN_MIN;
 
-			if (torque > vesc_current_max)
+			if (torque > vesc_current_max) {
 				torque = vesc_current_max;
-			if (torque < VESC_CURRENT_MIN)
+			}
+			if (torque < VESC_CURRENT_MIN) {
 				torque = VESC_CURRENT_MIN;
+			}
 		}
 	}
 
@@ -127,34 +134,50 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 	}
 
 	double rearTorque = abs(steering_0) < deadzone ? torque + scalar : torque;
-	double torqueRequest[4] = {torque, torque, rearTorque, rearTorque};
+	double torqueRequest[4] = { torque, torque, rearTorque, rearTorque };
 
 	for (VESC_ID i = FL; i <= RR; i++) {
 		// If our regen value is > 0, we only send brake command, else send torque command
-		if (regen > 0.0f
-				&& (float) (vesc_rpm / (21.0f * 4.5f)) > 500.0f / 4.5f) {
-			// Set Regen
-			VESC_SetCurrentBrake_t regenCommand = Compose_VESC_SetCurrentBrake(
-					i, regen);
-			CAN_TxHeaderTypeDef regenHeader = { .IDE = CAN_ID_EXT, .RTR =
-			CAN_RTR_DATA, .DLC = sizeof(regenCommand.data), .ExtId =
-					regenCommand.id, };
+		if (regen > 0.0f && ((vesc_rpm / (21.0f)) > 200)) {
 
-			CC_send_can_msg(&hcan1, &regenHeader, regenCommand.data);
-			CC_send_can_msg(&hcan2, &regenHeader, regenCommand.data);
+			if (!regen_mode) {
+				regen_mode = true;
+
+				torqueCommand = Compose_VESC_SetCurrent(i, 0);
+				vescHeader.DLC = sizeof(torqueCommand.data);
+				vescHeader.ExtId = torqueCommand.id;
+
+				CC_send_can_msg(&hcan1, &vescHeader, torqueCommand.data);
+				CC_send_can_msg(&hcan2, &vescHeader, torqueCommand.data);
+			}
+
+			// Set Regen
+			regenCommand = Compose_VESC_SetCurrentBrake(i, disable_motor ? 0 : regen);
+			vescHeader.DLC = sizeof(regenCommand.data);
+			vescHeader.ExtId = regenCommand.id;
+
+			CC_send_can_msg(&hcan1, &vescHeader, regenCommand.data);
+			CC_send_can_msg(&hcan2, &vescHeader, regenCommand.data);
 		} else {
 			// Set Torque
+			if (regen_mode) {
+				regen_mode = false;
 
+				regenCommand = Compose_VESC_SetCurrentBrake(i, 0);
+				vescHeader.DLC = sizeof(regenCommand.data);
+				vescHeader.ExtId = regenCommand.id;
 
+				CC_send_can_msg(&hcan1, &vescHeader, regenCommand.data);
+				CC_send_can_msg(&hcan2, &vescHeader, regenCommand.data);
+			}
 
-			VESC_SetCurrent_t torqueCommand = Compose_VESC_SetCurrent(i,
+			torqueCommand = Compose_VESC_SetCurrent(i,
 					disable_motor ? 0 : torqueRequest[i] * tvValues[i]);
-			CAN_TxHeaderTypeDef torqueHeader = { .IDE = CAN_ID_EXT, .RTR =
-			CAN_RTR_DATA, .DLC = sizeof(torqueCommand.data), .ExtId =
-					torqueCommand.id, };
+			vescHeader.DLC = sizeof(torqueCommand.data);
+			vescHeader.ExtId = torqueCommand.id;
 
-			CC_send_can_msg(&hcan1, &torqueHeader, torqueCommand.data);
-			CC_send_can_msg(&hcan2, &torqueHeader, torqueCommand.data);
+			CC_send_can_msg(&hcan1, &vescHeader, torqueCommand.data);
+			CC_send_can_msg(&hcan2, &vescHeader, torqueCommand.data);
 		}
 	}
 
@@ -223,10 +246,10 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 		lboost = 0;
 	}
 
-	double *rW[4] = {&rFL, &rFR, &rRL, &rRR};
+	double *rW[4] = { &rFL, &rFR, &rRL, &rRR };
 
 	//Find min rpm value
-	
+
 	int32_t min_rpm = INT32_MAX;
 
 	for (int i = 0; i < 4; i++) {
@@ -239,11 +262,10 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 	for (int i = 0; i < 4; i++) {
 		int32_t diff = motor_rpm[i] - min_rpm;
 
-		if (diff > 0 && ( ((float)diff/min_rpm) > 0.5 )) {
+		if (diff > 0 && (((float) diff / min_rpm) > 0.5)) {
 			*(rW[i]) = 0;
 		}
 	}
-
 
 	*fr = (rFR / rref) + rboost;
 	*fl = (rFL / rref) + lboost;
