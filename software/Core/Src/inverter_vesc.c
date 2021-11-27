@@ -5,6 +5,7 @@
  *      Author: Thomas Fraser
  */
 
+#include "inverter.h"
 #include "inverter_vesc.h"
 #include "pedal_adc.h"
 #include "can_dict.h"
@@ -19,8 +20,6 @@ uint16_t scalar = 0;
 uint16_t deadzone = 5 * M_PI / 180.0f;
 
 int32_t vesc_rpm;
-
-int32_t motor_rpm[4];
 
 bool regen_mode = false;
 
@@ -57,6 +56,14 @@ void vesc_update_enabled(bool state) {
 }
 
 void vesc_send_pedals(uint16_t accel, uint16_t brake) {
+
+	bool fast_for_regen = false;
+
+	for (int i = 0; i < 4; i++) {
+		if (motor_kmh[i] > 10) {
+			fast_for_regen = true;
+		}
+	}
 
 	bool disable_motor = current_pedal_values.APPS_disable_motors
 			|| current_pedal_values.BSE_disable_motors
@@ -138,7 +145,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 
 	for (VESC_ID i = FL; i <= RR; i++) {
 		// If our regen value is > 0, we only send brake command, else send torque command
-		if (regen > 0.0f && ((vesc_rpm / (21.0f)) > 200)) {
+		if (regen > 0.0f && fast_for_regen) {
 
 			if (!regen_mode) {
 				regen_mode = true;

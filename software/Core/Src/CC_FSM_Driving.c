@@ -23,9 +23,7 @@ state_t drivingState = { &state_driving_enter, &state_driving_iterate,
 ms_timer_t timer_inverters;
 void inverter_timer_cb(void *args);
 
-int16_t motor_amps[4];
-
-int inv_count = 0;
+uint8_t inv_count = 0;
 int enabled_count = 0;
 
 void state_driving_enter(fsm_t *fsm) {
@@ -41,10 +39,10 @@ void state_driving_enter(fsm_t *fsm) {
 
 	timer_start(&timer_inverters);
 
-	motor_amps[0] = 0;
-	motor_amps[1] = 0;
-	motor_amps[2] = 0;
-	motor_amps[3] = 0;
+	for (int i = 0; i < 4; i++) {
+		motor_amps[i] = 0;
+		motor_rpm[i] = 0;
+	}
 
 	inv_count = 0;
 	enabled_count = 0;
@@ -72,14 +70,6 @@ void state_driving_iterate(fsm_t *fsm) {
 			}
 		} else if (msg.ID == CC_OBJ_DICT_ID) {
 			CC_OD_handleCAN(&msg, &hcan2);
-		} else if (msg.ID == VESC_CAN_PACKET_STATUS) {
-			VESC_ID id;
-			int32_t rpm;
-			float current;
-			float duty;
-			Parse_VESC_CANPacketStatus(msg.data, &id, &rpm, &current, &duty);
-//			printf("rpm: %li, sending to inverter\r\n", rpm);
-			vesc_setRPM(rpm);
 		}
 	}
 
@@ -111,14 +101,23 @@ void state_driving_iterate(fsm_t *fsm) {
 		 CC_send_can_msg(&hcan2, &header, msg.data);
 		 */
 
-		if (msg.ID == VESC_CAN_PACKET_STATUS) {
+		if (((msg.ID & ~0xFF) >> 8) == VESC_CAN_PACKET_STATUS) {
 			VESC_ID id;
 			int32_t rpm;
 			float current;
 			float duty;
 			Parse_VESC_CANPacketStatus(msg.data, &id, &rpm, &current, &duty);
+
+			id = (msg.ID & 0xFF);
+
+			if (id >= 0 && id <= 3) {
+				motor_rpm[id] = rpm / (21.0f * 4.50f);
+				motor_kmh[id] = motor_rpm[id] * 3.14f * 0.4064f * 60 / 1000;
+				motor_amps[id] = current;
+			}
+
 			//			printf("rpm: %li, sending to inverter\r\n", rpm);
-			vesc_setRPM(rpm);
+			//vesc_setRPM(rpm);
 		}
 	}
 
@@ -176,17 +175,15 @@ void inverter_timer_cb(void *args) {
 	}
 
 	// send pedal values to inverters
-	inverter_send_pedals(accel, current_pedal_values.pedal_brake_mapped);
+	//inverter_send_pedals(accel, current_pedal_values.pedal_brake_mapped);
 
 	inv_count++;
 
-	if (inv_count == 20) {
+	if (inv_count >= 20) {
 		inv_count = 0;
 
-		printf("MA: %d %d %d %d\r\n", motor_amps[0], motor_amps[1],
-				motor_amps[2], motor_amps[3]);
-
-		inverter_request_motor_amps();
+		printf("RPM: %.02f\t %.02f\t %.02f\t %.02f\r\n", motor_kmh[0], motor_kmh[1],
+				motor_kmh[2], motor_kmh[3]);
 	}
 
 }
