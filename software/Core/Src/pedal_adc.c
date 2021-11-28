@@ -334,14 +334,14 @@ void pedal_adc_timer_cb(void *args) {
 		 current_pedal_values.pedal_accel[1].current_filtered, (int) pa1,
 		 current_pedal_values.pedal_accel_mapped[1], apps, current_pedal_values.APPS_disable_motors ? 1 : 0, diff);
 		 */
-
+/*
 		printf("a: %i, b: %i, p: %i \t a: %i \t b: %i\r\n",
 				current_pedal_values.APPS_disable_motors ? 1 : 0,
 				current_pedal_values.BSE_disable_motors ? 1 : 0,
 				current_pedal_values.pedal_disable_motors ? 1 : 0,
 						current_pedal_values.pedal_accel_mapped[0],
 						current_pedal_values.pedal_brake_mapped);
-
+*/
 		/*
 		 printf("%i %i\r\n", current_pedal_values.pedal_accel[0].current_filtered,
 		 current_pedal_values.pedal_accel[1].current_filtered);
@@ -356,12 +356,13 @@ void pedal_adc_timer_cb(void *args) {
 		 printf("%i %i %i %i\r\n", current_pedal_values.pedal_accel_mapped[0],
 		 current_pedal_values.pedal_accel_mapped[1], apps, diff);
 		 */
-		/*printf("%i %i %i %i\r\n",
+		/*
+		printf("%i %i %i %i\r\n",
 		 current_pedal_values.brake_pressure.current_filtered,
 		 current_pedal_values.brake_pressure_min,
 		 current_pedal_values.brake_pressure_max,
 		 current_pedal_values.pedal_brake_mapped);
-		 */
+*/
 #endif
 	}
 }
