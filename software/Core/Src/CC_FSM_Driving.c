@@ -175,7 +175,7 @@ void inverter_timer_cb(void *args) {
 	}
 
 	// send pedal values to inverters
-	//inverter_send_pedals(accel, current_pedal_values.pedal_brake_mapped);
+	inverter_send_pedals(accel, current_pedal_values.pedal_brake_mapped);
 
 	inv_count++;
 

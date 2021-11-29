@@ -39,7 +39,7 @@ extern "C" {
 /* USER CODE BEGIN ET */
 #define PRINT_RAW_PEDALS 0
 #define DEBUG_AMS 0
-#define RTD_DEBUG 1
+#define RTD_DEBUG 0
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

@@ -245,9 +245,10 @@ void update_pedal_plausibility() {
 	}
 
 
+
 	// if accel < 5% -> pedal_disable_motors = false
 	if (current_pedal_values.pedal_disable_motors) {
-		if (current_pedal_values.pedal_accel_mapped[0] < 50) {
+		if ((current_pedal_values.pedal_accel_mapped[0] < 50) || (current_pedal_values.pedal_accel_mapped[1] < 50)) {
 			current_pedal_values.pedal_disable_motors = false;
 		}
 	}

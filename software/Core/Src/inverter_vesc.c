@@ -12,12 +12,13 @@
 
 #include <math.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 uint16_t vesc_current_max = VESC_CURRENT_MAX;
 uint16_t enable_tv = 1;
 uint16_t boost = 0;
 uint16_t scalar = 0;
-uint16_t deadzone = 5 * M_PI / 180.0f;
+uint16_t deadzone = 5;
 
 int32_t vesc_rpm;
 
@@ -65,9 +66,11 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 		}
 	}
 
-	bool disable_motor = current_pedal_values.APPS_disable_motors
+
+
+	bool disable_motor = (current_pedal_values.APPS_disable_motors
 			|| current_pedal_values.BSE_disable_motors
-			|| current_pedal_values.pedal_disable_motors;
+			|| current_pedal_values.pedal_disable_motors);
 
 	if (OD_flagStatus(&CC_obj_dict, CC_OD_IDX_INV_CURRENT)) {
 		vesc_current_max = OD_getValue(&CC_obj_dict, CC_OD_IDX_INV_CURRENT,
@@ -221,7 +224,7 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 	double rboost;
 	double lboost;
 
-	if (b > deadzone) {
+	if (steeringAngle > deadzone) {
 		rFR = l / sin(b);
 		d = l / tan(b);
 		alpha = atan(l / (w + d));
@@ -231,7 +234,7 @@ void vesc_torque_vectoring(double steeringAngle, double *fl, double *fr,
 		rref = rFL;
 		lboost = 0;
 		rboost = boost;
-	} else if (b < -(deadzone)) {
+	} else if (steeringAngle < -(deadzone)) {
 		b = b * -1;
 		rFL = l / sin(b);
 		d = l / tan(b);

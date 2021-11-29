@@ -158,8 +158,7 @@ void state_idle_iterate(fsm_t *fsm) {
 #if RTD_DEBUG == 1
 				brake_pressed = true;
 #else
-				brake_pressed = (current_pedal_values.pedal_brake_mapped
-						> BRAKE_PRESSURE_RTD);
+				brake_pressed =	(current_pedal_values.pedal_brake_mapped >= 100);
 #endif
 
 				if (brake_pressed) {
@@ -177,10 +176,13 @@ void state_idle_iterate(fsm_t *fsm) {
 							// Enter Driving State
 							fsm_changeState(fsm, &drivingState, "RTD Engaged");
 						}
+					} else {
+						RTD_state.RTD_ticks = 0;
 					}
 				} else {
 					HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
 					HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
+					RTD_state.RTD_ticks = 0;
 				}
 			}
 
