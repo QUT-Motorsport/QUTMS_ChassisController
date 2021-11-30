@@ -357,13 +357,13 @@ void pedal_adc_timer_cb(void *args) {
 		 printf("%i %i %i %i\r\n", current_pedal_values.pedal_accel_mapped[0],
 		 current_pedal_values.pedal_accel_mapped[1], apps, diff);
 		 */
-		/*
+
 		printf("%i %i %i %i\r\n",
 		 current_pedal_values.brake_pressure.current_filtered,
 		 current_pedal_values.brake_pressure_min,
 		 current_pedal_values.brake_pressure_max,
 		 current_pedal_values.pedal_brake_mapped);
-*/
+
 #endif
 	}
 }

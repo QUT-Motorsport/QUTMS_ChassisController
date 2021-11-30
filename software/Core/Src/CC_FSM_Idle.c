@@ -35,6 +35,7 @@ void state_idle_enter(fsm_t *fsm) {
 	RTD_state.precharge_done = false;
 	RTD_state.precharge_ticks = 0;
 	RTD_state.RTD_ticks = 0;
+	RTD_state.close_contactors = false;
 
 	timer_rtd_light = timer_init(500, true, rtd_light_timer_cb);
 
@@ -66,9 +67,10 @@ void state_idle_iterate(fsm_t *fsm) {
 
 			if (!RTD_state.AMS_init && initialised) {
 				printf("AMS ready\r\n");
+				RTD_state.AMS_init = initialised;
 			}
 
-			RTD_state.AMS_init = initialised;
+
 
 		} else if (msg.ID == SHDN_ShutdownTriggered_ID) {
 			// send shutdown to inverters
@@ -84,6 +86,7 @@ void state_idle_iterate(fsm_t *fsm) {
 			if (!RTD_state.precharge_done) {
 				printf("AMS ready received\r\n");
 				RTD_state.precharge_done = true;
+				RTD_state.close_contactors = true;
 			}
 		} else if (msg.ID == CC_OBJ_DICT_ID) {
 			CC_OD_handleCAN(&msg, &hcan2);
@@ -152,13 +155,14 @@ void state_idle_iterate(fsm_t *fsm) {
 						GPIO_PIN_RESET);
 				printf("waiting for precharge\r\n");
 			} else if (RTD_state.precharge_done) {
-				printf("precharge done\r\n");
+				//printf("precharge done\r\n");
 
 				bool brake_pressed = false;
 #if RTD_DEBUG == 1
 				brake_pressed = true;
 #else
-				brake_pressed =	(current_pedal_values.pedal_brake_mapped >= 100);
+				brake_pressed =
+						(current_pedal_values.pedal_brake_mapped >= 100);
 #endif
 
 				if (brake_pressed) {
@@ -183,6 +187,20 @@ void state_idle_iterate(fsm_t *fsm) {
 					HAL_GPIO_WritePin(HSOUT_RTD_LED_GPIO_Port,
 					HSOUT_RTD_LED_Pin, GPIO_PIN_RESET);
 					RTD_state.RTD_ticks = 0;
+				}
+
+				if (RTD_state.close_contactors == true) {
+					RTD_state.close_contactors = false;
+
+					CC_ReadyToDrive_t readyToDrive = Compose_CC_ReadyToDrive();
+					CAN_TxHeaderTypeDef header = { .ExtId = readyToDrive.id,
+							.IDE =
+							CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = 1,
+							.TransmitGlobalTime = DISABLE, };
+					uint8_t data[1] = { 0xF };
+
+					CC_send_can_msg(&hcan2, &header, data);
+
 				}
 			}
 
