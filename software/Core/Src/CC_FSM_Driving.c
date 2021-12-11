@@ -14,6 +14,8 @@
 
 #include "pedal_adc.h"
 #include "inverter.h"
+#include "can_dict.h"
+#include "debugCAN.h"
 
 state_t drivingState = { &state_driving_enter, &state_driving_iterate,
 		&state_driving_exit, "Driving_s" };
@@ -21,26 +23,26 @@ state_t drivingState = { &state_driving_enter, &state_driving_iterate,
 ms_timer_t timer_inverters;
 void inverter_timer_cb(void *args);
 
-int16_t motor_amps[4];
-
-int inv_count = 0;
+uint8_t inv_count = 0;
 int enabled_count = 0;
 
 void state_driving_enter(fsm_t *fsm) {
+	debugCAN_enterState(CC_STATE_ID_Driving);
+
 	// send enable to inverters
 	inverter_update_enabled(true);
 
 	// update duty cycle on fans
 
 	// start inverter timer
-	timer_inverters = timer_init(5, true, inverter_timer_cb);
+	timer_inverters = timer_init(10, true, inverter_timer_cb);
 
 	timer_start(&timer_inverters);
 
-	motor_amps[0] = 0;
-	motor_amps[1] = 0;
-	motor_amps[2] = 0;
-	motor_amps[3] = 0;
+	for (int i = 0; i < 4; i++) {
+		motor_amps[i] = 0;
+		motor_rpm[i] = 0;
+	}
 
 	inv_count = 0;
 	enabled_count = 0;
@@ -66,6 +68,8 @@ void state_driving_iterate(fsm_t *fsm) {
 				// change to error state
 				fsm_changeState(fsm, &shutdownState, "Fatal Shutdown");
 			}
+		} else if (msg.ID == CC_OBJ_DICT_ID) {
+			CC_OD_handleCAN(&msg, &hcan2);
 		}
 	}
 
@@ -96,6 +100,25 @@ void state_driving_iterate(fsm_t *fsm) {
 		 .TransmitGlobalTime = DISABLE, };
 		 CC_send_can_msg(&hcan2, &header, msg.data);
 		 */
+
+		if (((msg.ID & ~0xFF) >> 8) == VESC_CAN_PACKET_STATUS) {
+			VESC_ID id;
+			int32_t rpm;
+			float current;
+			float duty;
+			Parse_VESC_CANPacketStatus(msg.data, &id, &rpm, &current, &duty);
+
+			id = (msg.ID & 0xFF);
+
+			if (id >= 0 && id <= 3) {
+				motor_rpm[id] = rpm / (21.0f * 4.50f);
+				motor_kmh[id] = motor_rpm[id] * 3.14f * 0.4064f * 60 / 1000;
+				motor_amps[id] = current;
+			}
+
+			//			printf("rpm: %li, sending to inverter\r\n", rpm);
+			//vesc_setRPM(rpm);
+		}
 	}
 
 	// CAN3
@@ -112,6 +135,8 @@ void state_driving_iterate(fsm_t *fsm) {
 }
 
 void state_driving_exit(fsm_t *fsm) {
+	debugCAN_exitState(CC_STATE_ID_Driving);
+
 	// only exit here for either soft shutdown (pedals out of sync)
 	// or big shutdown -> power is going off
 
@@ -154,13 +179,11 @@ void inverter_timer_cb(void *args) {
 
 	inv_count++;
 
-	if (inv_count == 20) {
+	if (inv_count >= 20) {
 		inv_count = 0;
 
-		printf("MA: %d %d %d %d\r\n", motor_amps[0], motor_amps[1],
-				motor_amps[2], motor_amps[3]);
-
-		inverter_request_motor_amps();
+		printf("RPM: %.02f\t %.02f\t %.02f\t %.02f\r\n", motor_kmh[0], motor_kmh[1],
+				motor_kmh[2], motor_kmh[3]);
 	}
 
 }

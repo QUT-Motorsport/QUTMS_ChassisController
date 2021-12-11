@@ -37,9 +37,9 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-#define PRINT_RAW_PEDALS 1
+#define PRINT_RAW_PEDALS 0
 #define DEBUG_AMS 0
-#define RTD_DEBUG 1
+#define RTD_DEBUG 0
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -84,6 +84,16 @@ void Error_Handler(void);
 
 
 #define UART_TIMEOUT 1000
+
+// 10% of 1000
+#define APPS_DIFF 300
+
+// 100ms
+#define PEDAL_IMPLAUSIBILITY_TIMEOUT 100
+
+// 50mv
+#define ADC_DISCONNECT_CUTOFF 50
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

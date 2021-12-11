@@ -9,11 +9,13 @@
 #include "main.h"
 #include <FSM.h>
 #include "RTD.h"
+#include "debugCAN.h"
 
 state_t deadState = { &state_dead_enter, &state_dead_iterate, &state_dead_exit,
 		"Dead_s" };
 
 void state_dead_enter(fsm_t *fsm) {
+	debugCAN_enterState(CC_STATE_ID_Dead);
 	return;
 }
 
@@ -22,6 +24,7 @@ void state_dead_iterate(fsm_t *fsm) {
 }
 
 void state_dead_exit(fsm_t *fsm) {
+	debugCAN_exitState(CC_STATE_ID_Dead);
 	return;
 }
 
@@ -29,6 +32,7 @@ state_t startState = { &state_start_enter, &state_start_iterate,
 		&state_start_exit, "Start_s" };
 
 void state_start_enter(fsm_t *fsm) {
+	debugCAN_enterState(CC_STATE_ID_Start);
 
 	RTD_state.shutdown_fault = false;
 
@@ -50,6 +54,8 @@ void state_start_iterate(fsm_t *fsm) {
 }
 
 void state_start_exit(fsm_t *fsm) {
+	debugCAN_exitState(CC_STATE_ID_Start);
+
 	RTD_state.precharge_enabled = false;
 	RTD_state.precharge_done = false;
 

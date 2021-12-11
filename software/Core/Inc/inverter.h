@@ -27,4 +27,9 @@ void inverter_send_pedals(uint16_t accel, uint16_t brake);
 
 void inverter_request_motor_amps();
 
+extern int16_t motor_amps[4];
+extern int32_t motor_rpm[4];
+extern float motor_kmh[4];
+
+
 #endif /* INC_INVERTER_H_ */

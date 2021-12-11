@@ -523,6 +523,8 @@ HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
 	if (hcan == &hcan1) {
 		pTxMailbox = &txMailbox_CAN1;
 		can_idx = 0;
+
+
 	} else if (hcan == &hcan2) {
 		pTxMailbox = &txMailbox_CAN2;
 		can_idx = 1;

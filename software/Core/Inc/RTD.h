@@ -18,6 +18,7 @@
 #define BRAKE_PRESSURE_RTD 300
 
 typedef struct RTD {
+	bool close_contactors;
 	bool precharge_enabled;
 	bool precharge_done;
 	bool shutdown_fault;

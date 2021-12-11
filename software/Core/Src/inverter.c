@@ -7,6 +7,10 @@
 
 #include "inverter.h"
 
+int16_t motor_amps[4];
+int32_t motor_rpm[4];
+float motor_kmh[4];
+
 void inverter_send_shutdown()
 {
 #ifdef INV_ROBOTEQ

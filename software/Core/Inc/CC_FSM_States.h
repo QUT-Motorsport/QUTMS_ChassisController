@@ -10,6 +10,13 @@
 
 #include <FSM.h>
 
+#define CC_STATE_ID_Dead 		0x0
+#define CC_STATE_ID_Reset 		0x1
+#define CC_STATE_ID_Start 		0x2
+#define CC_STATE_ID_Idle 		0x4
+#define CC_STATE_ID_Driving		0x6
+#define CC_STATE_ID_Shutdown 	0x8
+
 void state_dead_enter(fsm_t *fsm);
 void state_dead_iterate(fsm_t *fsm);
 void state_dead_exit(fsm_t *fsm);
