@@ -213,12 +213,12 @@ void update_APPS() {
 void update_BSE() {
 	// TODO: calculate correct status based off brake pressure sensor
 	current_pedal_values.BSE_implausibility_present = false;
-
+/*
 	if (current_pedal_values.brake_pressure.current_filtered
 			< ADC_DISCONNECT_CUTOFF) {
 		current_pedal_values.BSE_implausibility_present = true;
 	}
-
+*/
 	if (current_pedal_values.BSE_implausibility_present) {
 		// current implausibility detected
 		if (current_pedal_values.BSE_implausibility_start == 0) {
@@ -238,7 +238,8 @@ void update_BSE() {
 
 void update_pedal_plausibility() {
 	// TODO: check via accel pedal and brake pressure
-
+	current_pedal_values.pedal_disable_motors = false;
+/*
 	// if brake AND accel > 25% -> pedal_disable_motors = true
 	if ((current_pedal_values.pedal_brake_mapped > BRAKE_MIN_ACTIVATION) && (current_pedal_values.pedal_accel_mapped[0] > 250)) {
 		current_pedal_values.pedal_disable_motors = true;
@@ -252,6 +253,7 @@ void update_pedal_plausibility() {
 			current_pedal_values.pedal_disable_motors = false;
 		}
 	}
+	*/
 }
 
 void pedal_adc_timer_cb(void *args) {
