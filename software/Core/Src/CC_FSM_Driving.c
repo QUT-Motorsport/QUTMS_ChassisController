@@ -35,7 +35,7 @@ void state_driving_enter(fsm_t *fsm) {
 	// update duty cycle on fans
 
 	// start inverter timer
-	timer_inverters = timer_init(5, true, inverter_timer_cb);
+	timer_inverters = timer_init(10, true, inverter_timer_cb);
 
 	timer_start(&timer_inverters);
 

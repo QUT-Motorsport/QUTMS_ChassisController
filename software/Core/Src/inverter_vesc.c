@@ -18,7 +18,7 @@ uint16_t vesc_current_max = VESC_CURRENT_MAX;
 uint16_t enable_tv = 1;
 uint16_t boost = 0;
 uint16_t scalar = 0;
-uint16_t deadzone = 5;
+uint16_t deadzone = 10;
 
 int32_t vesc_rpm;
 
@@ -149,7 +149,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 	for (VESC_ID i = FL; i <= RR; i++) {
 		// If our regen value is > 0, we only send brake command, else send torque command
 		if (regen > 0.0f && fast_for_regen) {
-
+/*
 			if (!regen_mode) {
 				regen_mode = true;
 
@@ -160,15 +160,16 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 				CC_send_can_msg(&hcan1, &vescHeader, torqueCommand.data);
 				CC_send_can_msg(&hcan2, &vescHeader, torqueCommand.data);
 			}
-
+*/
 			// Set Regen
 			regenCommand = Compose_VESC_SetCurrentBrake(i, disable_motor ? 0 : regen);
 			vescHeader.DLC = sizeof(regenCommand.data);
 			vescHeader.ExtId = regenCommand.id;
 
-			CC_send_can_msg(&hcan1, &vescHeader, regenCommand.data);
-			CC_send_can_msg(&hcan2, &vescHeader, regenCommand.data);
+			//CC_send_can_msg(&hcan1, &vescHeader, regenCommand.data);
+			//CC_send_can_msg(&hcan2, &vescHeader, regenCommand.data);
 		} else {
+			/*
 			// Set Torque
 			if (regen_mode) {
 				regen_mode = false;
@@ -177,10 +178,10 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 				vescHeader.DLC = sizeof(regenCommand.data);
 				vescHeader.ExtId = regenCommand.id;
 
-				CC_send_can_msg(&hcan1, &vescHeader, regenCommand.data);
-				CC_send_can_msg(&hcan2, &vescHeader, regenCommand.data);
+				//CC_send_can_msg(&hcan1, &vescHeader, regenCommand.data);
+				//CC_send_can_msg(&hcan2, &vescHeader, regenCommand.data);
 			}
-
+*/
 			torqueCommand = Compose_VESC_SetCurrent(i,
 					disable_motor ? 0 : torqueRequest[i] * tvValues[i]);
 			vescHeader.DLC = sizeof(torqueCommand.data);
