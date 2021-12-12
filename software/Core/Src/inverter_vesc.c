@@ -15,7 +15,7 @@
 #include <stdbool.h>
 
 uint16_t vesc_current_max = VESC_CURRENT_MAX;
-uint16_t enable_tv = 1;
+uint16_t enable_tv = TV_ENABLED_DEFAULT;
 uint16_t boost = 0;
 uint16_t scalar = 0;
 uint16_t deadzone = 10;

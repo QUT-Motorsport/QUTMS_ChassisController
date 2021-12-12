@@ -16,6 +16,8 @@
 #include "CC_CAN_Messages.h"
 #include "VESC_CAN_Messages.h"
 
+#define TV_ENABLED_DEFAULT 0
+
 #define VESC_CURRENT_MAX 120
 #define VESC_CURRENT_MIN 0
 
