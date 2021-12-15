@@ -12,11 +12,14 @@
 #include <QUTMS_can.h>
 #include "can.h"
 
-#define CC_OD_IDX_INV_CURRENT 0x1
-#define CC_OD_IDX_ENABLE_TV 0x2
-#define CC_OD_IDX_SCALAR 0x3
-#define CC_OD_IDX_BOOST 0x4
-#define CC_OD_IDX_DEADZONE 0x5
+#define CC_OD_IDX_INV_CURRENT 				0x1
+#define CC_OD_IDX_ENABLE_TV 				0x2
+#define CC_OD_IDX_SCALAR 					0x3
+#define CC_OD_IDX_BOOST 					0x4
+#define CC_OD_IDX_DEADZONE 					0x5
+#define CC_OD_IDX_REGEN_ENABLE 				0x6
+#define CC_OD_IDX_REGEN_RPM_CUTOFF			0x7
+#define CC_OD_IDX_REGEN_MAX_CURRENT			0x8
 
 extern obj_dict_t CC_obj_dict;
 
