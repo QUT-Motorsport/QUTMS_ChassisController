@@ -23,9 +23,7 @@
 /* USER CODE BEGIN 0 */
 #include <stdio.h>
 #include <QUTMS_can.h>
-#include "data_logger.h"
 
-ms_timer_t timer_CAN_queue;
 message_queue_t queue_CAN1;
 message_queue_t queue_CAN2;
 message_queue_t queue_CAN3;
@@ -350,35 +348,24 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
-void setup_CAN() {
-	// setup CAN queue
-	if (queue_init(&queue_CAN1, sizeof(CAN_MSG_Generic_t),
-	CAN_QUEUE_SIZE) == false) {
-		printf("ERROR: FAILED TO SETUP CAN1 QUEUE\r\n");
-	}
-
-	if (queue_init(&queue_CAN2, sizeof(CAN_MSG_Generic_t),
-	CAN_QUEUE_SIZE) == false) {
-		printf("ERROR: FAILED TO SETUP CAN2 QUEUE\r\n");
-	}
-
-	if (queue_init(&queue_CAN2, sizeof(CAN_MSG_Generic_t),
-	CAN_QUEUE_SIZE) == false) {
-		printf("ERROR: FAILED TO SETUP CAN3 QUEUE\r\n");
-	}
+bool setup_CAN() {
+	// setup CAN queues
+	queue_init(&queue_CAN1, sizeof(CAN_MSG_Generic_t));
+	queue_init(&queue_CAN2, sizeof(CAN_MSG_Generic_t));
+	queue_init(&queue_CAN3, sizeof(CAN_MSG_Generic_t));
 
 	// start CAN lines
 	if (HAL_CAN_Start(&hcan1) != HAL_OK) {
 		printf("ERROR: FAILED TO START CAN1\r\n");
-		Error_Handler();
+		return false;
 	}
 	if (HAL_CAN_Start(&hcan2) != HAL_OK) {
 		printf("ERROR: FAILED TO START CAN2\r\n");
-		Error_Handler();
+		return false;
 	}
 	if (HAL_CAN_Start(&hcan3) != HAL_OK) {
 		printf("ERROR: FAILED TO START CAN3\r\n");
-		Error_Handler();
+		return false;
 	}
 
 	// setup CAN filters
@@ -397,63 +384,61 @@ void setup_CAN() {
 
 	if (HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig) != HAL_OK) {
 		printf("failed to config filter on can1\r\n");
-		Error_Handler();
+		return false;
 	}
 
 	sFilterConfig.FilterBank = 14;
 
 	if (HAL_CAN_ConfigFilter(&hcan2, &sFilterConfig) != HAL_OK) {
 		printf("failed to config filter on can2\r\n");
-		Error_Handler();
+		return false;
 	}
 
 	sFilterConfig.FilterBank = 28;
 
 	if (HAL_CAN_ConfigFilter(&hcan3, &sFilterConfig) != HAL_OK) {
 		printf("failed to config filter on can3\r\n");
-		Error_Handler();
+		return false;
 	}
 
 	// activate notifications / interrupts
 	if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING)
 			!= HAL_OK) {
 		printf("Failed to activate CAN1 notification on RX0");
+		return false;
 	}
 
 	if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO1_MSG_PENDING)
 			!= HAL_OK) {
 		printf("Failed to activate CAN1 notification on RX1");
+		return false;
 	}
 
 	if (HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING)
 			!= HAL_OK) {
 		printf("Failed to activate CAN2 notification on RX0");
+		return false;
 	}
 
 	if (HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO1_MSG_PENDING)
 			!= HAL_OK) {
 		printf("Failed to activate CAN2 notification on RX1");
+		return false;
 	}
 
 	if (HAL_CAN_ActivateNotification(&hcan3, CAN_IT_RX_FIFO0_MSG_PENDING)
 			!= HAL_OK) {
 		printf("Failed to activate CAN3 notification on RX0");
+		return false;
 	}
 
 	if (HAL_CAN_ActivateNotification(&hcan3, CAN_IT_RX_FIFO1_MSG_PENDING)
 			!= HAL_OK) {
 		printf("Failed to activate CAN3 notification on RX1");
+		return false;
 	}
 
-	// setup timer
-	timer_CAN_queue = timer_init(1, true, CAN_timer_cb);
-
-	// start timer
-	timer_start(&timer_CAN_queue);
-}
-
-void CAN_timer_cb(void *args) {
-
+	return true;
 }
 
 void handle_CAN_interrupt(CAN_HandleTypeDef *hcan, int fifo) {
@@ -532,28 +517,7 @@ HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
 		pTxMailbox = &txMailbox_CAN3;
 		can_idx = 2;
 	}
-/*
-	test = 0;
-	if (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
-		for (int i = 0; i < 10; i++) {
-			test = test + 1;
-		}
-	}
 
-
-	while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
-		printf("\r");
-	}
-*/
-	/*
-
-	 msg_count[can_idx]++;
-
-	 if (msg_count[can_idx] > 2) {
-	 HAL_Delay(1);
-	 msg_count[can_idx] = 0;
-	 }
-	 */
 
 	// finally send CAN msg
 	HAL_StatusTypeDef result = HAL_CAN_AddTxMessage(hcan, pHeader, aData,
@@ -562,10 +526,6 @@ HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,
 		printf("FAILED TO SEND CAN %i - e: %lu\r\n", can_idx + 1,
 				hcan->ErrorCode);
 	}
-
-#ifdef DATA_LOG
-	queue_add(&queue_CAN_log, &msg);
-#endif
 
 	return result;
 }

@@ -55,7 +55,7 @@ void MX_CAN2_Init(void);
 void MX_CAN3_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void setup_CAN();
+bool setup_CAN();
 void CAN_timer_cb(void *args);
 
 HAL_StatusTypeDef CC_send_can_msg(CAN_HandleTypeDef *hcan,

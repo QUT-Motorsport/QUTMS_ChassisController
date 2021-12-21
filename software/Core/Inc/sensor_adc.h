@@ -1,12 +1,12 @@
 /*
- * pedal_adc.h
+ * sensor_adc.h
  *
- *  Created on: Apr 25, 2021
- *      Author: Calvin
+ *  Created on: Dec 21, 2021
+ *      Author: Calvin J
  */
 
-#ifndef INC_PEDAL_ADC_H_
-#define INC_PEDAL_ADC_H_
+#ifndef INC_SENSOR_ADC_H_
+#define INC_SENSOR_ADC_H_
 
 #include <stdbool.h>
 
@@ -39,7 +39,7 @@
 #define STEER_MIN 380
 #define STEER_MAX 3260
 
-typedef struct pedal_values {
+typedef struct sensor_values {
 	uint16_t pedal_accel_min[NUM_PEDAL_ACCEL];
 	uint16_t pedal_accel_max[NUM_PEDAL_ACCEL];
 
@@ -77,15 +77,15 @@ typedef struct pedal_values {
 
 
 
-} pedal_values_t;
+} sensor_values_t;
 
-extern pedal_values_t current_pedal_values;
+extern sensor_values_t current_sensor_values;
 
-extern ms_timer_t timer_pedal_adc;
+extern ms_timer_t timer_sensor_adc;
 
-void setup_pedals_adc();
+void setup_sensor_adc();
 
-void pedal_adc_timer_cb(void *args);
+void sensor_adc_timer_cb(void *args);
 
 uint16_t map_value(uint16_t input, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
 double map_capped(uint16_t input, uint16_t in_min, uint16_t in_max,
