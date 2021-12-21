@@ -20,7 +20,10 @@ void CC_OD_init() {
 	OD_setValue(&CC_obj_dict, CC_OD_IDX_DEADZONE, 0);
 	OD_setValue(&CC_obj_dict, CC_OD_IDX_SCALAR, 0);
 	OD_setValue(&CC_obj_dict, CC_OD_IDX_BOOST, 0);
-	OD_setValue(&CC_obj_dict, CC_OD_IDX_ENABLE_TV, 1);
+	OD_setValue(&CC_obj_dict, CC_OD_IDX_ENABLE_TV, TV_ENABLED_DEFAULT);
+	OD_setValue(&CC_obj_dict, CC_OD_IDX_REGEN_ENABLE, REGEN_ENABLED_DEFAULT);
+	OD_setValue(&CC_obj_dict, CC_OD_IDX_REGEN_RPM_CUTOFF, VESC_REGEN_KMH_CUTOFF_DEFAULT);
+	OD_setValue(&CC_obj_dict, CC_OD_IDX_REGEN_MAX_CURRENT, VESC_REGEN_MAX_DEFAULT);
 }
 
 void CC_OD_handleCAN(CAN_MSG_Generic_t *msg, CAN_HandleTypeDef *hcan) {

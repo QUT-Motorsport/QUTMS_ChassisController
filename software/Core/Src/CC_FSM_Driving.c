@@ -35,7 +35,7 @@ void state_driving_enter(fsm_t *fsm) {
 	// update duty cycle on fans
 
 	// start inverter timer
-	timer_inverters = timer_init(10, true, inverter_timer_cb);
+	timer_inverters = timer_init(20, true, inverter_timer_cb);
 
 	timer_start(&timer_inverters);
 
@@ -178,12 +178,12 @@ void inverter_timer_cb(void *args) {
 	inverter_send_pedals(accel, current_pedal_values.pedal_brake_mapped);
 
 	inv_count++;
-
+/*
 	if (inv_count >= 20) {
 		inv_count = 0;
 
 		printf("RPM: %.02f\t %.02f\t %.02f\t %.02f\r\n", motor_kmh[0], motor_kmh[1],
 				motor_kmh[2], motor_kmh[3]);
 	}
-
+*/
 }
