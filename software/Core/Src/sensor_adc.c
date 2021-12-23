@@ -5,10 +5,9 @@
  *      Author: Calvin
  */
 
+#include <CAN_CC.h>
 #include <math.h>
 #include <stdio.h>
-
-#include <CC_CAN_Messages.h>
 
 #include "main.h"
 #include "sensor_adc.h"
@@ -33,35 +32,46 @@ void update_pedal_plausibility();
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	if (hadc == &hadc1) {
 		// accel
-		memcpy(current_sensor_values.raw_pedal_accel,
-				current_sensor_values.raw_pedal_accel_dma,
+		memcpy(current_sensor_values.raw_pedal_accel, current_sensor_values.raw_pedal_accel_dma,
 				sizeof(uint16_t) * NUM_PEDAL_ACCEL);
 
-	} else if (hadc == &hadc3) {
+	}
+	else if (hadc == &hadc3) {
 		// brake pressure
-		current_sensor_values.raw_pressure_brake[0] =
-				current_sensor_values.raw_pressure_brake_dma[0];
-	} else if (hadc == &hadc2) {
-		current_sensor_values.raw_steering[0] =
-				current_sensor_values.raw_steering_dma[0];
-		current_sensor_values.raw_steering[1] =
-				current_sensor_values.raw_steering_dma[1];
+		current_sensor_values.raw_pressure_brake[0] = current_sensor_values.raw_pressure_brake_dma[0];
+	}
+	else if (hadc == &hadc2) {
+		current_sensor_values.raw_steering[0] = current_sensor_values.raw_steering_dma[0];
+		current_sensor_values.raw_steering[1] = current_sensor_values.raw_steering_dma[1];
 	}
 }
-void setup_sensor_adc() {
-	// every 1ms, continuous
-	timer_sensor_adc = timer_init(2, true, sensor_adc_timer_cb);
 
+bool setup_adc_peripherals() {
 	// start dma requests
-	HAL_ADC_Start_DMA(&hadc1,
-			(uint32_t*) current_sensor_values.raw_pedal_accel_dma,
-			NUM_PEDAL_ACCEL);
-	HAL_ADC_Start_DMA(&hadc3, current_sensor_values.raw_pressure_brake_dma, 1);
-	HAL_ADC_Start_DMA(&hadc2, (uint32_t*) current_sensor_values.raw_steering_dma,
-	NUM_STEERING);
 
-	// wait for first dma round
+	if (HAL_ADC_Start_DMA(&hadc1, (uint32_t*) current_sensor_values.raw_pedal_accel_dma,
+	NUM_PEDAL_ACCEL) != HAL_OK) {
+		return false;
+	}
+
+	if (HAL_ADC_Start_DMA(&hadc3, current_sensor_values.raw_pressure_brake_dma, 1) != HAL_OK) {
+		return false;
+	}
+
+	if (HAL_ADC_Start_DMA(&hadc2, (uint32_t*) current_sensor_values.raw_steering_dma,
+	NUM_STEERING) != HAL_OK) {
+		return false;
+	}
+
+	// small delay to ensure the first round can complete
 	HAL_Delay(1);
+
+	return true;
+}
+
+void setup_adc_sensors() {
+	// every 2ms, continuous
+	timer_sensor_adc = timer_init(2, true, sensor_adc_timer_cb);
 
 	// setup filters
 	for (int i = 0; i < NUM_PEDAL_ACCEL; i++) {
@@ -78,14 +88,12 @@ void setup_sensor_adc() {
 	current_sensor_values.brake_pressure_min = PEDAL_BRAKE_MIN;
 	current_sensor_values.brake_pressure_max = PEDAL_BRAKE_MAX;
 
-	window_filter_initialize(&current_sensor_values.brake_pressure,
-			current_sensor_values.raw_pressure_brake[0],
-			ACCEL_FILTER_SIZE);
+	window_filter_initialize(&current_sensor_values.brake_pressure, current_sensor_values.raw_pressure_brake[0],
+	ACCEL_FILTER_SIZE);
 
 	for (int i = 0; i < NUM_STEERING; i++) {
-		window_filter_initialize(&current_sensor_values.steering_angle[i],
-				current_sensor_values.raw_steering[i],
-				ACCEL_FILTER_SIZE);
+		window_filter_initialize(&current_sensor_values.steering_angle[i], current_sensor_values.raw_steering[i],
+		ACCEL_FILTER_SIZE);
 	}
 
 	// start timer
@@ -95,11 +103,9 @@ void setup_sensor_adc() {
 void update_sensor_values() {
 	// update filter
 	for (int i = 0; i < NUM_PEDAL_ACCEL; i++) {
-		window_filter_update(&current_sensor_values.pedal_accel[i],
-				current_sensor_values.raw_pedal_accel[i]);
+		window_filter_update(&current_sensor_values.pedal_accel[i], current_sensor_values.raw_pedal_accel[i]);
 
-		uint16_t pedal_value =
-				current_sensor_values.pedal_accel[i].current_filtered;
+		uint16_t pedal_value = current_sensor_values.pedal_accel[i].current_filtered;
 
 		// update min/max?
 		if (pedal_value < current_sensor_values.pedal_accel_min[i]) {
@@ -122,19 +128,16 @@ void update_sensor_values() {
 			//}
 		}
 
-		current_sensor_values.pedal_accel_mapped[i] = map_value(pedal_value,
-				current_sensor_values.pedal_accel_min[i],
+		current_sensor_values.pedal_accel_mapped[i] = map_value(pedal_value, current_sensor_values.pedal_accel_min[i],
 				current_sensor_values.pedal_accel_max[i], 0,
 				PEDAL_DUTY_CYCLE);
 	}
 
 	// correct accel 1 orientation
-	current_sensor_values.pedal_accel_mapped[1] = PEDAL_DUTY_CYCLE
-			- current_sensor_values.pedal_accel_mapped[1];
+	current_sensor_values.pedal_accel_mapped[1] = PEDAL_DUTY_CYCLE - current_sensor_values.pedal_accel_mapped[1];
 
 	// update brake pressure
-	window_filter_update(&current_sensor_values.brake_pressure,
-			current_sensor_values.raw_pressure_brake[0]);
+	window_filter_update(&current_sensor_values.brake_pressure, current_sensor_values.raw_pressure_brake[0]);
 
 	uint16_t brake_val = current_sensor_values.brake_pressure.current_filtered;
 
@@ -146,24 +149,19 @@ void update_sensor_values() {
 		brake_val = current_sensor_values.brake_pressure_min;
 	}
 
-	current_sensor_values.pedal_brake_mapped = map_value(brake_val,
-			current_sensor_values.brake_pressure_min,
+	current_sensor_values.pedal_brake_mapped = map_value(brake_val, current_sensor_values.brake_pressure_min,
 			current_sensor_values.brake_pressure_max, 0,
 			PEDAL_DUTY_CYCLE);
 
 	// update steering
 	for (int i = 0; i < NUM_STEERING; i++) {
-		window_filter_update(&current_sensor_values.steering_angle[i],
-				current_sensor_values.raw_steering[i]);
+		window_filter_update(&current_sensor_values.steering_angle[i], current_sensor_values.raw_steering[i]);
 	}
 
-	steering_0 = map_capped(
-			current_sensor_values.steering_angle[0].current_filtered,
-			STEER_MIN, STEER_MAX, 0, 360);
-	steering_1 = 360
-			- map_capped(
-					current_sensor_values.steering_angle[1].current_filtered,
-					STEER_MIN, STEER_MAX, 0, 360);
+	steering_0 = map_capped(current_sensor_values.steering_angle[0].current_filtered,
+	STEER_MIN, STEER_MAX, 0, 360);
+	steering_1 = 360 - map_capped(current_sensor_values.steering_angle[1].current_filtered,
+	STEER_MIN, STEER_MAX, 0, 360);
 
 	// flip angle
 	steering_0 = 180 - steering_0;
@@ -177,21 +175,17 @@ void update_APPS() {
 	bool APPS_implausibility_check = false;
 
 	for (int i = 0; i < NUM_PEDAL_ACCEL; i++) {
-		if (current_sensor_values.pedal_accel[i].current_filtered
-				< ADC_DISCONNECT_CUTOFF) {
+		if (current_sensor_values.pedal_accel[i].current_filtered < ADC_DISCONNECT_CUTOFF) {
 			APPS_implausibility_check = true;
 		}
 	}
 
-	int diff = abs(
-			current_sensor_values.pedal_accel_mapped[0]
-					- current_sensor_values.pedal_accel_mapped[1]);
+	int diff = abs(current_sensor_values.pedal_accel_mapped[0] - current_sensor_values.pedal_accel_mapped[1]);
 	if (diff > APPS_DIFF) {
 		APPS_implausibility_check = true;
 	}
 
-	current_sensor_values.APPS_implausibility_present =
-			APPS_implausibility_check;
+	current_sensor_values.APPS_implausibility_present = APPS_implausibility_check;
 
 	if (current_sensor_values.APPS_implausibility_present) {
 		// current implausibility detected
@@ -199,12 +193,12 @@ void update_APPS() {
 			current_sensor_values.APPS_implausibility_start = HAL_GetTick();
 		}
 
-		if ((HAL_GetTick() - current_sensor_values.APPS_implausibility_start)
-				> PEDAL_IMPLAUSIBILITY_TIMEOUT) {
+		if ((HAL_GetTick() - current_sensor_values.APPS_implausibility_start) > PEDAL_IMPLAUSIBILITY_TIMEOUT) {
 			// 100ms of implausibility, so ensure we can't send motor values
 			current_sensor_values.APPS_disable_motors = true;
 		}
-	} else {
+	}
+	else {
 		current_sensor_values.APPS_implausibility_start = 0;
 		current_sensor_values.APPS_disable_motors = false;
 	}
@@ -213,24 +207,24 @@ void update_APPS() {
 void update_BSE() {
 	// TODO: calculate correct status based off brake pressure sensor
 	current_sensor_values.BSE_implausibility_present = false;
-/*
-	if (current_pedal_values.brake_pressure.current_filtered
-			< ADC_DISCONNECT_CUTOFF) {
-		current_pedal_values.BSE_implausibility_present = true;
-	}
-*/
+	/*
+	 if (current_pedal_values.brake_pressure.current_filtered
+	 < ADC_DISCONNECT_CUTOFF) {
+	 current_pedal_values.BSE_implausibility_present = true;
+	 }
+	 */
 	if (current_sensor_values.BSE_implausibility_present) {
 		// current implausibility detected
 		if (current_sensor_values.BSE_implausibility_start == 0) {
 			current_sensor_values.BSE_implausibility_start = HAL_GetTick();
 		}
 
-		if ((HAL_GetTick() - current_sensor_values.BSE_implausibility_start)
-				> PEDAL_IMPLAUSIBILITY_TIMEOUT) {
+		if ((HAL_GetTick() - current_sensor_values.BSE_implausibility_start) > PEDAL_IMPLAUSIBILITY_TIMEOUT) {
 			// 100ms of implausibility, so ensure we can't send motor values
 			current_sensor_values.BSE_disable_motors = true;
 		}
-	} else {
+	}
+	else {
 		current_sensor_values.BSE_implausibility_start = 0;
 		current_sensor_values.BSE_disable_motors = false;
 	}
@@ -239,21 +233,21 @@ void update_BSE() {
 void update_pedal_plausibility() {
 	// TODO: check via accel pedal and brake pressure
 	current_sensor_values.pedal_disable_motors = false;
-/*
-	// if brake AND accel > 25% -> pedal_disable_motors = true
-	if ((current_pedal_values.pedal_brake_mapped > BRAKE_MIN_ACTIVATION) && (current_pedal_values.pedal_accel_mapped[0] > 250)) {
-		current_pedal_values.pedal_disable_motors = true;
-	}
+	/*
+	 // if brake AND accel > 25% -> pedal_disable_motors = true
+	 if ((current_pedal_values.pedal_brake_mapped > BRAKE_MIN_ACTIVATION) && (current_pedal_values.pedal_accel_mapped[0] > 250)) {
+	 current_pedal_values.pedal_disable_motors = true;
+	 }
 
 
 
-	// if accel < 5% -> pedal_disable_motors = false
-	if (current_pedal_values.pedal_disable_motors) {
-		if ((current_pedal_values.pedal_accel_mapped[0] < 50) || (current_pedal_values.pedal_accel_mapped[1] < 50)) {
-			current_pedal_values.pedal_disable_motors = false;
-		}
-	}
-	*/
+	 // if accel < 5% -> pedal_disable_motors = false
+	 if (current_pedal_values.pedal_disable_motors) {
+	 if ((current_pedal_values.pedal_accel_mapped[0] < 50) || (current_pedal_values.pedal_accel_mapped[1] < 50)) {
+	 current_pedal_values.pedal_disable_motors = false;
+	 }
+	 }
+	 */
 }
 
 void sensor_adc_timer_cb(void *args) {
@@ -274,15 +268,12 @@ void sensor_adc_timer_cb(void *args) {
 		count = 0;
 
 		// log to CAN
-		CC_TransmitPedals_t msg = Compose_CC_TransmitPedals(
-				current_sensor_values.pedal_accel_mapped[0],
-				current_sensor_values.pedal_accel_mapped[1],
-				current_sensor_values.pedal_brake_mapped,
+		CC_TransmitPedals_t msg = Compose_CC_TransmitPedals(current_sensor_values.pedal_accel_mapped[0],
+				current_sensor_values.pedal_accel_mapped[1], current_sensor_values.pedal_brake_mapped,
 				current_sensor_values.brake_pressure.current_filtered);
 
 		CAN_TxHeaderTypeDef header = { .ExtId = msg.id, .IDE =
-		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data),
-				.TransmitGlobalTime = DISABLE, };
+		CAN_ID_EXT, .RTR = CAN_RTR_DATA, .DLC = sizeof(msg.data), .TransmitGlobalTime = DISABLE, };
 		CC_send_can_msg(&hcan2, &header, msg.data);
 
 		// send any error status
@@ -301,8 +292,8 @@ void sensor_adc_timer_cb(void *args) {
 			debugCAN_errorPresent(DEBUG_ERROR_PEDAL_IMPLAUSIBILITY);
 		}
 
-		CC_TransmitSteering_t msg2 = Compose_CC_TransmitSteering(
-				(uint16_t) (steering_0 + 180), (uint16_t) (steering_1 + 180));
+		CC_TransmitSteering_t msg2 = Compose_CC_TransmitSteering((uint16_t) (steering_0 + 180),
+				(uint16_t) (steering_1 + 180));
 		/*
 		 CC_TransmitSteering_t msg2 = Compose_CC_TransmitSteering(
 		 current_pedal_values.steering_angle[0].current_filtered,
@@ -370,20 +361,17 @@ void sensor_adc_timer_cb(void *args) {
 	}
 }
 
-uint16_t map_value(uint16_t input, uint16_t in_min, uint16_t in_max,
-		uint16_t out_min, uint16_t out_max) {
-	return (input - in_min) * (out_max - out_min) / (float) (in_max - in_min)
-			+ out_min;
+uint16_t map_value(uint16_t input, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max) {
+	return (input - in_min) * (out_max - out_min) / (float) (in_max - in_min) + out_min;
 }
 
-double map_capped(uint16_t input, uint16_t in_min, uint16_t in_max,
-		uint16_t out_min, uint16_t out_max) {
+double map_capped(uint16_t input, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max) {
 	if (input < in_min) {
 		input = in_min;
-	} else if (input > in_max) {
+	}
+	else if (input > in_max) {
 		input = in_max;
 	}
 
-	return (double) (input - in_min) * (double) (out_max - out_min)
-			/ (double) (in_max - in_min) + (double) out_min;
+	return (double) (input - in_min) * (double) (out_max - out_min) / (double) (in_max - in_min) + (double) out_min;
 }

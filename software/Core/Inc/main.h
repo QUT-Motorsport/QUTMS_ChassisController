@@ -81,6 +81,12 @@ void Error_Handler(void);
 #define RTD_INPUT_GPIO_Port GPIOE
 /* USER CODE BEGIN Private defines */
 
+// 100ms
+#define PERIPHERAL_RETRY 100
+
+// 1000ms
+#define PERIPHERAL_TIMEOUT 1000
+
 
 #define UART_TIMEOUT 1000
 

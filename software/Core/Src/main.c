@@ -31,11 +31,12 @@
 #include <sys/unistd.h>
 
 #include <FSM.h>
-#include <sensor_adc.h>
 
-#include "can_dict.h"
+#include "sensor_adc.h"
 #include "states.h"
 #include "debugCAN.h"
+#include "heartbeat.h"
+
 
 /* USER CODE END Includes */
 
@@ -57,6 +58,7 @@
 
 /* USER CODE BEGIN PV */
 fsm_t fsm;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -200,6 +202,7 @@ void SystemClock_Config(void) {
 
 /* USER CODE BEGIN 4 */
 void fsm_state_enter(fsm_t *fsm_def) {
+	CC_heartbeatState.stateID = fsm_def->currentState->stateID;
 	debugCAN_enterState(fsm_def->currentState->stateID);
 }
 

@@ -83,7 +83,8 @@ extern sensor_values_t current_sensor_values;
 
 extern ms_timer_t timer_sensor_adc;
 
-void setup_sensor_adc();
+bool setup_adc_peripherals();
+void setup_adc_sensors();
 
 void sensor_adc_timer_cb(void *args);
 

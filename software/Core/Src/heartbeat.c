@@ -10,3 +10,6 @@
 #include <stdbool.h>
 
 heatbeat_states_t heartbeats;
+
+CC_HeartbeatState_t CC_heartbeatState;
+MCISO_HeartbeatState_t MCISO_heartbeatState;
