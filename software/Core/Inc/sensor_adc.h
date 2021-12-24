@@ -11,7 +11,9 @@
 #include <stdbool.h>
 
 #include <Timer.h>
+#include <CAN_CC.h>
 #include "window_filtering.h"
+
 
 #define NUM_PEDAL_ACCEL 2
 #define NUM_PEDAL_BRAKE 2
@@ -33,6 +35,7 @@
 
 #define ADC_DIFF 25
 
+
 #define STEER_OFFSET_0 -7.25
 #define STEER_OFFSET_1 -6
 
@@ -40,6 +43,8 @@
 #define STEER_MAX 3260
 
 typedef struct sensor_values {
+	uint16_t pedal_duty_cycle;
+
 	uint16_t pedal_accel_min[NUM_PEDAL_ACCEL];
 	uint16_t pedal_accel_max[NUM_PEDAL_ACCEL];
 
@@ -58,9 +63,16 @@ typedef struct sensor_values {
 	uint32_t raw_pressure_brake[1];
 	uint32_t raw_pressure_brake_dma[1];
 
-	uint16_t raw_steering[2];
-	uint16_t raw_steering_dma[2];
-	window_filter_t steering_angle[2];
+	uint16_t steering_min;
+	uint16_t steering_max;
+
+	float steering_offset[NUM_STEERING];
+
+	uint16_t raw_steering[NUM_STEERING];
+	uint16_t raw_steering_dma[NUM_STEERING];
+	window_filter_t steering_angle[NUM_STEERING];
+
+	double steering_mapped[NUM_STEERING];
 
 	// To comply with T.4.2, specifically T.4.2.4 and T.4.2.5
 	bool APPS_disable_motors;
@@ -75,23 +87,24 @@ typedef struct sensor_values {
 	// To comply with EV.5.7
 	bool pedal_disable_motors;
 
-
-
+	bool steering_disable_TV;
+	bool steering_imp_present;
+	uint32_t steering_imp_start;
 } sensor_values_t;
 
 extern sensor_values_t current_sensor_values;
-
 extern ms_timer_t timer_sensor_adc;
 
 bool setup_adc_peripherals();
+bool check_sensors_connected(CC_Flags_u *error_flags);
 void setup_adc_sensors();
 
 void sensor_adc_timer_cb(void *args);
 
-uint16_t map_value(uint16_t input, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
 double map_capped(uint16_t input, uint16_t in_min, uint16_t in_max,
 		uint16_t out_min, uint16_t out_max);
 
+// todo: make these go bye bye
 extern double steering_0;
 extern double steering_1;
 

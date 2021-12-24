@@ -40,6 +40,9 @@ extern "C" {
 #define PRINT_RAW_PEDALS 0
 #define DEBUG_AMS 0
 #define RTD_DEBUG 1
+
+// is steering missing an issue
+#define STEERING_NON_CRITICAL 1
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -87,14 +90,23 @@ void Error_Handler(void);
 // 1000ms
 #define PERIPHERAL_TIMEOUT 1000
 
+// 500ms
+#define SENSOR_RETRY 500
+
+// 5000ms
+#define SENSOR_TIMEOUT 5000
+
 
 #define UART_TIMEOUT 1000
 
 // 10% of 1000
 #define APPS_DIFF 300
 
+// usually +-2 of each other, so 10 is massive bad
+#define STEER_IMP_DIFF 10
+
 // 100ms
-#define PEDAL_IMPLAUSIBILITY_TIMEOUT 100
+#define SENSOR_IMPLAUSIBILITY_TIMEOUT 100
 
 // 50mv
 #define ADC_DISCONNECT_CUTOFF 50
