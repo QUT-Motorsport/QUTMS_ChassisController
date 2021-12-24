@@ -104,7 +104,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 	bool fast_for_regen = false;
 
 	for (int i = 0; i < 4; i++) {
-		if (motor_kmh[i] > regen_kmh_cutoff) {
+		if (motor_kmh[i] >= regen_kmh_cutoff) {
 			fast_for_regen = true;
 		}
 	}
@@ -164,9 +164,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 
 	for (VESC_ID i = FL; i <= RR; i++) {
 		// If our regen value is > 0, we only send brake command, else send torque command
-		if (regen > 0.0f && fast_for_regen) {
-
-			if (enable_regen == 1) {
+		if (regen > 0.0f && fast_for_regen && (enable_regen == 1)) {
 
 				if (!regen_mode) {
 					regen_mode = true;
@@ -187,7 +185,7 @@ void vesc_send_pedals(uint16_t accel, uint16_t brake) {
 
 				CC_send_can_msg(&hcan1, &vescHeader, regenCommand.data);
 				CC_send_can_msg(&hcan2, &vescHeader, regenCommand.data);
-			}
+
 		} else {
 
 			// Set Torque
