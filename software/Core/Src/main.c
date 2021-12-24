@@ -36,6 +36,7 @@
 #include "states.h"
 #include "debugCAN.h"
 #include "heartbeat.h"
+#include "can_dict.h"
 
 
 /* USER CODE END Includes */
@@ -143,6 +144,8 @@ int main(void) {
 
 		// update key timers
 		timer_update(&timer_sensor_adc, NULL);
+		timer_update(&timer_heartbeat, NULL);
+		timer_update(&timer_OD, NULL);
 
 		// continue fsm
 		fsm_iterate(&fsm);

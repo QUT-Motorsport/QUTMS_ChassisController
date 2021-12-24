@@ -45,6 +45,10 @@ void state_pInit_enter(fsm_t *fsm) {
 		CC_heartbeatState.errorFlags.P_CAN = 1;
 		success = false;
 	}
+	else {
+		// CAN has started successfully so heartbeat machine go brr
+		setup_heartbeat();
+	}
 
 	if (!setup_adc_peripherals()) {
 		CC_heartbeatState.errorFlags.P_ADC = 1;
@@ -79,6 +83,9 @@ void state_pInit_body(fsm_t *fsm) {
 			if (setup_CAN()) {
 				success &= ~(1 << 0);
 				CC_heartbeatState.errorFlags.P_CAN = 0;
+
+				// CAN has started successfully so heartbeat machine go brr
+				setup_heartbeat();
 			}
 		}
 
@@ -168,6 +175,29 @@ void state_boardCheck_enter(fsm_t *fsm) {
 
 void state_boardCheck_body(fsm_t *fsm) {
 	// if all heartbeats / boards are present go to check AMS
+
+	CAN_MSG_Generic_t msg;
+	while (queue_next(&queue_CAN2, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
+	// update state of heartbeat error flags
+	// don't need to go into an error state if boards aren't present
+	// so won't check return value
+	check_bad_heartbeat();
+
+	bool boards_missing = false;
+
+	// AMS is critical
+	if (!heartbeats.AMS) {
+		boards_missing = true;
+	}
+
+	if (!boards_missing) {
+		// all boards required are present
+		fsm_changeState(fsm, &state_checkAMS, "Boards present");
+	}
 }
 
 void state_checkAMS_enter(fsm_t *fsm) {

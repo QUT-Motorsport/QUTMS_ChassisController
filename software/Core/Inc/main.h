@@ -84,6 +84,9 @@ void Error_Handler(void);
 #define RTD_INPUT_GPIO_Port GPIOE
 /* USER CODE BEGIN Private defines */
 
+// number of MCISO boards in car
+#define MCISO_COUNT 2
+
 // 100ms
 #define PERIPHERAL_RETRY 100
 
@@ -96,7 +99,10 @@ void Error_Handler(void);
 // 5000ms
 #define SENSOR_TIMEOUT 5000
 
+// 200ms
+#define HEARTBEAT_TIMEOUT 200
 
+// 1000ms
 #define UART_TIMEOUT 1000
 
 // 10% of 1000

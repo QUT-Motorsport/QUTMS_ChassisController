@@ -10,6 +10,8 @@
 
 #include <obj_dic.h>
 #include <QUTMS_can.h>
+#include <Timer.h>
+
 #include "can.h"
 
 #define CC_OD_IDX_INV_CURRENT 				0x1
@@ -22,8 +24,10 @@
 #define CC_OD_IDX_REGEN_MAX_CURRENT			0x8
 
 extern obj_dict_t CC_obj_dict;
+extern ms_timer_t timer_OD;
 
 void CC_OD_init();
-void CC_OD_handleCAN(CAN_MSG_Generic_t *msg, CAN_HandleTypeDef *hcan);
+void CC_OD_handleCAN(CAN_MSG_Generic_t *msg);
+void OD_timer_cb(void *args);
 
 #endif /* INC_CAN_DICT_H_ */

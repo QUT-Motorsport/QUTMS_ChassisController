@@ -43,6 +43,7 @@ extern ms_timer_t timer_CAN_queue;
 extern message_queue_t queue_CAN1;
 extern message_queue_t queue_CAN2;
 extern message_queue_t queue_CAN3;
+extern message_queue_t queue_CAN_OD;
 
 extern uint32_t txMailbox_CAN1;
 extern uint32_t txMailbox_CAN2;
