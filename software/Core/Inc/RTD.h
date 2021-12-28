@@ -29,4 +29,7 @@ typedef struct RTD {
 
 extern RTD_t RTD_state;
 
+void RTD_BTN_Off();
+void RTD_BTN_On();
+
 #endif /* INC_RTD_H_ */

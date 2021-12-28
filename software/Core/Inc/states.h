@@ -9,6 +9,7 @@
 #define INC_STATES_H_
 
 #include <FSM.h>
+#include <CAN_CC.h>
 
 void state_start_enter(fsm_t *fsm);
 void state_start_body(fsm_t *fsm);
@@ -33,6 +34,10 @@ extern state_t state_checkAMS;
 void state_idle_enter(fsm_t *fsm);
 void state_idle_body(fsm_t *fsm);
 extern state_t state_idle;
+
+void state_request_pchrg_enter(fsm_t *fsm);
+void state_request_pchrg_body(fsm_t *fsm);
+extern state_t state_request_pchrg;
 
 void state_precharge_enter(fsm_t *fsm);
 void state_precharge_body(fsm_t *fsm);

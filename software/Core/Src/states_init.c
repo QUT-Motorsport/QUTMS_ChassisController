@@ -177,6 +177,11 @@ void state_boardCheck_body(fsm_t *fsm) {
 	// if all heartbeats / boards are present go to check AMS
 
 	CAN_MSG_Generic_t msg;
+	while (queue_next(&queue_CAN1, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
 	while (queue_next(&queue_CAN2, &msg)) {
 		// check for heartbeats
 		check_heartbeat_msg(&msg);
@@ -208,12 +213,18 @@ void state_checkAMS_body(fsm_t *fsm) {
 	// check AMS in ready state, if so go to idle
 
 	CAN_MSG_Generic_t msg;
+	while (queue_next(&queue_CAN1, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
 	while (queue_next(&queue_CAN2, &msg)) {
 		// check for heartbeats
 		check_heartbeat_msg(&msg);
 	}
 
 	if (AMS_heartbeatState.stateID == AMS_STATE_READY) {
+		// AMS has finished initialization so we're good to precharge whenever driver is ready
 		fsm_changeState(fsm, &state_idle, "AMS Ready");
 	}
 }
