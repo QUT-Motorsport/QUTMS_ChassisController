@@ -10,6 +10,7 @@
 
 heatbeat_states_t heartbeats;
 
+AMS_HeartbeatState_t AMS_heartbeatState;
 CC_HeartbeatState_t CC_heartbeatState;
 MCISO_HeartbeatState_t MCISO_heartbeatState[MCISO_COUNT];
 
@@ -74,6 +75,8 @@ bool check_heartbeat_msg(CAN_MSG_Generic_t *msg) {
 
 		// have heartbeat so clear error flag if it's set
 		CC_heartbeatState.errorFlags.HB_AMS = 0;
+
+		Parse_AMS_Heartbeat(msg->data, &AMS_heartbeatState);
 	}
 
 	// check all MCISO boards for valid heartbeats

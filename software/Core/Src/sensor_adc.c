@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include "main.h"
+#include "can.h"
 #include "sensor_adc.h"
 #include "adc.h"
 #include "debugCAN.h"

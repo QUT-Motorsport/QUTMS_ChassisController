@@ -9,6 +9,7 @@
 #define INC_HEARTBEAT_H_
 
 #include <stdbool.h>
+#include <CAN_AMS.h>
 #include <CAN_CC.h>
 #include <CAN_MCISO.h>
 #include <Timer.h>
@@ -26,6 +27,7 @@ typedef struct heartbeat_states {
 extern heatbeat_states_t heartbeats;
 extern ms_timer_t timer_heartbeat;
 
+extern AMS_HeartbeatState_t AMS_heartbeatState;
 extern CC_HeartbeatState_t CC_heartbeatState;
 extern MCISO_HeartbeatState_t MCISO_heartbeatState[MCISO_COUNT];
 
