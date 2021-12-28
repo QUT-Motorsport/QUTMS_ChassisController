@@ -51,6 +51,15 @@ typedef struct sensor_values {
 	uint16_t brake_pressure_min;
 	uint16_t brake_pressure_max;
 
+	uint16_t brake_min_actuation;
+
+	uint16_t steering_min;
+	uint16_t steering_max;
+
+	float steering_offset[NUM_STEERING];
+
+
+
 	uint16_t pedal_accel_mapped[NUM_PEDAL_ACCEL];
 	uint16_t pedal_brake_mapped;
 
@@ -62,13 +71,6 @@ typedef struct sensor_values {
 
 	uint32_t raw_pressure_brake[1];
 	uint32_t raw_pressure_brake_dma[1];
-
-	uint16_t brake_min_actuation;
-
-	uint16_t steering_min;
-	uint16_t steering_max;
-
-	float steering_offset[NUM_STEERING];
 
 	uint16_t raw_steering[NUM_STEERING];
 	uint16_t raw_steering_dma[NUM_STEERING];
