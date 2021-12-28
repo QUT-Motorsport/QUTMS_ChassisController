@@ -112,7 +112,7 @@ void state_request_pchrg_body(fsm_t *fsm) {
 		// precharge request has been acknowledged and started, or it's already finished so move to precharge to confirm and wait
 		fsm_changeState(fsm, &state_precharge, "Precharging");
 	}
-	else if (AMS_heartbeatState.stateID != AMS_STATE_READY ){
+	else if (AMS_heartbeatState.stateID != AMS_STATE_READY) {
 		// if it's in ready, probably just about to start precharge so ignore
 		// any other state is an error
 
@@ -162,7 +162,33 @@ void state_checkInverter_enter(fsm_t *fsm) {
 }
 
 void state_checkInverter_body(fsm_t *fsm) {
+	CAN_MSG_Generic_t msg;
 
+	while (queue_next(&queue_CAN1, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
+	while (queue_next(&queue_CAN2, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
+	bool inverter_good = true;
+
+	for (int i = 0; i < MCISO_COUNT; i++) {
+		// check MCISO board is good
+		inverter_good = inverter_good && heartbeats.MCISO[i];
+
+		// check connected inverters are good
+		inverter_good = inverter_good && (MCISO_heartbeatState[i].errorFlags.HB_INV0 == 1);
+		inverter_good = inverter_good && (MCISO_heartbeatState[i].errorFlags.HB_INV1 == 1);
+	}
+
+	if (inverter_good) {
+		// all MCISO boards and good and all inverters report good on heartbeat so we good
+		fsm_changeState(fsm, &state_rtdReady, "Inverters good");
+	}
 }
 
 void state_rtdReady_enter(fsm_t *fsm) {
