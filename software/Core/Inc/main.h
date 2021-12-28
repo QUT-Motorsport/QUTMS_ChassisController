@@ -101,8 +101,8 @@ void Error_Handler(void);
 // 5000ms
 #define SENSOR_TIMEOUT 5000
 
-// 200ms
-#define HEARTBEAT_TIMEOUT 200
+// 300ms
+#define HEARTBEAT_TIMEOUT 300
 
 // 1000ms
 #define UART_TIMEOUT 1000

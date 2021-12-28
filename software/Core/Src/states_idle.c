@@ -17,7 +17,6 @@ state_t state_precharge = { &state_precharge_enter, &state_precharge_body, CC_ST
 state_t state_checkInverter = { &state_checkInverter_enter, &state_checkInverter_body, CC_STATE_INVERTER_CHECK };
 state_t state_rtdReady = { &state_rtdReady_enter, &state_rtdReady_body, CC_STATE_RTD_RDY };
 state_t state_rtdButton = { &state_rtdButton_enter, &state_rtdButton_body, CC_STATE_RTD_BTN };
-state_t state_shutdown = { &state_shutdown_enter, &state_shutdown_body, CC_STATE_SHUTDOWN };
 
 ms_timer_t timer_rtd_light;
 void rtd_light_timer_cb(void *args);
@@ -58,6 +57,19 @@ void state_idle_body(fsm_t *fsm) {
 				return;
 			}
 		}
+	}
+
+	if (!check_bad_heartbeat()) {
+		// board has dropped out, go to error state
+
+		// stop timer
+		timer_stop(&timer_rtd_light);
+
+		// turn RTD button off
+		RTD_BTN_Off();
+
+		fsm_changeState(fsm, &state_error, "Board died");
+		return;
 	}
 
 	if (AMS_heartbeatState.stateID != AMS_STATE_READY) {
@@ -134,6 +146,13 @@ void state_request_pchrg_body(fsm_t *fsm) {
 		}
 	}
 
+	if (!check_bad_heartbeat()) {
+		// board has dropped out, go to error state
+
+		fsm_changeState(fsm, &state_error, "Board died");
+		return;
+	}
+
 	if ((AMS_heartbeatState.stateID == AMS_STATE_PRECHARGE) || (AMS_heartbeatState.stateID == AMS_STATE_TS_ACTIVE)) {
 		// precharge request has been acknowledged and started, or it's already finished so move to precharge to confirm and wait
 		fsm_changeState(fsm, &state_precharge, "Precharging");
@@ -172,6 +191,13 @@ void state_precharge_body(fsm_t *fsm) {
 				return;
 			}
 		}
+	}
+
+	if (!check_bad_heartbeat()) {
+		// board has dropped out, go to error state
+
+		fsm_changeState(fsm, &state_error, "Board died");
+		return;
 	}
 
 	if (AMS_heartbeatState.stateID == AMS_STATE_TS_ACTIVE) {
@@ -221,6 +247,13 @@ void state_checkInverter_body(fsm_t *fsm) {
 		}
 	}
 
+	if (!check_bad_heartbeat()) {
+		// board has dropped out, go to error state
+
+		fsm_changeState(fsm, &state_error, "Board died");
+		return;
+	}
+
 	bool inverter_good = true;
 
 	for (int i = 0; i < MCISO_COUNT; i++) {
@@ -265,6 +298,13 @@ void state_rtdReady_body(fsm_t *fsm) {
 		}
 	}
 
+	if (!check_bad_heartbeat()) {
+		// board has dropped out, go to error state
+
+		fsm_changeState(fsm, &state_error, "Board died");
+		return;
+	}
+
 	bool brake_pressed = false;
 
 #if RTD_DEBUG == 1
@@ -302,10 +342,20 @@ void state_rtdButton_body(fsm_t *fsm) {
 		// check for shutdowns
 		else if (check_shutdown_msg(&msg, &shutdown_triggered)) {
 			if (shutdown_triggered) {
+				RTD_BTN_Off();
 				fsm_changeState(fsm, &state_shutdown, "Shutdown triggered");
 				return;
 			}
 		}
+	}
+
+	if (!check_bad_heartbeat()) {
+		// board has dropped out, go to error state
+
+		RTD_BTN_Off();
+
+		fsm_changeState(fsm, &state_error, "Board died");
+		return;
 	}
 
 	bool brake_pressed = false;
@@ -339,39 +389,5 @@ void state_rtdButton_body(fsm_t *fsm) {
 	else {
 		// button not pressed, reset timer
 		RTD_state.RTD_ticks = 0;
-	}
-}
-
-void state_shutdown_enter(fsm_t *fsm) {
-
-}
-
-void state_shutdown_body(fsm_t *fsm) {
-	CAN_MSG_Generic_t msg;
-
-	while (queue_next(&queue_CAN1, &msg)) {
-		// check for heartbeats
-		check_heartbeat_msg(&msg);
-	}
-
-	bool shutdown_status = false;
-
-	while (queue_next(&queue_CAN2, &msg)) {
-		// check for heartbeats
-		if (!check_heartbeat_msg(&msg)) {
-			if ((msg.ID & ~0xF) == VCU_ShutdownStatus_ID) {
-				uint8_t line;
-				bool status;
-				Parse_VCU_ShutdownStatus(msg.data, &line, &line, &line, &line, &status);
-
-				shutdown_status = status;
-			}
-		}
-	}
-
-	if (shutdown_status) {
-		// shutdown is good now, go back to AMS health check
-		fsm_changeState(fsm, &state_checkAMS, "Shutdown fixed");
-		return;
 	}
 }

@@ -10,6 +10,7 @@
 #include "heartbeat.h"
 #include "sensor_adc.h"
 #include "shutdown.h"
+#include "RTD.h"
 
 state_t state_start = { &state_start_enter, &state_start_body, CC_STATE_START };
 state_t state_pInit = { &state_pInit_enter, &state_pInit_body, CC_STATE_PERIPHERAL_INIT };
@@ -203,6 +204,13 @@ void state_boardCheck_body(fsm_t *fsm) {
 		boards_missing = true;
 	}
 
+	// MCISO is critical
+	for (int i = 0; i < MCISO_COUNT; i++) {
+		if (!heartbeats.MCISO[i]) {
+			boards_missing = true;
+		}
+	}
+
 	if (!boards_missing) {
 		// all boards required are present
 		fsm_changeState(fsm, &state_checkAMS, "Boards present");
@@ -236,6 +244,12 @@ void state_checkAMS_body(fsm_t *fsm) {
 		}
 	}
 
+	if (!check_bad_heartbeat()) {
+		// board has dropped out, go to error state
+		fsm_changeState(fsm, &state_error, "Board died");
+		return;
+	}
+
 	if (AMS_heartbeatState.stateID == AMS_STATE_READY) {
 		// AMS has finished initialization so we're good to precharge whenever driver is ready
 		fsm_changeState(fsm, &state_idle, "AMS Ready");
@@ -244,7 +258,7 @@ void state_checkAMS_body(fsm_t *fsm) {
 }
 
 void state_error_enter(fsm_t *fsm) {
-
+	RTD_BTN_Off();
 }
 
 void state_error_body(fsm_t *fsm) {
