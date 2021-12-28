@@ -9,6 +9,7 @@
 #include "heartbeat.h"
 #include "RTD.h"
 #include "sensor_adc.h"
+#include "shutdown.h"
 
 state_t state_idle = { &state_idle_enter, &state_idle_body, CC_STATE_IDLE };
 state_t state_request_pchrg = { &state_request_pchrg_enter, &state_request_pchrg_body, CC_STATE_PRECHARGE_REQUEST };
@@ -41,8 +42,22 @@ void state_idle_body(fsm_t *fsm) {
 	}
 
 	while (queue_next(&queue_CAN2, &msg)) {
-		// check for heartbeats
-		check_heartbeat_msg(&msg);
+		// check for heartbeat
+		if (check_heartbeat_msg(&msg)) {
+		}
+		// check for shutdowns
+		else if (check_shutdown_msg(&msg, &shutdown_triggered)) {
+			if (shutdown_triggered) {
+				// stop timer
+				timer_stop(&timer_rtd_light);
+
+				// turn RTD button off
+				RTD_BTN_Off();
+
+				fsm_changeState(fsm, &state_shutdown, "Shutdown triggered");
+				return;
+			}
+		}
 	}
 
 	if (AMS_heartbeatState.stateID != AMS_STATE_READY) {
@@ -57,6 +72,7 @@ void state_idle_body(fsm_t *fsm) {
 
 		// go back to check AMS
 		fsm_changeState(fsm, &state_checkAMS, "AMS not good");
+		return;
 	}
 	else {
 		if (RTD_BTN_Pressed()) {
@@ -79,6 +95,7 @@ void state_idle_body(fsm_t *fsm) {
 
 				// start precharge
 				fsm_changeState(fsm, &state_request_pchrg, "Precharge requested");
+				return;
 			}
 		}
 	}
@@ -105,13 +122,22 @@ void state_request_pchrg_body(fsm_t *fsm) {
 	}
 
 	while (queue_next(&queue_CAN2, &msg)) {
-		// check for heartbeats
-		check_heartbeat_msg(&msg);
+		// check for heartbeat
+		if (check_heartbeat_msg(&msg)) {
+		}
+		// check for shutdowns
+		else if (check_shutdown_msg(&msg, &shutdown_triggered)) {
+			if (shutdown_triggered) {
+				fsm_changeState(fsm, &state_shutdown, "Shutdown triggered");
+				return;
+			}
+		}
 	}
 
 	if ((AMS_heartbeatState.stateID == AMS_STATE_PRECHARGE) || (AMS_heartbeatState.stateID == AMS_STATE_TS_ACTIVE)) {
 		// precharge request has been acknowledged and started, or it's already finished so move to precharge to confirm and wait
 		fsm_changeState(fsm, &state_precharge, "Precharging");
+		return;
 	}
 	else if (AMS_heartbeatState.stateID != AMS_STATE_READY) {
 		// if it's in ready, probably just about to start precharge so ignore
@@ -119,6 +145,7 @@ void state_request_pchrg_body(fsm_t *fsm) {
 
 		// something has clowned, so go back to AMS health check
 		fsm_changeState(fsm, &state_checkAMS, "Precharge error");
+		return;
 	}
 }
 
@@ -135,26 +162,37 @@ void state_precharge_body(fsm_t *fsm) {
 	}
 
 	while (queue_next(&queue_CAN2, &msg)) {
-		// check for heartbeats
-		check_heartbeat_msg(&msg);
+		// check for heartbeat
+		if (check_heartbeat_msg(&msg)) {
+		}
+		// check for shutdowns
+		else if (check_shutdown_msg(&msg, &shutdown_triggered)) {
+			if (shutdown_triggered) {
+				fsm_changeState(fsm, &state_shutdown, "Shutdown triggered");
+				return;
+			}
+		}
 	}
 
 	if (AMS_heartbeatState.stateID == AMS_STATE_TS_ACTIVE) {
 		// precharge finished successfully, TS is active
 		// go to inverter health check
 		fsm_changeState(fsm, &state_checkInverter, "Precharge finished");
+		return;
 	}
 	else if ((AMS_heartbeatState.stateID == AMS_STATE_READY) && (AMS_heartbeatState.flags.PCHRG_TIMEOUT == 1)) {
 		// precharge timed out
 		// go back to idle and start again
 
 		fsm_changeState(fsm, &state_idle, "Precharge timed out");
+		return;
 	}
 	else {
 		// why tf we go back, something is broken
 		// go to AMS health check
 
 		fsm_changeState(fsm, &state_checkAMS, "Precharge error");
+		return;
 	}
 }
 
@@ -171,8 +209,16 @@ void state_checkInverter_body(fsm_t *fsm) {
 	}
 
 	while (queue_next(&queue_CAN2, &msg)) {
-		// check for heartbeats
-		check_heartbeat_msg(&msg);
+		// check for heartbeat
+		if (check_heartbeat_msg(&msg)) {
+		}
+		// check for shutdowns
+		else if (check_shutdown_msg(&msg, &shutdown_triggered)) {
+			if (shutdown_triggered) {
+				fsm_changeState(fsm, &state_shutdown, "Shutdown triggered");
+				return;
+			}
+		}
 	}
 
 	bool inverter_good = true;
@@ -189,6 +235,7 @@ void state_checkInverter_body(fsm_t *fsm) {
 	if (inverter_good) {
 		// all MCISO boards and good and all inverters report good on heartbeat so we good
 		fsm_changeState(fsm, &state_rtdReady, "Inverters good");
+		return;
 	}
 }
 
@@ -206,8 +253,16 @@ void state_rtdReady_body(fsm_t *fsm) {
 	}
 
 	while (queue_next(&queue_CAN2, &msg)) {
-		// check for heartbeats
-		check_heartbeat_msg(&msg);
+		// check for heartbeat
+		if (check_heartbeat_msg(&msg)) {
+		}
+		// check for shutdowns
+		else if (check_shutdown_msg(&msg, &shutdown_triggered)) {
+			if (shutdown_triggered) {
+				fsm_changeState(fsm, &state_shutdown, "Shutdown triggered");
+				return;
+			}
+		}
 	}
 
 	bool brake_pressed = false;
@@ -220,6 +275,7 @@ void state_rtdReady_body(fsm_t *fsm) {
 
 	if (brake_pressed) {
 		fsm_changeState(fsm, &state_rtdButton, "Brakes actuated");
+		return;
 	}
 }
 
@@ -240,8 +296,16 @@ void state_rtdButton_body(fsm_t *fsm) {
 	}
 
 	while (queue_next(&queue_CAN2, &msg)) {
-		// check for heartbeats
-		check_heartbeat_msg(&msg);
+		// check for heartbeat
+		if (check_heartbeat_msg(&msg)) {
+		}
+		// check for shutdowns
+		else if (check_shutdown_msg(&msg, &shutdown_triggered)) {
+			if (shutdown_triggered) {
+				fsm_changeState(fsm, &state_shutdown, "Shutdown triggered");
+				return;
+			}
+		}
 	}
 
 	bool brake_pressed = false;
@@ -269,8 +333,10 @@ void state_rtdButton_body(fsm_t *fsm) {
 
 			// change to driving state
 			fsm_changeState(fsm, &state_driving, "RTD Pressed");
+			return;
 		}
-	} else {
+	}
+	else {
 		// button not pressed, reset timer
 		RTD_state.RTD_ticks = 0;
 	}
@@ -281,5 +347,31 @@ void state_shutdown_enter(fsm_t *fsm) {
 }
 
 void state_shutdown_body(fsm_t *fsm) {
+	CAN_MSG_Generic_t msg;
 
+	while (queue_next(&queue_CAN1, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
+	bool shutdown_status = false;
+
+	while (queue_next(&queue_CAN2, &msg)) {
+		// check for heartbeats
+		if (!check_heartbeat_msg(&msg)) {
+			if ((msg.ID & ~0xF) == VCU_ShutdownStatus_ID) {
+				uint8_t line;
+				bool status;
+				Parse_VCU_ShutdownStatus(msg.data, &line, &line, &line, &line, &status);
+
+				shutdown_status = status;
+			}
+		}
+	}
+
+	if (shutdown_status) {
+		// shutdown is good now, go back to AMS health check
+		fsm_changeState(fsm, &state_checkAMS, "Shutdown fixed");
+		return;
+	}
 }

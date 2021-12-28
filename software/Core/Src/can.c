@@ -18,11 +18,11 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+#include <QUTMS_CAN.h>
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
 #include <stdio.h>
-#include <QUTMS_can.h>
 
 message_queue_t queue_CAN1;
 message_queue_t queue_CAN2;

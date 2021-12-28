@@ -9,7 +9,7 @@
 #define INC_CAN_DICT_H_
 
 #include <obj_dic.h>
-#include <QUTMS_can.h>
+#include <QUTMS_CAN.h>
 #include <Timer.h>
 
 #include "can.h"

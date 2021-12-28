@@ -9,6 +9,7 @@
 #include "can_dict.h"
 #include "heartbeat.h"
 #include "sensor_adc.h"
+#include "shutdown.h"
 
 state_t state_start = { &state_start_enter, &state_start_body, CC_STATE_START };
 state_t state_pInit = { &state_pInit_enter, &state_pInit_body, CC_STATE_PERIPHERAL_INIT };
@@ -31,6 +32,7 @@ void state_start_enter(fsm_t *fsm) {
 
 	// go to peripheral init
 	fsm_changeState(fsm, &state_pInit, "Init Peripherals");
+	return;
 }
 
 void state_start_body(fsm_t *fsm) {
@@ -59,6 +61,7 @@ void state_pInit_enter(fsm_t *fsm) {
 		fsm_changeState(fsm, &state_sInit, "Peripherals initialized");
 		peripheral_retry_start = 0;
 		peripheral_timeout_start = 0;
+		return;
 	}
 	else {
 		// something failed, so start timers so we can retry
@@ -166,6 +169,7 @@ void state_sInit_body(fsm_t *fsm) {
 	if ((sensor_timeout_start - HAL_GetTick()) > SENSOR_TIMEOUT) {
 		// sensor has failed so go to error state
 		fsm_changeState(fsm, &state_error, "Sensors failed");
+		return;
 	}
 }
 
@@ -202,6 +206,7 @@ void state_boardCheck_body(fsm_t *fsm) {
 	if (!boards_missing) {
 		// all boards required are present
 		fsm_changeState(fsm, &state_checkAMS, "Boards present");
+		return;
 	}
 }
 
@@ -219,13 +224,22 @@ void state_checkAMS_body(fsm_t *fsm) {
 	}
 
 	while (queue_next(&queue_CAN2, &msg)) {
-		// check for heartbeats
-		check_heartbeat_msg(&msg);
+		// check for heartbeat
+		if (check_heartbeat_msg(&msg)) {
+		}
+		// check for shutdowns
+		else if (check_shutdown_msg(&msg, &shutdown_triggered)) {
+			if (shutdown_triggered) {
+				fsm_changeState(fsm, &state_shutdown, "Shutdown triggered");
+				return;
+			}
+		}
 	}
 
 	if (AMS_heartbeatState.stateID == AMS_STATE_READY) {
 		// AMS has finished initialization so we're good to precharge whenever driver is ready
 		fsm_changeState(fsm, &state_idle, "AMS Ready");
+		return;
 	}
 }
 

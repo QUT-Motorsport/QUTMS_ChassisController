@@ -9,11 +9,11 @@
 #define INC_INVERTER_VESC_H_
 
 #include <CAN_CC.h>
+#include <QUTMS_CAN.h>
 #include "main.h"
 #include <stdint.h>
 #include <stdio.h>
 #include "can.h"
-#include "QUTMS_can.h"
 #include "VESC_CAN_Messages.h"
 
 #define TV_ENABLED_DEFAULT 0
