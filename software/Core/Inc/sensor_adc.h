@@ -42,7 +42,7 @@
 #define STEER_MIN 380
 #define STEER_MAX 3260
 
-typedef struct sensor_values {
+typedef struct sensor_settings {
 	uint16_t pedal_duty_cycle;
 
 	uint16_t pedal_accel_min[NUM_PEDAL_ACCEL];
@@ -57,9 +57,9 @@ typedef struct sensor_values {
 	uint16_t steering_max;
 
 	float steering_offset[NUM_STEERING];
+} sensor_settings_t;
 
-
-
+typedef struct sensor_values {
 	uint16_t pedal_accel_mapped[NUM_PEDAL_ACCEL];
 	uint16_t pedal_brake_mapped;
 
@@ -96,6 +96,7 @@ typedef struct sensor_values {
 	uint32_t steering_imp_start;
 } sensor_values_t;
 
+extern sensor_settings_t sensor_config;
 extern sensor_values_t current_sensor_values;
 extern ms_timer_t timer_sensor_adc;
 

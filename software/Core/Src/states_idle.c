@@ -313,7 +313,7 @@ void state_rtdReady_body(fsm_t *fsm) {
 #if RTD_DEBUG == 1
 	brake_pressed = true;
 #else
-	brake_pressed = (current_sensor_values.pedal_brake_mapped >= current_sensor_values.brake_min_actuation);
+	brake_pressed = (current_sensor_values.pedal_brake_mapped >= sensor_config.brake_min_actuation);
 #endif
 
 	if (brake_pressed) {
@@ -366,7 +366,7 @@ void state_rtdButton_body(fsm_t *fsm) {
 #if RTD_DEBUG == 1
 	brake_pressed = true;
 #else
-	brake_pressed = (current_sensor_values.pedal_brake_mapped >= current_sensor_values.brake_min_actuation);
+	brake_pressed = (current_sensor_values.pedal_brake_mapped >= sensor_config.brake_min_actuation);
 #endif
 
 	if (!brake_pressed) {

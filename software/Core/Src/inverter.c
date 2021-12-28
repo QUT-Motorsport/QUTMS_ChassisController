@@ -70,7 +70,7 @@ void inverter_send_pedals(uint16_t accel, uint16_t brake, double steeringAngle, 
 	float regen = 0.0f;
 
 	// calculate torque and regen currents
-	if (brake <= current_sensor_values.brake_min_actuation) {
+	if (brake <= sensor_config.brake_min_actuation) {
 		if (accel <= inverter_config.deadzone_min) {
 			// regen zone
 

@@ -16,6 +16,7 @@
 #include "debugCAN.h"
 #include "heartbeat.h"
 
+sensor_settings_t sensor_config;
 sensor_values_t current_sensor_values;
 ms_timer_t timer_sensor_adc;
 
@@ -148,23 +149,23 @@ void setup_adc_sensors() {
 	}
 
 	// setup constants
-	current_sensor_values.pedal_duty_cycle = PEDAL_DUTY_CYCLE;
+	sensor_config.pedal_duty_cycle = PEDAL_DUTY_CYCLE;
 
-	current_sensor_values.pedal_accel_min[0] = PEDAL_ACCEL_0_MIN;
-	current_sensor_values.pedal_accel_max[0] = PEDAL_ACCEL_0_MAX;
-	current_sensor_values.pedal_accel_min[1] = PEDAL_ACCEL_1_MIN;
-	current_sensor_values.pedal_accel_max[1] = PEDAL_ACCEL_1_MAX;
+	sensor_config.pedal_accel_min[0] = PEDAL_ACCEL_0_MIN;
+	sensor_config.pedal_accel_max[0] = PEDAL_ACCEL_0_MAX;
+	sensor_config.pedal_accel_min[1] = PEDAL_ACCEL_1_MIN;
+	sensor_config.pedal_accel_max[1] = PEDAL_ACCEL_1_MAX;
 
-	current_sensor_values.brake_pressure_min = PEDAL_BRAKE_MIN;
-	current_sensor_values.brake_pressure_max = PEDAL_BRAKE_MAX;
+	sensor_config.brake_pressure_min = PEDAL_BRAKE_MIN;
+	sensor_config.brake_pressure_max = PEDAL_BRAKE_MAX;
 
-	current_sensor_values.brake_min_actuation = BRAKE_MIN_ACTUATION;
+	sensor_config.brake_min_actuation = BRAKE_MIN_ACTUATION;
 
-	current_sensor_values.steering_min = STEER_MIN;
-	current_sensor_values.steering_max = STEER_MAX;
+	sensor_config.steering_min = STEER_MIN;
+	sensor_config.steering_max = STEER_MAX;
 
-	current_sensor_values.steering_offset[0] = STEER_OFFSET_0;
-	current_sensor_values.steering_offset[1] = STEER_OFFSET_1;
+	sensor_config.steering_offset[0] = STEER_OFFSET_0;
+	sensor_config.steering_offset[1] = STEER_OFFSET_1;
 
 	// init count
 	sensor_transmit_count = 0;
@@ -185,27 +186,27 @@ void update_sensor_values() {
 		window_filter_update(&current_sensor_values.pedal_accel[i], current_sensor_values.raw_pedal_accel[i]);
 
 		current_sensor_values.pedal_accel_mapped[i] = map_capped(current_sensor_values.pedal_accel[i].current_filtered,
-				current_sensor_values.pedal_accel_min[i], current_sensor_values.pedal_accel_max[i], 0,
-				current_sensor_values.pedal_duty_cycle);
+				sensor_config.pedal_accel_min[i], sensor_config.pedal_accel_max[i], 0,
+				sensor_config.pedal_duty_cycle);
 	}
 
 	// correct accel 1 orientation
-	current_sensor_values.pedal_accel_mapped[1] = current_sensor_values.pedal_duty_cycle
+	current_sensor_values.pedal_accel_mapped[1] = sensor_config.pedal_duty_cycle
 			- current_sensor_values.pedal_accel_mapped[1];
 
 	// update brake pressure
 	window_filter_update(&current_sensor_values.brake_pressure, current_sensor_values.raw_pressure_brake[0]);
 
 	current_sensor_values.pedal_brake_mapped = (uint16_t) map_capped(
-			current_sensor_values.brake_pressure.current_filtered, current_sensor_values.brake_pressure_min,
-			current_sensor_values.brake_pressure_max, 0, current_sensor_values.pedal_duty_cycle);
+			current_sensor_values.brake_pressure.current_filtered, sensor_config.brake_pressure_min,
+			sensor_config.brake_pressure_max, 0, sensor_config.pedal_duty_cycle);
 
 	// update steering angle
 	for (int i = 0; i < NUM_STEERING; i++) {
 		window_filter_update(&current_sensor_values.steering_angle[i], current_sensor_values.raw_steering[i]);
 
 		current_sensor_values.steering_mapped[i] = map_capped(current_sensor_values.steering_angle[i].current_filtered,
-				current_sensor_values.steering_min, current_sensor_values.steering_max, 0, 360);
+				sensor_config.steering_min, sensor_config.steering_max, 0, 360);
 
 		current_sensor_values.steering_mapped[i] = 180 - current_sensor_values.steering_mapped[i];
 
@@ -215,8 +216,8 @@ void update_sensor_values() {
 	current_sensor_values.steering_mapped[1] = -current_sensor_values.steering_mapped[1];
 
 	// zero steering angle values
-	current_sensor_values.steering_mapped[0] += current_sensor_values.steering_offset[0];
-	current_sensor_values.steering_mapped[1] += current_sensor_values.steering_offset[1];
+	current_sensor_values.steering_mapped[0] += sensor_config.steering_offset[0];
+	current_sensor_values.steering_mapped[1] += sensor_config.steering_offset[1];
 }
 
 void update_APPS() {
@@ -290,7 +291,7 @@ void update_BSE() {
 
 void update_pedal_plausibility() {
 	// if brake AND accel > 25% -> pedal_disable_motors = true
-	if ((current_sensor_values.pedal_brake_mapped > current_sensor_values.brake_min_actuation)
+	if ((current_sensor_values.pedal_brake_mapped > sensor_config.brake_min_actuation)
 			&& (current_sensor_values.pedal_accel_mapped[0] > 250)) {
 		current_sensor_values.pedal_disable_motors = true;
 
