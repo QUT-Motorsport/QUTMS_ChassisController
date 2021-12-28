@@ -20,6 +20,8 @@ bool shutdown_triggered;
 
 void state_shutdown_enter(fsm_t *fsm) {
 	RTD_BTN_Off();
+
+	// TODO: send message to disable inverters???
 }
 
 void state_shutdown_body(fsm_t *fsm) {

@@ -9,12 +9,12 @@
 #define INC_INVERTER_VESC_H_
 
 #include <CAN_CC.h>
+#include <CAN_VESC.h>
 #include <QUTMS_CAN.h>
 #include "main.h"
 #include <stdint.h>
 #include <stdio.h>
 #include "can.h"
-#include "VESC_CAN_Messages.h"
 
 #define TV_ENABLED_DEFAULT 0
 #define REGEN_ENABLED_DEFAULT 1
@@ -30,6 +30,13 @@
 #define VESC_BRAKE_THRESHOLD (BRAKE_MIN_ACTIVATION / 1000.0f)
 #define VESC_DEADZONE_MIN 0.3f
 #define VESC_DEADZONE_MAX 0.4f
+
+void vesc_send_shutdown();
+
+void vesc_send_torque(uint8_t id, float request);
+void vesc_send_regen(uint8_t id, float request);
+
+bool vesc_handle_CAN(CAN_MSG_Generic_t *msg);
 
 
 void vesc_send_shutdown();

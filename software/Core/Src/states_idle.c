@@ -6,6 +6,9 @@
  */
 
 #include "states.h"
+
+#include <Timer.h>
+
 #include "heartbeat.h"
 #include "RTD.h"
 #include "sensor_adc.h"
@@ -378,7 +381,7 @@ void state_rtdButton_body(fsm_t *fsm) {
 		}
 
 		if ((HAL_GetTick() - RTD_state.RTD_ticks) > RTD_BTN_TIME) {
-			// send RTD message
+			// send RTD message (this is what triggers siren)
 			send_RTD();
 
 			// change to driving state

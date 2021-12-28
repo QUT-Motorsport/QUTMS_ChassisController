@@ -119,6 +119,23 @@ void Error_Handler(void);
 // 50mv
 #define ADC_DISCONNECT_CUTOFF 50
 
+// inverter settings
+
+#define INV_MAX_CURRENT 120
+#define INV_DEADZONE_MIN 400
+#define INV_DEADZONE_MAX 500
+
+#define INV_REGEN_ENABLE 1
+#define INV_REGEN_KMH_CUTOFF 10
+#define INV_REGEN_MAX_CURRENT 60
+
+#define INV_TV_ENABLE 0
+#define INV_TV_DEADZONE 10
+#define INV_TV_SCALAR 0
+#define INV_TV_BOOST 0
+
+#define WHEEL_RADIUS 0.4064
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
