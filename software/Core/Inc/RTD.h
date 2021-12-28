@@ -32,4 +32,8 @@ extern RTD_t RTD_state;
 void RTD_BTN_Off();
 void RTD_BTN_On();
 
+bool RTD_BTN_Pressed();
+
+void send_RTD();
+
 #endif /* INC_RTD_H_ */

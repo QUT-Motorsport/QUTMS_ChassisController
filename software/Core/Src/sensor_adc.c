@@ -158,6 +158,8 @@ void setup_adc_sensors() {
 	current_sensor_values.brake_pressure_min = PEDAL_BRAKE_MIN;
 	current_sensor_values.brake_pressure_max = PEDAL_BRAKE_MAX;
 
+	current_sensor_values.brake_min_actuation = BRAKE_MIN_ACTUATION;
+
 	current_sensor_values.steering_min = STEER_MIN;
 	current_sensor_values.steering_max = STEER_MAX;
 
@@ -288,7 +290,7 @@ void update_BSE() {
 
 void update_pedal_plausibility() {
 	// if brake AND accel > 25% -> pedal_disable_motors = true
-	if ((current_sensor_values.pedal_brake_mapped > BRAKE_MIN_ACTIVATION)
+	if ((current_sensor_values.pedal_brake_mapped > current_sensor_values.brake_min_actuation)
 			&& (current_sensor_values.pedal_accel_mapped[0] > 250)) {
 		current_sensor_values.pedal_disable_motors = true;
 

@@ -8,6 +8,7 @@
 #include "states.h"
 #include "heartbeat.h"
 #include "RTD.h"
+#include "sensor_adc.h"
 
 state_t state_idle = { &state_idle_enter, &state_idle_body, CC_STATE_IDLE };
 state_t state_request_pchrg = { &state_request_pchrg_enter, &state_request_pchrg_body, CC_STATE_PRECHARGE_REQUEST };
@@ -58,7 +59,7 @@ void state_idle_body(fsm_t *fsm) {
 		fsm_changeState(fsm, &state_checkAMS, "AMS not good");
 	}
 	else {
-		if (HAL_GPIO_ReadPin(RTD_INPUT_GPIO_Port, RTD_INPUT_Pin) == GPIO_PIN_SET) {
+		if (RTD_BTN_Pressed()) {
 			// precharge pressed
 
 			if (RTD_state.precharge_ticks == 0) {
@@ -192,19 +193,87 @@ void state_checkInverter_body(fsm_t *fsm) {
 }
 
 void state_rtdReady_enter(fsm_t *fsm) {
-
+	// make sure button is off
+	RTD_BTN_Off();
 }
 
 void state_rtdReady_body(fsm_t *fsm) {
+	CAN_MSG_Generic_t msg;
 
+	while (queue_next(&queue_CAN1, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
+	while (queue_next(&queue_CAN2, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
+	bool brake_pressed = false;
+
+#if RTD_DEBUG == 1
+	brake_pressed = true;
+#else
+	brake_pressed = (current_sensor_values.pedal_brake_mapped >= current_sensor_values.brake_min_actuation);
+#endif
+
+	if (brake_pressed) {
+		fsm_changeState(fsm, &state_rtdButton, "Brakes actuated");
+	}
 }
 
 void state_rtdButton_enter(fsm_t *fsm) {
+	// brake is actuated so turn RTD button on
+	RTD_BTN_On();
 
+	// brakes just got pushed, reset timer
+	RTD_state.RTD_ticks = 0;
 }
 
 void state_rtdButton_body(fsm_t *fsm) {
+	CAN_MSG_Generic_t msg;
 
+	while (queue_next(&queue_CAN1, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
+	while (queue_next(&queue_CAN2, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
+	bool brake_pressed = false;
+
+#if RTD_DEBUG == 1
+	brake_pressed = true;
+#else
+	brake_pressed = (current_sensor_values.pedal_brake_mapped >= current_sensor_values.brake_min_actuation);
+#endif
+
+	if (!brake_pressed) {
+		fsm_changeState(fsm, &state_rtdReady, "Brakes not actuated");
+		return;
+	}
+
+	if (RTD_BTN_Pressed()) {
+		if (RTD_state.RTD_ticks == 0) {
+			// button just pushed
+			RTD_state.RTD_ticks = HAL_GetTick();
+		}
+
+		if ((HAL_GetTick() - RTD_state.RTD_ticks) > RTD_BTN_TIME) {
+			// send RTD message
+			send_RTD();
+
+			// change to driving state
+			fsm_changeState(fsm, &state_driving, "RTD Pressed");
+		}
+	} else {
+		// button not pressed, reset timer
+		RTD_state.RTD_ticks = 0;
+	}
 }
 
 void state_shutdown_enter(fsm_t *fsm) {

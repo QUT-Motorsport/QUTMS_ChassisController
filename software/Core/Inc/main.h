@@ -39,7 +39,9 @@ extern "C" {
 /* USER CODE BEGIN ET */
 #define PRINT_RAW_PEDALS 0
 #define DEBUG_AMS 0
-#define RTD_DEBUG 1
+
+// 0 - brakes must be actuated for RTD, 1 - brakes not required
+#define RTD_DEBUG 0
 
 // is steering missing an issue
 #define STEERING_NON_CRITICAL 1

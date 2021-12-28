@@ -29,7 +29,7 @@
 #define PEDAL_BRAKE_MIN 500
 #define PEDAL_BRAKE_MAX 1000
 
-#define BRAKE_MIN_ACTIVATION 700
+#define BRAKE_MIN_ACTUATION 700
 
 #define PEDAL_DUTY_CYCLE 1000
 
@@ -62,6 +62,8 @@ typedef struct sensor_values {
 
 	uint32_t raw_pressure_brake[1];
 	uint32_t raw_pressure_brake_dma[1];
+
+	uint16_t brake_min_actuation;
 
 	uint16_t steering_min;
 	uint16_t steering_max;
