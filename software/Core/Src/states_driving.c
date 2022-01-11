@@ -115,8 +115,11 @@ void inverter_timer_cb(void *args) {
 		}
 	}
 
-	bool disable_motor = (current_sensor_values.APPS_disable_motors || current_sensor_values.BSE_disable_motors
-			|| current_sensor_values.pedal_disable_motors);
+	bool disable_motor = current_sensor_values.APPS_disable_motors || current_sensor_values.pedal_disable_motors;
+
+#if BRAKE_NON_CRITICAL == 0
+	disable_motor = disable_motor || current_sensor_values.BSE_disable_motors;
+#endif
 
 	inverter_send_pedals(current_sensor_values.pedal_accel_mapped[0], current_sensor_values.pedal_brake_mapped,
 			steeringAngle, disable_motor, use_tv);
