@@ -43,6 +43,9 @@ extern "C" {
 // 0 - brakes must be actuated for RTD, 1 - brakes not required
 #define RTD_DEBUG 0
 
+// is brakes missing an issue
+#define BRAKE_NON_CRITICAL 1
+
 // is steering missing an issue
 #define STEERING_NON_CRITICAL 1
 /* USER CODE END ET */
@@ -103,6 +106,9 @@ void Error_Handler(void);
 
 // 300ms
 #define HEARTBEAT_TIMEOUT 300
+
+// 250ms
+#define HEARTBEAT_PRINT_TIME 250
 
 // 1000ms
 #define UART_TIMEOUT 1000

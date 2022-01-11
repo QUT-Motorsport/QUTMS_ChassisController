@@ -246,8 +246,8 @@ void state_checkAMS_body(fsm_t *fsm) {
 
 	if (!check_bad_heartbeat()) {
 		// board has dropped out, go to error state
-		fsm_changeState(fsm, &state_error, "Board died");
-		return;
+		//fsm_changeState(fsm, &state_error, "Board died");
+		//return;
 	}
 
 	if (AMS_heartbeatState.stateID == AMS_STATE_READY) {
@@ -263,5 +263,17 @@ void state_error_enter(fsm_t *fsm) {
 
 void state_error_body(fsm_t *fsm) {
 	// do nothing
+	CAN_MSG_Generic_t msg;
+	while (queue_next(&queue_CAN1, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
+	while (queue_next(&queue_CAN2, &msg)) {
+		// check for heartbeats
+		check_heartbeat_msg(&msg);
+	}
+
+	check_bad_heartbeat();
 }
 

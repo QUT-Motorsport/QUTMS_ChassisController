@@ -97,8 +97,9 @@ bool check_sensors_connected(CC_Flags_u *error_flags) {
 
 	if (current_sensor_values.raw_pressure_brake[0] < ADC_DISCONNECT_CUTOFF) {
 		error_flags->S_Brake = 1;
-
+#if BRAKE_NON_CRITICAL == 0
 		success = false;
+#endif
 	}
 	else {
 		error_flags->S_Brake = 0;

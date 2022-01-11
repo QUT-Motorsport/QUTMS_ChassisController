@@ -216,7 +216,7 @@ void state_precharge_body(fsm_t *fsm) {
 		fsm_changeState(fsm, &state_idle, "Precharge timed out");
 		return;
 	}
-	else {
+	else if (AMS_heartbeatState.stateID != AMS_STATE_PRECHARGE){
 		// why tf we go back, something is broken
 		// go to AMS health check
 
@@ -264,8 +264,8 @@ void state_checkInverter_body(fsm_t *fsm) {
 		inverter_good = inverter_good && heartbeats.MCISO[i];
 
 		// check connected inverters are good
-		inverter_good = inverter_good && (MCISO_heartbeatState[i].errorFlags.HB_INV0 == 1);
-		inverter_good = inverter_good && (MCISO_heartbeatState[i].errorFlags.HB_INV1 == 1);
+		inverter_good = inverter_good && (MCISO_heartbeatState[i].errorFlags.HB_INV0 == 0);
+		inverter_good = inverter_good && (MCISO_heartbeatState[i].errorFlags.HB_INV1 == 0);
 	}
 
 	if (inverter_good) {

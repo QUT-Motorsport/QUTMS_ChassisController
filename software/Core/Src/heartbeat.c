@@ -15,6 +15,7 @@ CC_HeartbeatState_t CC_heartbeatState;
 MCISO_HeartbeatState_t MCISO_heartbeatState[MCISO_COUNT];
 
 ms_timer_t timer_heartbeat;
+uint32_t heartbeat_print_timer_start;
 
 void setup_heartbeat() {
 	// send heartbeat every 100ms
@@ -28,6 +29,8 @@ void setup_heartbeat() {
 
 	// start timer
 	timer_start(&timer_heartbeat);
+
+	heartbeat_print_timer_start = HAL_GetTick();
 }
 
 void heartbeat_timer_cb(void *args) {
@@ -39,6 +42,12 @@ void heartbeat_timer_cb(void *args) {
 	CC_send_can_msg(&hcan1, &header, msg.data);
 	CC_send_can_msg(&hcan2, &header, msg.data);
 	CC_send_can_msg(&hcan3, &header, msg.data);
+
+	if ((HAL_GetTick() - heartbeat_print_timer_start) > HEARTBEAT_PRINT_TIME) {
+		heartbeat_print_timer_start = HAL_GetTick();
+
+		printf("HB: State: 0x%02X, Flags: 0x%04X, AMS: %d, MC0: %d, MC1: %d\r\n", CC_heartbeatState.stateID, CC_heartbeatState.errorFlags.rawMem, heartbeats.AMS ? 1 : 0, heartbeats.MCISO[0] ? 1 : 0, heartbeats.MCISO[1] ? 1 : 0);
+	}
 }
 
 void heartbeat_timeout_reset() {
