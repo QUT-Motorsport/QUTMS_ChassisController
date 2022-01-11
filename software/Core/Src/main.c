@@ -207,10 +207,12 @@ void SystemClock_Config(void) {
 void fsm_state_enter(fsm_t *fsm_def) {
 	CC_heartbeatState.stateID = fsm_def->currentState->stateID;
 	debugCAN_enterState(fsm_def->currentState->stateID);
+	heartbeat_timer_cb(NULL);
 }
 
 void fsm_state_exit(fsm_t *fsm_def) {
 	debugCAN_exitState(fsm_def->currentState->stateID);
+	heartbeat_timer_cb(NULL);
 }
 
 void fsm_log_uart(const char *data, size_t len) {

@@ -105,7 +105,7 @@ void Error_Handler(void);
 #define SENSOR_TIMEOUT 5000
 
 // 300ms
-#define HEARTBEAT_TIMEOUT 300
+#define HEARTBEAT_TIMEOUT 1000
 
 // 250ms
 #define HEARTBEAT_PRINT_TIME 250
