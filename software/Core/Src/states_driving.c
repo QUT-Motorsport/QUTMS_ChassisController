@@ -33,7 +33,7 @@ void state_driving_enter(fsm_t *fsm) {
 	inverter_setup();
 
 	// send commands to inverters every 20ms
-	timer_inverters = timer_init(20, true, inverter_timer_cb);
+	timer_inverters = timer_init(30, true, inverter_timer_cb);
 
 	timer_start(&timer_inverters);
 }

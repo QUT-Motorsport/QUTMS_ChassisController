@@ -310,7 +310,7 @@ void state_rtdReady_body(fsm_t *fsm) {
 
 	bool brake_pressed = false;
 
-#if RTD_DEBUG == 1
+#if (RTD_DEBUG == 1) || (BRAKE_NON_CRITICAL == 1)
 	brake_pressed = true;
 #else
 	brake_pressed = (current_sensor_values.pedal_brake_mapped >= sensor_config.brake_min_actuation);
@@ -363,7 +363,7 @@ void state_rtdButton_body(fsm_t *fsm) {
 
 	bool brake_pressed = false;
 
-#if RTD_DEBUG == 1
+#if (RTD_DEBUG == 1) || (BRAKE_NON_CRITICAL == 1)
 	brake_pressed = true;
 #else
 	brake_pressed = (current_sensor_values.pedal_brake_mapped >= sensor_config.brake_min_actuation);
@@ -380,7 +380,11 @@ void state_rtdButton_body(fsm_t *fsm) {
 			RTD_state.RTD_ticks = HAL_GetTick();
 		}
 
-		if ((HAL_GetTick() - RTD_state.RTD_ticks) > RTD_BTN_TIME) {
+		uint32_t timeLeft = (HAL_GetTick() - RTD_state.RTD_ticks);
+
+		printf("total: %i, start: %i\r\n", timeLeft, RTD_state.RTD_ticks);
+
+		if (timeLeft > RTD_BTN_TIME) {
 			// send RTD message (this is what triggers siren)
 			send_RTD();
 

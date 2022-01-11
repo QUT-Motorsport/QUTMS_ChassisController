@@ -232,6 +232,7 @@ void inverter_calculate_TV(double steeringAngle, double tvValues[4]) {
 }
 
 void inverter_send_torque(uint8_t id, float request) {
+	printf("tq %d %02f\r\n", id, request);
 	vesc_send_torque(id, request);
 }
 
