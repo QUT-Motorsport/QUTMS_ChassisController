@@ -198,11 +198,12 @@ void state_boardCheck_body(fsm_t *fsm) {
 	check_bad_heartbeat();
 
 	bool boards_missing = false;
-
+#if DEBUG_AMS == 0
 	// AMS is critical
 	if (!heartbeats.AMS) {
 		boards_missing = true;
 	}
+#endif
 
 	// MCISO is critical
 	for (int i = 0; i < MCISO_COUNT; i++) {
@@ -250,11 +251,17 @@ void state_checkAMS_body(fsm_t *fsm) {
 		//return;
 	}
 
+#if DEBUG_AMS == 0
 	if (AMS_heartbeatState.stateID == AMS_STATE_READY) {
-		// AMS has finished initialization so we're good to precharge whenever driver is ready
-		fsm_changeState(fsm, &state_idle, "AMS Ready");
-		return;
-	}
+			// AMS has finished initialization so we're good to precharge whenever driver is ready
+			fsm_changeState(fsm, &state_idle, "AMS Ready");
+			return;
+		}
+#else
+	// swap instantly into ready
+	fsm_changeState(fsm, &state_idle, "AMS Ready");
+	return;
+#endif
 }
 
 void state_error_enter(fsm_t *fsm) {

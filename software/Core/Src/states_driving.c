@@ -72,11 +72,16 @@ void state_driving_body(fsm_t *fsm) {
 	bool inverter_missing = false;
 
 	for (int i = 0; i < MCISO_COUNT; i++) {
+
 		if ( (MCISO_heartbeatState[i].errorFlags.HB_INV0 == 1) || (MCISO_heartbeatState[i].errorFlags.HB_INV1 == 1) ) {
 			inverter_missing = true;
 			CC_heartbeatState.errorFlags.HB_INV = 1;
 		}
 	}
+
+#if DEBUG_INV == 1
+	inverter_missing = false;
+#endif
 
 	if (board_missing || inverter_missing) {
 		// board has dropped out, go to error state

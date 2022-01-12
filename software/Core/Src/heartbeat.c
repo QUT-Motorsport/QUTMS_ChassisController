@@ -112,7 +112,9 @@ bool check_bad_heartbeat() {
 	if ((HAL_GetTick() - heartbeats.hb_AMS_start) > heartbeats.heartbeat_timeout) {
 		heartbeats.AMS = false;
 		CC_heartbeatState.errorFlags.HB_AMS = 1;
+#if DEBUG_AMS == 0
 		success = false;
+#endif
 	}
 
 	// MCISO

@@ -74,7 +74,7 @@ void state_idle_body(fsm_t *fsm) {
 		fsm_changeState(fsm, &state_error, "Board died");
 		return;
 	}
-
+#if DEBUG_AMS == 0
 	if (AMS_heartbeatState.stateID != AMS_STATE_READY) {
 		// something is wrong, AMS has had some fault, probably BMS or shutdown
 		// go back to check AMS and wait for AMS to be ready again
@@ -90,30 +90,33 @@ void state_idle_body(fsm_t *fsm) {
 		return;
 	}
 	else {
-		if (RTD_BTN_Pressed()) {
-			// precharge pressed
+#endif
+	if (RTD_BTN_Pressed()) {
+		// precharge pressed
 
-			if (RTD_state.precharge_ticks == 0) {
-				// first detection of press, so start counting
-				RTD_state.precharge_ticks = HAL_GetTick();
-			}
+		if (RTD_state.precharge_ticks == 0) {
+			// first detection of press, so start counting
+			RTD_state.precharge_ticks = HAL_GetTick();
+		}
 
-			if ((HAL_GetTick() - RTD_state.precharge_ticks) > PRECHARGE_BTN_TIME) {
-				// precharge held for long enough
-				// go into precharge
+		if ((HAL_GetTick() - RTD_state.precharge_ticks) > PRECHARGE_BTN_TIME) {
+			// precharge held for long enough
+			// go into precharge
 
-				// stop timer
-				timer_stop(&timer_rtd_light);
+			// stop timer
+			timer_stop(&timer_rtd_light);
 
-				// turn RTD button off
-				RTD_BTN_Off();
+			// turn RTD button off
+			RTD_BTN_Off();
 
-				// start precharge
-				fsm_changeState(fsm, &state_request_pchrg, "Precharge requested");
-				return;
-			}
+			// start precharge
+			fsm_changeState(fsm, &state_request_pchrg, "Precharge requested");
+			return;
 		}
 	}
+#if DEBUG_AMS == 0
+	}
+#endif
 
 	// update timers
 	timer_update(&timer_rtd_light, NULL);
@@ -156,10 +159,13 @@ void state_request_pchrg_body(fsm_t *fsm) {
 		return;
 	}
 
+#if DEBUG_AMS == 0
 	if ((AMS_heartbeatState.stateID == AMS_STATE_PRECHARGE) || (AMS_heartbeatState.stateID == AMS_STATE_TS_ACTIVE)) {
-		// precharge request has been acknowledged and started, or it's already finished so move to precharge to confirm and wait
-		fsm_changeState(fsm, &state_precharge, "Precharging");
-		return;
+#endif
+	// precharge request has been acknowledged and started, or it's already finished so move to precharge to confirm and wait
+	fsm_changeState(fsm, &state_precharge, "Precharging");
+	return;
+#if DEBUG_AMS == 0
 	}
 	else if (AMS_heartbeatState.stateID != AMS_STATE_READY) {
 		// if it's in ready, probably just about to start precharge so ignore
@@ -169,6 +175,7 @@ void state_request_pchrg_body(fsm_t *fsm) {
 		fsm_changeState(fsm, &state_checkAMS, "Precharge error");
 		return;
 	}
+#endif
 }
 
 void state_precharge_enter(fsm_t *fsm) {
@@ -203,6 +210,7 @@ void state_precharge_body(fsm_t *fsm) {
 		return;
 	}
 
+#if DEBUG_AMS == 0
 	if (AMS_heartbeatState.stateID == AMS_STATE_TS_ACTIVE) {
 		// precharge finished successfully, TS is active
 		// go to inverter health check
@@ -223,6 +231,10 @@ void state_precharge_body(fsm_t *fsm) {
 		fsm_changeState(fsm, &state_checkAMS, "Precharge error");
 		return;
 	}
+#else
+	fsm_changeState(fsm, &state_checkInverter, "Precharge finished");
+	return;
+#endif
 }
 
 void state_checkInverter_enter(fsm_t *fsm) {
@@ -262,10 +274,11 @@ void state_checkInverter_body(fsm_t *fsm) {
 	for (int i = 0; i < MCISO_COUNT; i++) {
 		// check MCISO board is good
 		inverter_good = inverter_good && heartbeats.MCISO[i];
-
+#if DEBUG_INV == 0
 		// check connected inverters are good
 		inverter_good = inverter_good && (MCISO_heartbeatState[i].errorFlags.HB_INV0 == 0);
 		inverter_good = inverter_good && (MCISO_heartbeatState[i].errorFlags.HB_INV1 == 0);
+#endif
 	}
 
 	if (inverter_good) {
