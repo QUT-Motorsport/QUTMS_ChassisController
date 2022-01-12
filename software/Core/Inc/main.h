@@ -44,7 +44,7 @@ extern "C" {
 #define RTD_DEBUG 0
 
 // is brakes missing an issue
-#define BRAKE_NON_CRITICAL 1
+#define BRAKE_NON_CRITICAL 0
 
 // is steering missing an issue
 #define STEERING_NON_CRITICAL 1
@@ -69,7 +69,7 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define DASH_LED_POWER_Pin GPIO_PIN_3
 #define DASH_LED_POWER_GPIO_Port GPIOC
-#define BRAKE_PRESSURE_Pin GPIO_PIN_2
+#define BRAKE_PRESSURE_Pin GPIO_PIN_0
 #define BRAKE_PRESSURE_GPIO_Port GPIOA
 #define STEERING_1_Pin GPIO_PIN_3
 #define STEERING_1_GPIO_Port GPIOA
